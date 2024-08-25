@@ -1,4 +1,5 @@
 #include "game.hpp"
+#include "utils.hpp"
 
 namespace Game::Pieces {
     Piece char_to_piece(char c) {
@@ -79,18 +80,21 @@ namespace Game {
                     std::isupper(c) ? Colors::WHITE : Colors::BLACK;
                 Pieces::Piece piece = Pieces::char_to_piece(c);
 
-                board.colors[color] |= get_bit_set_at(index);
-                board.pieces[piece] |= get_bit_set_at(index);
+                board.colors[color] |= Utils::bit_at(index);
+                board.pieces[piece] |= Utils::bit_at(index);
                 index--;
             }
         }
+
+        board.turn = Colors::WHITE;
 
         return board;
     }
 
     void Board::print_board() {
+        std::printf("\n");
         for (int rank = 7; rank >= 0; --rank) {
-            for (int file = 0; file < 8; ++file) {
+            for (int file = 7; file >= 0; --file) {
                 int index = rank * 8 + file;
                 if (is_square_occupied(index))
                     std::printf(" %c ", Pieces::piece_to_char(piece_at(index),
@@ -98,25 +102,26 @@ namespace Game {
                 else
                     std::printf(" - ");
 
-                if (index % 8 == 7)
+                if (index % 8 == 0)
                     std::printf("\n");
             }
         }
+        std::printf("\n");
     }
 
     bool Board::is_square_occupied(square index) {
-        return is_set_at(index, white | black);
+        return Utils::is_set_at(index, white | black);
     }
 
     Game::Colors::Color Board::color_at(square index) {
-        if (is_set_at(index, white))
+        if (Utils::is_set_at(index, white))
             return Colors::WHITE;
         return Colors::BLACK;
     }
 
     Game::Pieces::Piece Board::piece_at(square index) {
         for (auto piece : Pieces::AllPieces) {
-            if (is_set_at(index, pieces[piece]))
+            if (Utils::is_set_at(index, pieces[piece]))
                 return piece;
         }
 
@@ -124,11 +129,13 @@ namespace Game {
     }
 
     void Board::make_move(Move move) {
-        colors[move.color] &= ~get_bit_set_at(move.from);
-        colors[move.color] |= get_bit_set_at(move.to);
+        colors[turn] &= ~Utils::bit_at(move.from);
+        colors[turn] |= Utils::bit_at(move.to);
 
-        pieces[move.moved] &= ~get_bit_set_at(move.from);
-        pieces[move.moved] |= get_bit_set_at(move.to);
+        pieces[move.moved] &= ~Utils::bit_at(move.from);
+        pieces[move.moved] |= Utils::bit_at(move.to);
+
+        turn = Colors::BothColors[!turn];
     }
 
 } // namespace Game

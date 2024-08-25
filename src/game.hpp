@@ -7,16 +7,10 @@ namespace Types {
     typedef uint64_t bitboard;
     typedef uint8_t square;
 
-    inline bitboard get_bit_set_at(square index) { return 1ul << index; }
-
-    inline bool is_set_at(square index, bitboard bitboard) {
-        return (bitboard >> index) & 1ul;
-    }
-
 } // namespace Types
 
 namespace Game::Colors {
-    enum Color { BLACK, WHITE };
+    enum Color { BLACK = false, WHITE = true };
     static const Color BothColors[]{BLACK, WHITE};
 
 } // namespace Game::Colors
@@ -38,7 +32,6 @@ namespace Game {
     struct Move {
         square from, to;
         Pieces::Piece moved;
-        Colors::Color color;
     };
 
     struct Board {
@@ -50,11 +43,13 @@ namespace Game {
         };
 
         union {
-            bitboard pieces[8];
+            bitboard pieces[6];
             struct {
                 bitboard pawns, knights, bishops, rooks, queens, kings;
             };
         };
+
+        Colors::Color turn;
 
         square enpassant;
 
@@ -67,6 +62,8 @@ namespace Game {
         Colors::Color color_at(square index);
 
         Pieces::Piece piece_at(square index);
+
+        inline bitboard all() { return white | black; }
 
         void make_move(Move move);
     };
