@@ -29,29 +29,22 @@ namespace Game::Pieces {
 namespace Game {
     using namespace Types;
 
+    // clang-format off
     struct Move {
-        square from, to;
-        Pieces::Piece moved;
+        square        from, to;
+        Pieces::Piece piece_moved;
     };
+    // clang-format on
 
     struct Board {
-        union {
-            bitboard colors[2];
-            struct {
-                bitboard black, white;
-            };
-        };
-
-        union {
-            bitboard pieces[6];
-            struct {
-                bitboard pawns, knights, bishops, rooks, queens, kings;
-            };
-        };
-
+        // clang-format off
         Colors::Color turn;
+        square        enpassant;
 
-        square enpassant;
+        union { bitboard colors[2]; struct { bitboard black, white; }; };
+
+        union { bitboard pieces[6]; struct { bitboard pawns, knights, bishops, rooks, queens, kings; }; };
+        // clang-format on
 
         static Board parse_fen_string(std::string fen);
 
@@ -63,7 +56,7 @@ namespace Game {
 
         Pieces::Piece piece_at(square index);
 
-        inline bitboard all() { return white | black; }
+        inline bitboard all_pieces() { return white | black; }
 
         void make_move(Move move);
     };

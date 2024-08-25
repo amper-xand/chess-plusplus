@@ -132,8 +132,8 @@ namespace Game {
         colors[turn] &= ~Utils::bit_at(move.from);
         colors[turn] |= Utils::bit_at(move.to);
 
-        pieces[move.moved] &= ~Utils::bit_at(move.from);
-        pieces[move.moved] |= Utils::bit_at(move.to);
+        pieces[move.piece_moved] &= ~Utils::bit_at(move.from);
+        pieces[move.piece_moved] |= Utils::bit_at(move.to);
 
         turn = Colors::BothColors[!turn];
     }

@@ -229,7 +229,7 @@ namespace Game::Generators::Magic {
                 entry.magic = Random::rnd_composite_low();
             } while (std::popcount(get_magic_index(entry, entry.mask)) < 6);
 
-            // clear table and try again
+            // Clear table and try again
             memset((char *)table, 0, table_size * sizeof(*table));
 
             // Loop through all possible blockers configurations

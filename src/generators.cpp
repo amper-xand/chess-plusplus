@@ -12,9 +12,51 @@
 #include <stdexcept>
 #include <vector>
 
+namespace Game::Generators::Knights {
+    bitboard available_moves[64];
+
+    bitboard gen_knight_moves(square index) {
+        bitboard moves = 0;
+        square col = Utils::column(index);
+
+        if (col >= 1) {
+            moves |= 1 << (index - 1 - 16);
+            moves |= 1 << (index - 1 + 16);
+        }
+
+        if (col >= 2) {
+            moves |= 1 << (index - 2 - 8);
+            moves |= 1 << (index - 2 + 8);
+        }
+
+        if (col <= 6) {
+            moves |= 1 << (index + 1 - 8);
+            moves |= 1 << (index + 1 + 8);
+        }
+
+        if (col <= 5) {
+            moves |= 1 << (index + 1 - 16);
+            moves |= 1 << (index + 1 + 16);
+        }
+
+        return moves;
+    }
+
+    void initialize_table() {
+        for (square index = 0; index < 64; ++index) {
+            available_moves[index] = gen_knight_moves(index);
+        }
+    }
+} // namespace Game::Generators::Knights
+
 namespace Game::Generators {
+    void initialize_tables() {
+        Magic::initialize_magic_tables();
+        Knights::initialize_table();
+    }
+
     std::vector<Move> gen_pawn_moves(Game::Board board) {
-        bitboard blockers = board.all();
+        bitboard blockers = board.all_pieces();
 
         bitboard pawns = board.pawns & board.colors[board.turn];
 
@@ -63,7 +105,7 @@ namespace Game::Generators {
         auto from_advances = [&](bitboard &advance, int offset) {
             for (square index = 0; index < 64; ++index, advance >>= 1) {
                 if (Utils::last_bit(advance)) {
-                    move->moved = Pieces::PAWNS;
+                    move->piece_moved = Pieces::PAWNS;
                     move->from = index;
 
                     if (board.turn == Colors::WHITE)
@@ -121,7 +163,9 @@ namespace Game::Generators {
 
         uint8_t current_piece = 0;
 
-        for (square index = 0; index < 64; ++index, pieces >>= 1) {
+        for (square index = 0; pieces != 0 & index < 64;
+             ++index, pieces >>= 1) {
+
             if (Utils::last_bit(pieces)) {
                 available_per_piece[current_piece] =
                     mgenerator(blockers, index) & ~board.colors[board.turn];
@@ -140,7 +184,7 @@ namespace Game::Generators {
         if (moves.size() == 0)
             return moves;
 
-        std::fill(moves.begin(), moves.end(), Move{.moved = piece});
+        std::fill(moves.begin(), moves.end(), Move{.piece_moved = piece});
 
         auto current_move = moves.begin();
 
@@ -173,6 +217,55 @@ namespace Game::Generators {
                    Magic::Bishops::get_avail_moves(blockers, index);
         },
                                     Pieces::QUEENS>(board);
+    }
+
+    std::vector<Move> gen_knights_moves(Game::Board board) {
+        bitboard knights = board.knights & board.colors[board.turn];
+
+        uint8_t knights_count = std::popcount(knights);
+
+        uint16_t available_moves = 0;
+        bitboard available_per_knight[knights_count];
+        square knight_positions[knights_count];
+
+        uint8_t current_knight = 0;
+
+        for (square index = 0; knights != 0 && index < 64;
+             ++index, knights >>= 1) {
+
+            if (Utils::last_bit(knights)) {
+                available_per_knight[current_knight] =
+                    Knights::available_moves[index] & ~board.colors[board.turn];
+                knight_positions[current_knight] = index;
+
+                available_moves +=
+                    std::popcount(available_per_knight[current_knight]);
+
+                ++current_knight;
+            }
+        }
+
+        std::vector<Move> moves(available_moves);
+
+        if (moves.size() == 0) {
+            return moves;
+        }
+
+        std::fill(moves.begin(), moves.end(), Move{.piece_moved = Pieces::KNIGHTS});
+
+        auto current_move = moves.begin();
+
+        for (current_knight = 0; current_knight < knights_count; ++current_knight) {
+            uint8_t size = std::popcount(available_per_knight[current_knight]);
+
+            populate_from_bitboard(std::span(current_move, size),
+                                   available_per_knight[current_knight],
+                                   knight_positions[current_knight]);
+
+            std::advance(current_move, size);
+        }
+
+        return moves;
     }
 
 } // namespace Game::Generators
