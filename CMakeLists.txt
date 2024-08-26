@@ -12,6 +12,7 @@ add_executable(chessy
     src/core/game.cpp
     src/core/generators/generators.cpp
     src/core/generators/magic.cpp
+    src/core/generators/helpers.cpp
 )
 
 add_executable(maggen src/core/generators/magic.cpp)

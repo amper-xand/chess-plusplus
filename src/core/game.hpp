@@ -32,7 +32,7 @@ namespace Game {
     // clang-format off
     struct Move {
         square        from, to;
-        Pieces::Piece piece_moved;
+        Pieces::Piece piece_moved, piece_captured = Pieces::NONE;
     };
     // clang-format on
 

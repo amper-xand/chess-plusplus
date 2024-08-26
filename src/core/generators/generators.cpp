@@ -3,10 +3,10 @@
 #include "../../utils/utils.hpp"
 #include "../game.hpp"
 #include "magic.hpp"
+#include "helpers.hpp"
 
 #include <algorithm>
 #include <bit>
-#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <iterator>
@@ -171,14 +171,12 @@ namespace Game::Generators {
                         move->from = index + 8 - direction;
                     }
 
-                    // TODO
-                    // move->piece_captured = Pieces::NONE;
-                    // for (auto piece : Pieces::AllPieces) {
-                    //     if (Utils::last_bit(captures_by_piece[piece])) {
-                    //         move->piece_captured = piece;
-                    //         break;
-                    //     }
-                    // }
+                    for (auto piece : Pieces::AllPieces) {
+                        if (Utils::last_bit(captures_by_piece[piece])) {
+                            move->piece_captured = piece;
+                            break;
+                        }
+                    }
 
                     if (move == moves.end() && captures != 1) {
                         throw std::out_of_range(
@@ -199,90 +197,18 @@ namespace Game::Generators {
         return moves;
     }
 
-    void populate_from_bitboard(std::span<Move> target, bitboard bitboard,
-                                square origin) {
-        auto next_move = target.begin();
-
-        for (square index = 0; index < 64; ++index, bitboard >>= 1) {
-            if (Utils::last_bit(bitboard)) {
-                next_move->from = origin;
-                next_move->to = index;
-
-                if (next_move == target.end() && bitboard != 1) {
-                    throw std::out_of_range("Bitboard has more elements than "
-                                            "the provided span can hold");
-                }
-
-                std::advance(next_move, 1);
-            }
-        }
-    }
-
-    template <bitboard (*mgenerator)(bitboard blockers, square index),
-              Pieces::Piece piece>
-    std::vector<Move> moves_from_generator(Game::Board board) {
-        auto pieces = board.pieces[piece] & board.colors[board.turn];
-
-        bitboard blockers = board.white | board.black;
-
-        uint8_t pieces_count = std::popcount(pieces);
-
-        uint16_t available_moves = 0;
-        bitboard available_per_piece[pieces_count];
-        square piece_positions[pieces_count];
-
-        uint8_t current_piece = 0;
-
-        for (square index = 0; pieces != 0 & index < 64;
-             ++index, pieces >>= 1) {
-
-            if (Utils::last_bit(pieces)) {
-                available_per_piece[current_piece] =
-                    mgenerator(blockers, index) & ~board.colors[board.turn];
-
-                piece_positions[current_piece] = index;
-
-                available_moves +=
-                    std::popcount(available_per_piece[current_piece]);
-
-                ++current_piece;
-            }
-        }
-
-        std::vector<Move> moves(available_moves);
-
-        if (moves.size() == 0)
-            return moves;
-
-        std::fill(moves.begin(), moves.end(), Move{.piece_moved = piece});
-
-        auto current_move = moves.begin();
-
-        for (current_piece = 0; current_piece < pieces_count; ++current_piece) {
-            uint8_t size = std::popcount(available_per_piece[current_piece]);
-
-            populate_from_bitboard(std::span(current_move, size),
-                                   available_per_piece[current_piece],
-                                   piece_positions[current_piece]);
-
-            std::advance(current_move, size);
-        }
-
-        return moves;
-    }
-
     std::vector<Move> gen_rooks_moves(Game::Board board) {
-        return moves_from_generator<Magic::Rooks::get_avail_moves,
+        return Helpers::moves_from_generator<Magic::Rooks::get_avail_moves,
                                     Pieces::ROOKS>(board);
     }
 
     std::vector<Move> gen_bishops_moves(Game::Board board) {
-        return moves_from_generator<Magic::Bishops::get_avail_moves,
+        return Helpers::moves_from_generator<Magic::Bishops::get_avail_moves,
                                     Pieces::BISHOPS>(board);
     }
 
     std::vector<Move> gen_queens_moves(Game::Board board) {
-        return moves_from_generator<[](bitboard blockers, square index) {
+        return Helpers::moves_from_generator<[](bitboard blockers, square index) {
             return Magic::Rooks::get_avail_moves(blockers, index) |
                    Magic::Bishops::get_avail_moves(blockers, index);
         },
@@ -330,8 +256,18 @@ namespace Game::Generators {
              ++current_knight) {
             uint8_t size = std::popcount(available_per_knight[current_knight]);
 
-            populate_from_bitboard(std::span(current_move, size),
+            bitboard captures_by_type[7];
+            captures_by_type[6] = 0;
+
+            for (auto type : Pieces::AllPieces) {
+                captures_by_type[type] =
+                    available_per_knight[current_knight] & board.pieces[type];
+                captures_by_type[6] |= captures_by_type[type];
+            }
+
+            Helpers::populate_from_bitboard(std::span(current_move, size),
                                    available_per_knight[current_knight],
+                                   captures_by_type,
                                    knight_positions[current_knight]);
 
             std::advance(current_move, size);
