@@ -1,23 +1,23 @@
 #pragma once
 
-#include "game.hpp"
+#include "../core/game.hpp"
 #include <iostream>
 
 namespace Utils {
-    inline constexpr Types::bitboard bit_at(Types::square index) {
+    inline constexpr Game::bitboard bit_at(Game::square index) {
         return 1ul << index;
     }
 
-    inline constexpr bool is_set_at(Types::square index,
-                                    Types::bitboard bitboard) {
+    inline constexpr bool is_set_at(Game::square index,
+                                    Game::bitboard bitboard) {
         return (bitboard >> index) & 1ul;
     }
 
-    inline constexpr Types::bitboard last_bit(Types::bitboard bitboard) {
+    inline constexpr Game::bitboard last_bit(Game::bitboard bitboard) {
         return bitboard & 1;
     }
 
-    inline constexpr Types::bitboard flip_vertically(Types::bitboard value) {
+    inline constexpr Game::bitboard flip_vertically(Game::bitboard value) {
         const uint64_t k1 = 0x00FF00FF00FF00FFul;
         const uint64_t k2 = 0x0000FFFF0000FFFFul;
         value = ((value >> 8) & k1) | ((value & k1) << 8);
@@ -26,7 +26,7 @@ namespace Utils {
         return value;
     }
 
-    inline constexpr Types::bitboard flip_horizontally(Types::bitboard value) {
+    inline constexpr Game::bitboard flip_horizontally(Game::bitboard value) {
         const uint64_t k1 = 0x5555555555555555ul;
         const uint64_t k2 = 0x3333333333333333ul;
         const uint64_t k4 = 0x0f0f0f0f0f0f0f0ful;
@@ -48,11 +48,11 @@ namespace Utils {
         std::cout << std::endl;
     }
 
-    inline constexpr uint8_t column(Types::square index) { return index % 8; }
+    inline constexpr uint8_t column(Game::square index) { return index % 8; }
 
-    inline constexpr uint8_t row(Types::square index) { return index / 8; }
+    inline constexpr uint8_t row(Game::square index) { return index / 8; }
 
-    inline constexpr Types::square start_of_row(Types::square index) {
+    inline constexpr Game::square start_of_row(Game::square index) {
         return index - column(index);
     }
 

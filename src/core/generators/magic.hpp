@@ -1,4 +1,4 @@
-#include "game.hpp"
+#include "../game.hpp"
 
 namespace Game::Generators::Magic {
     namespace Rooks {

@@ -1,9 +1,13 @@
-#include "game.hpp"
-#include "masks.hpp"
-#include "utils.hpp"
+#include "magic.hpp"
+
+#include "../../utils/masks.hpp"
+#include "../../utils/utils.hpp"
+
 #include <bit>
 #include <cstdint>
 #include <stdexcept>
+
+using namespace Utils;
 
 namespace Game::Generators::Magic {
     struct MagicEntry {
@@ -20,172 +24,176 @@ namespace Game::Generators::Magic {
 
         return index;
     }
+} // namespace Game::Generators::Magic
 
-    namespace Random {
-        uint64_t seed = 3982143279794049853;
+namespace Random {
+    uint64_t seed = 3982143279794049853;
 
-        inline uint64_t random() {
-            // XOR shift algorithm
-            seed ^= seed << 13;
-            seed ^= seed >> 17;
-            seed ^= seed << 5;
+    inline uint64_t random() {
+        // XOR shift algorithm
+        seed ^= seed << 13;
+        seed ^= seed >> 17;
+        seed ^= seed << 5;
 
-            return seed;
-        }
+        return seed;
+    }
 
-        inline uint64_t rnd_composite() {
-            uint64_t u1, u2, u3, u4;
+    inline uint64_t rnd_composite() {
+        uint64_t u1, u2, u3, u4;
 
-            u1 = random() & 0xFFFF;
-            u2 = random() & 0xFFFF;
-            u3 = random() & 0xFFFF;
-            u4 = random() & 0xFFFF;
+        u1 = random() & 0xFFFF;
+        u2 = random() & 0xFFFF;
+        u3 = random() & 0xFFFF;
+        u4 = random() & 0xFFFF;
 
-            return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
-        }
+        return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
+    }
 
-        inline uint64_t random_low() {
-            return random() & random() & random() & random();
-        }
+    inline uint64_t random_low() {
+        return random() & random() & random() & random();
+    }
 
-        inline uint64_t rnd_composite_low() {
-            return rnd_composite() & rnd_composite() & rnd_composite();
-        }
-    }; // namespace Random
+    inline uint64_t rnd_composite_low() {
+        return rnd_composite() & rnd_composite() & rnd_composite();
+    }
+}; // namespace Random
 
+namespace Game::Generators::Magic {
     bitboard get_moves(MagicEntry entry, bitboard moves[], bitboard blockers,
-                       square index) {
+                       Game::square index) {
         return moves[get_magic_index(entry, blockers)];
     }
 
-    namespace Rooks {
-        constexpr uint8_t bits = 12;
+} // namespace Game::Generators::Magic
 
-        MagicEntry entries[64];
+namespace Game::Generators::Magic::Rooks {
+    constexpr uint8_t bits = 12;
 
-        bitboard avail_moves[64][Utils::bit_at(bits)];
+    MagicEntry entries[64];
+
+    bitboard avail_moves[64][Utils::bit_at(bits)];
 
 #include "magicsr.data"
 
-        inline bitboard get_relevant_blockers(square index) {
-            return (Masks::horizontal_rel_blo_mask
-                    << Utils::start_of_row(index)) ^
-                   (Masks::vertical_rel_blo_mask << Utils::column(index));
-        }
+    inline bitboard get_relevant_blockers(square index) {
+        return (Masks::horizontal_rel_blo_mask << Utils::start_of_row(index)) ^
+               (Masks::vertical_rel_blo_mask << Utils::column(index));
+    }
 
-        inline bitboard get_slider(square index) {
-            return (Masks::horizontal_moves_mask
-                    << Utils::start_of_row(index)) ^
-                   (Masks::vertical_moves_mask << Utils::column(index));
-        }
+    inline bitboard get_slider(square index) {
+        return (Masks::horizontal_moves_mask << Utils::start_of_row(index)) ^
+               (Masks::vertical_moves_mask << Utils::column(index));
+    }
 
-        bitboard get_avail_moves(bitboard blockers, square index) {
-            return get_moves(entries[index], avail_moves[index],
-                             blockers & get_relevant_blockers(index), index);
-        }
+    bitboard get_avail_moves(bitboard blockers, square index) {
+        return get_moves(entries[index], avail_moves[index],
+                         blockers & get_relevant_blockers(index), index);
+    }
 
-        bitboard get_slider_moves(bitboard blockers, square index) {
-            const bitboard slider = get_slider(index);
+    bitboard get_slider_moves(bitboard blockers, square index) {
+        const bitboard slider = get_slider(index);
 
-            // Masks the blockers with a north ray
-            const bitboard north_mask = Masks::make_n_mask(index);
-            bitboard n_ray = blockers & (slider & north_mask);
-            n_ray &= ~n_ray + 1;
-            // Turn it into a ray from the blocker
-            n_ray |= n_ray - 1;
-            n_ray &= slider & north_mask;
+        // Masks the blockers with a north ray
+        const bitboard north_mask = Masks::make_n_mask(index);
+        bitboard n_ray = blockers & (slider & north_mask);
+        n_ray &= ~n_ray + 1;
+        // Turn it into a ray from the blocker
+        n_ray |= n_ray - 1;
+        n_ray &= slider & north_mask;
 
-            const bitboard south_mask = Masks::make_s_mask(index);
-            bitboard s_ray = blockers & (slider & south_mask);
-            s_ray = Utils::flip_vertically(s_ray);
-            s_ray &= ~s_ray + 1;
-            // Turn it into a ray from the blocker
-            s_ray |= s_ray - 1;
-            s_ray = Utils::flip_vertically(s_ray);
-            s_ray &= slider & south_mask;
+        const bitboard south_mask = Masks::make_s_mask(index);
+        bitboard s_ray = blockers & (slider & south_mask);
+        s_ray = Utils::flip_vertically(s_ray);
+        s_ray &= ~s_ray + 1;
+        // Turn it into a ray from the blocker
+        s_ray |= s_ray - 1;
+        s_ray = Utils::flip_vertically(s_ray);
+        s_ray &= slider & south_mask;
 
-            const bitboard west_mask = Masks::make_w_mask(index);
-            bitboard w_ray = blockers & (slider & west_mask);
-            // Turn it into a ray from the blocker
-            w_ray &= ~w_ray + 1;
-            w_ray |= w_ray - 1;
-            w_ray &= slider & west_mask;
+        const bitboard west_mask = Masks::make_w_mask(index);
+        bitboard w_ray = blockers & (slider & west_mask);
+        // Turn it into a ray from the blocker
+        w_ray &= ~w_ray + 1;
+        w_ray |= w_ray - 1;
+        w_ray &= slider & west_mask;
 
-            const bitboard east_mask = Masks::make_e_mask(index);
-            bitboard e_ray = blockers & (slider & east_mask);
-            e_ray = Utils::flip_horizontally(e_ray);
-            e_ray &= ~e_ray + 1;
-            e_ray |= e_ray - 1;
-            e_ray = Utils::flip_horizontally(e_ray);
-            e_ray &= slider & east_mask;
+        const bitboard east_mask = Masks::make_e_mask(index);
+        bitboard e_ray = blockers & (slider & east_mask);
+        e_ray = Utils::flip_horizontally(e_ray);
+        e_ray &= ~e_ray + 1;
+        e_ray |= e_ray - 1;
+        e_ray = Utils::flip_horizontally(e_ray);
+        e_ray &= slider & east_mask;
 
-            return n_ray | s_ray | w_ray | e_ray;
-        }
+        return n_ray | s_ray | w_ray | e_ray;
+    }
 
-    } // namespace Rooks
+} // namespace Game::Generators::Magic::Rooks
 
-    namespace Bishops {
-        constexpr uint8_t bits = 9;
+namespace Game::Generators::Magic::Bishops {
+    constexpr uint8_t bits = 9;
 
-        MagicEntry entries[64];
+    MagicEntry entries[64];
 
-        bitboard avail_moves[64][Utils::bit_at(bits)];
+    bitboard avail_moves[64][Utils::bit_at(bits)];
 
 #include "magicsb.data"
 
-        inline bitboard get_slider(square index) {
-            return Masks::get_diagonal_at(index) ^
-                   Masks::get_rev_diagonal_at(index);
-        }
+    inline bitboard get_slider(square index) {
+        return Masks::get_diagonal_at(index) ^
+               Masks::get_rev_diagonal_at(index);
+    }
 
-        inline bitboard get_relevant_blockers(square index) {
-            return get_slider(index) & ~Masks::border_mask;
-        }
+    inline bitboard get_relevant_blockers(square index) {
+        return get_slider(index) & ~Masks::border_mask;
+    }
 
-        bitboard get_avail_moves(bitboard blockers, square index) {
-            return get_moves(entries[index], avail_moves[index],
-                             blockers & get_relevant_blockers(index), index);
-        }
+    bitboard get_avail_moves(bitboard blockers, square index) {
+        return get_moves(entries[index], avail_moves[index],
+                         blockers & get_relevant_blockers(index), index);
+    }
 
-        bitboard get_slider_moves(bitboard blockers, square index) {
-            const bitboard slider = get_slider(index);
+    bitboard get_slider_moves(bitboard blockers, square index) {
+        const bitboard slider = get_slider(index);
 
-            const bitboard n_mask = Masks::make_n_mask(index);
-            const bitboard s_mask = Masks::make_s_mask(index);
-            const bitboard w_mask = Masks::make_w_mask(index);
-            const bitboard e_mask = Masks::make_e_mask(index);
+        const bitboard n_mask = Masks::make_n_mask(index);
+        const bitboard s_mask = Masks::make_s_mask(index);
+        const bitboard w_mask = Masks::make_w_mask(index);
+        const bitboard e_mask = Masks::make_e_mask(index);
 
-            const bitboard nw_mask = n_mask & w_mask;
-            bitboard nw_ray = blockers & (slider & nw_mask);
-            nw_ray &= ~nw_ray + 1;
-            nw_ray |= nw_ray - 1;
-            nw_ray &= slider & nw_mask;
+        const bitboard nw_mask = n_mask & w_mask;
+        bitboard nw_ray = blockers & (slider & nw_mask);
+        nw_ray &= ~nw_ray + 1;
+        nw_ray |= nw_ray - 1;
+        nw_ray &= slider & nw_mask;
 
-            const bitboard ne_mask = n_mask & e_mask;
-            bitboard ne_ray = blockers & (slider & ne_mask);
-            ne_ray &= ~ne_ray + 1;
-            ne_ray |= ne_ray - 1;
-            ne_ray &= slider & ne_mask;
+        const bitboard ne_mask = n_mask & e_mask;
+        bitboard ne_ray = blockers & (slider & ne_mask);
+        ne_ray &= ~ne_ray + 1;
+        ne_ray |= ne_ray - 1;
+        ne_ray &= slider & ne_mask;
 
-            const bitboard sw_mask = s_mask & w_mask;
-            bitboard sw_ray = blockers & (slider & sw_mask);
-            sw_ray = Utils::flip_vertically(sw_ray);
-            sw_ray &= ~sw_ray + 1;
-            sw_ray |= sw_ray - 1;
-            sw_ray = Utils::flip_vertically(sw_ray);
-            sw_ray &= slider & sw_mask;
+        const bitboard sw_mask = s_mask & w_mask;
+        bitboard sw_ray = blockers & (slider & sw_mask);
+        sw_ray = Utils::flip_vertically(sw_ray);
+        sw_ray &= ~sw_ray + 1;
+        sw_ray |= sw_ray - 1;
+        sw_ray = Utils::flip_vertically(sw_ray);
+        sw_ray &= slider & sw_mask;
 
-            const bitboard se_mask = s_mask & e_mask;
-            bitboard se_ray = blockers & (slider & se_mask);
-            se_ray = Utils::flip_vertically(se_ray);
-            se_ray &= ~se_ray + 1;
-            se_ray |= se_ray - 1;
-            se_ray = Utils::flip_vertically(se_ray);
-            se_ray &= slider & se_mask;
+        const bitboard se_mask = s_mask & e_mask;
+        bitboard se_ray = blockers & (slider & se_mask);
+        se_ray = Utils::flip_vertically(se_ray);
+        se_ray &= ~se_ray + 1;
+        se_ray |= se_ray - 1;
+        se_ray = Utils::flip_vertically(se_ray);
+        se_ray &= slider & se_mask;
 
-            return nw_ray | ne_ray | sw_ray | se_ray;
-        }
-    } // namespace Bishops
+        return nw_ray | ne_ray | sw_ray | se_ray;
+    }
+} // namespace Game::Generators::Magic::Bishops
+
+namespace Game::Generators::Magic {
 
     // mgenerator short of mask generator
     typedef bitboard (*mgenerator)(bitboard blockers, square index);

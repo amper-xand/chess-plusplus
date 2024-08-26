@@ -1,6 +1,7 @@
 #pragma once
 
-#include "game.hpp"
+#include "../game.hpp"
+
 #include <vector>
 
 namespace Game::Generators {

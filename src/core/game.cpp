@@ -1,5 +1,6 @@
 #include "game.hpp"
-#include "utils.hpp"
+
+#include "../utils/utils.hpp"
 
 namespace Game::Pieces {
     Piece char_to_piece(char c) {

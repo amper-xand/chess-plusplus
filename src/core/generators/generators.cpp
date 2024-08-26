@@ -1,7 +1,8 @@
 #include "generators.hpp"
-#include "game.hpp"
+ 
+#include "../../utils/utils.hpp"
+#include "../game.hpp"
 #include "magic.hpp"
-#include "utils.hpp"
 
 #include <algorithm>
 #include <bit>

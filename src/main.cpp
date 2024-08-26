@@ -1,9 +1,9 @@
 #include <cstdio>
 #include <pthread.h>
 
-#include "game.hpp"
-#include "generators.hpp"
-#include "magic.hpp"
+#include "core/game.hpp"
+#include "core/generators/generators.hpp"
+#include "core/generators/magic.hpp"
 
 int main() {
     Game::Generators::initialize_tables();
