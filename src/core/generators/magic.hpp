@@ -10,4 +10,5 @@ namespace Game::Generators::Magic {
     }
 
     void initialize_magic_tables();
+
 } // namespace Game::Generators::Magic

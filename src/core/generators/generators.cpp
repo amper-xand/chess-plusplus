@@ -1,16 +1,18 @@
 #include "generators.hpp"
- 
+
 #include "../../utils/utils.hpp"
 #include "../game.hpp"
 #include "magic.hpp"
 
 #include <algorithm>
 #include <bit>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <iterator>
 #include <span>
 #include <stdexcept>
+#include <strings.h>
 #include <vector>
 
 namespace Game::Generators::Knights {
@@ -94,8 +96,29 @@ namespace Game::Generators {
             double_advances <<= 16;
         }
 
-        std::vector<Move> moves(std::popcount(advances) +
-                                std::popcount(double_advances));
+        bitboard east_captures = pawns & ~0x0101010101010101;
+
+        if (board.turn == Colors::WHITE) {
+            east_captures <<= 7;
+        } else {
+            east_captures >>= 9;
+        }
+
+        east_captures &= board.colors[!board.turn];
+
+        bitboard west_captures = pawns & ~0x8080808080808080;
+
+        if (board.turn == Colors::WHITE) {
+            west_captures <<= 9;
+        } else {
+            west_captures >>= 7;
+        }
+
+        west_captures &= board.colors[!board.turn];
+
+        std::vector<Move> moves(
+            std::popcount(advances) + std::popcount(double_advances) +
+            std::popcount(east_captures) + std::popcount(west_captures));
 
         if (moves.size() == 0) {
             return moves;
@@ -104,15 +127,18 @@ namespace Game::Generators {
         auto move = moves.begin();
 
         auto from_advances = [&](bitboard &advance, int offset) {
-            for (square index = 0; index < 64; ++index, advance >>= 1) {
+            for (square index = 0; advance != 0 && index < 64;
+                 ++index, advance >>= 1) {
+
                 if (Utils::last_bit(advance)) {
                     move->piece_moved = Pieces::PAWNS;
                     move->from = index;
 
-                    if (board.turn == Colors::WHITE)
+                    if (board.turn == Colors::WHITE) {
                         move->to = index + offset;
-                    else
+                    } else {
                         move->to = index - offset;
+                    }
 
                     if (move == moves.end() && advance != 1) {
                         throw std::out_of_range(
@@ -126,6 +152,49 @@ namespace Game::Generators {
 
         from_advances(advances, 8);
         from_advances(double_advances, 16);
+
+        auto from_captures = [&](bitboard &captures, int direction) {
+            bitboard captures_by_piece[6];
+
+            for (auto piece : Pieces::AllPieces) {
+                captures_by_piece[piece] = captures & board.pieces[piece];
+            }
+
+            for (square index = 0; captures != 0 && index < 64; ++index) {
+                if (Utils::last_bit(captures)) {
+                    move->piece_moved = Pieces::PAWNS;
+                    move->to = index;
+
+                    if (board.turn == Colors::WHITE) {
+                        move->from = index - 8 - direction;
+                    } else {
+                        move->from = index + 8 - direction;
+                    }
+
+                    // TODO
+                    // move->piece_captured = Pieces::NONE;
+                    // for (auto piece : Pieces::AllPieces) {
+                    //     if (Utils::last_bit(captures_by_piece[piece])) {
+                    //         move->piece_captured = piece;
+                    //         break;
+                    //     }
+                    // }
+
+                    if (move == moves.end() && captures != 1) {
+                        throw std::out_of_range(
+                            "Moves generated exceeded allocated space");
+                    }
+                    std::advance(move, 1);
+                }
+
+                captures >>= 1;
+                for (auto piece : Pieces::AllPieces)
+                    captures_by_piece[piece] >>= 1;
+            }
+        };
+
+        from_captures(east_captures, -1);
+        from_captures(west_captures, +1);
 
         return moves;
     }
@@ -252,11 +321,13 @@ namespace Game::Generators {
             return moves;
         }
 
-        std::fill(moves.begin(), moves.end(), Move{.piece_moved = Pieces::KNIGHTS});
+        std::fill(moves.begin(), moves.end(),
+                  Move{.piece_moved = Pieces::KNIGHTS});
 
         auto current_move = moves.begin();
 
-        for (current_knight = 0; current_knight < knights_count; ++current_knight) {
+        for (current_knight = 0; current_knight < knights_count;
+             ++current_knight) {
             uint8_t size = std::popcount(available_per_knight[current_knight]);
 
             populate_from_bitboard(std::span(current_move, size),

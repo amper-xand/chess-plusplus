@@ -333,8 +333,6 @@ namespace Game::Generators::Magic {
             initialize_magic_table(Bishops::avail_moves[index],
                                    Bishops::entries[index], index,
                                    Bishops::get_slider_moves);
-
-            // knight_moves[index] = gen_knight_moves(index);
         }
     }
 

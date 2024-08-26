@@ -12,7 +12,8 @@ int main() {
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     board.print_board();
-    board.make_move(Game::Generators::gen_knights_moves(board).at(0));
+    auto moves = Game::Generators::gen_pawn_moves(board);
+    board.make_move(moves.at(moves.size() - 1));
     board.print_board();
 
     return 0;
