@@ -216,7 +216,8 @@ namespace Game::Generators::Magic {
         uint16_t blockers_count = 0;
 
         // clang-format off
-        for (bitboard curr_blocker_mask = 0;; curr_blocker_mask = (curr_blocker_mask + addition_mask + 1) & entry.mask) { // clang-format on
+        for (bitboard curr_blocker_mask = 0;;
+             curr_blocker_mask = (curr_blocker_mask + addition_mask + 1) & entry.mask) { // clang-format on
 
             if (blockers_count >= max_blockers_com) {
                 throw std::out_of_range("Blockers exceeded allocated area");
