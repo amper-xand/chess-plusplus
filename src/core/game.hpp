@@ -58,6 +58,19 @@ namespace Game {
 
         inline bitboard all_pieces() { return white | black; }
 
+        inline bitboard allies() { return colors[turn]; }
+
+        inline bitboard allied(Pieces::Piece piece) {
+            return pieces[piece] & colors[turn];
+        }
+
+        inline bitboard enemies() { return colors[!turn]; }
+
+        inline bitboard enemy(Pieces::Piece piece) {
+            return pieces[piece] & colors[!turn];
+        }
+
+
         void make_move(Move move);
     };
 

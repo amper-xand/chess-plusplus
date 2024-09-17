@@ -8,7 +8,6 @@
 
 namespace Game::Generators::Helpers {
 
-    // Last index of captures is a bitboard for all captures
     void populate_from_bitboard(std::span<Move> target, bitboard moves,
                                 bitboard captures, Board board, square origin);
 
@@ -22,8 +21,8 @@ namespace Game::Generators::Helpers {
               Pieces::Piece piece>
     std::vector<Move> moves_from_generator(Board board) {
 
-        bitboard pieces = board.pieces[piece] & board.colors[board.turn],
-                 all = board.all_pieces(), blockers = all;
+        bitboard pieces = board.allied(piece), all = board.all_pieces(),
+                 blockers = all;
 
         uint8_t pieces_count = std::popcount(pieces);
 
@@ -36,7 +35,7 @@ namespace Game::Generators::Helpers {
 
             if (Utils::last_bit(pieces)) {
                 auto available_moves =
-                    mgenerator(blockers, index) & ~board.colors[board.turn];
+                    mgenerator(blockers, index) & ~board.allies();
 
                 piece_positions[current_piece] = index;
 
@@ -61,7 +60,7 @@ namespace Game::Generators::Helpers {
 
             uint8_t size = std::popcount(available_per_piece[current_piece]);
 
-            bitboard captures = available_per_piece[current_piece] & all;
+            bitboard captures = available_per_piece[current_piece] & board.enemies();
 
             populate_from_bitboard(std::span(current_move, size),
                                    available_per_piece[current_piece], captures,
