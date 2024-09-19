@@ -31,17 +31,4 @@ namespace Game::Generators {
     void initialize_tables();
 
     std::vector<Move> generate_moves(Board board);
-
-    MoveGenerator& gen_pawns_moves(MoveGenerator& generator);
-
-    MoveGenerator& gen_rooks_moves(MoveGenerator& generator);
-
-    MoveGenerator& gen_bishops_moves(MoveGenerator& generator);
-
-    MoveGenerator& gen_queens_moves(MoveGenerator& generator);
-
-    MoveGenerator& gen_knights_moves(MoveGenerator& generator);
-
-    MoveGenerator& gen_king_moves(MoveGenerator& generator);
-
 } // namespace Game::Generators

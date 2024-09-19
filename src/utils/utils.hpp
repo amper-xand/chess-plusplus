@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../core/game.hpp"
+#include <cstdint>
 #include <iostream>
 
 namespace Utils {
@@ -51,6 +52,10 @@ namespace Utils {
     inline constexpr uint8_t column(Game::square index) { return index % 8; }
 
     inline constexpr uint8_t row(Game::square index) { return index / 8; }
+
+    inline constexpr Game::square index_at(uint8_t row, uint8_t col) {
+        return col + 8 * row;
+    }
 
     inline constexpr Game::square start_of_row(Game::square index) {
         return index - column(index);

@@ -3,35 +3,31 @@
 #include "../utils/utils.hpp"
 
 namespace Game::Pieces {
+    // clang-format off
     Piece char_to_piece(char c) {
         switch (c) {
-        case 'p':
-        case 'P':
+        case 'p': case 'P':
             return PAWNS;
 
-        case 'n':
-        case 'N':
+        case 'n': case 'N':
             return KNIGHTS;
 
-        case 'b':
-        case 'B':
+        case 'b': case 'B':
             return BISHOPS;
 
-        case 'r':
-        case 'R':
+        case 'r': case 'R':
             return ROOKS;
 
-        case 'q':
-        case 'Q':
+        case 'q': case 'Q':
             return QUEENS;
 
-        case 'k':
-        case 'K':
+        case 'k': case 'K':
             return KINGS;
         }
 
         return PAWNS;
     }
+    // clang-format on
 
     char piece_to_char(Piece piece, Colors::Color color) {
         switch (piece) {
