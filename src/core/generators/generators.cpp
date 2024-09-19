@@ -3,15 +3,17 @@
 #include "../../utils/utils.hpp"
 #include "../game.hpp"
 #include "helpers.hpp"
-#include "magic.hpp"
+#include "magic/magic.hpp"
 
 #include <bit>
+#include <climits>
 #include <cstdio>
-#include <iterator>
 #include <span>
 #include <stdexcept>
 #include <strings.h>
 #include <vector>
+
+using Game::Generators::MoveGenerator;
 
 namespace Game::Generators::Knights {
     bitboard available_moves[64];
@@ -53,7 +55,7 @@ namespace Game::Generators::Knights {
 namespace Game::Generators::Kings {
     bitboard available_moves[64];
 
-    bitboard gen_king_moves(square index) {
+    bitboard get_available_moves(square index) {
         bitboard moves = 0, position = Utils::bit_at(index);
 
         square col = Utils::column(index);
@@ -74,9 +76,60 @@ namespace Game::Generators::Kings {
         return moves;
     }
 
+    bitboard get_pinned_pieces(Board board) {
+        bitboard king = board.allied(Pieces::KINGS);
+        square position = std::countr_zero(king);
+
+        bitboard diagonal_sliders =
+            (board.bishops | board.queens) & board.enemies();
+
+        bitboard straight_sliders =
+            (board.bishops | board.queens) & board.enemies();
+
+        bitboard pinned_pieces = 0;
+
+        auto check_candidates = [&](bitboard candidates, auto slider_moves) {
+            for (bitboard unchecked_bits = candidates; unchecked_bits != 0;
+                 // Remove the candidate we just checked
+                 unchecked_bits &= unchecked_bits - 1) {
+
+                // Get the bits from the current bit (inclusive) to then end
+                bitboard bits_previous = unchecked_bits ^ (unchecked_bits - 1);
+
+                // Remove the bits before the current bit
+                bitboard current_bit = bits_previous & unchecked_bits;
+
+                // Make a hole by removing the candidates
+                bitboard current_blockers = board.all_pieces() ^ current_bit;
+
+                // If removing the candidate exposes the king to a slider
+                auto is_pinned =
+                    diagonal_sliders & slider_moves(board.allies(), position);
+
+                // Then the piece is pinned
+                if (is_pinned) {
+                    pinned_pieces |= current_bit;
+                }
+            }
+        };
+
+        bitboard dia_candidates =
+            board.allies() &
+            Magic::Bishops::get_avail_moves(board.all_pieces(), position);
+
+        bitboard str_candidates =
+            board.allies() &
+            Magic::Rooks::get_avail_moves(board.all_pieces(), position);
+
+        check_candidates(dia_candidates, Magic::Bishops::get_avail_moves);
+        check_candidates(str_candidates, Magic::Rooks::get_avail_moves);
+
+        return pinned_pieces;
+    }
+
     void initialize_table() {
         for (square index = 0; index < 64; ++index) {
-            available_moves[index] = gen_king_moves(index);
+            available_moves[index] = get_available_moves(index);
         }
     }
 } // namespace Game::Generators::Kings
@@ -138,10 +191,30 @@ namespace Game::Generators {
         Magic::initialize_magic_tables();
     }
 
-    std::vector<Move> gen_pawn_moves(Board board) {
+    std::vector<Move> generate_moves(Board board) {
+        MoveGenerator generator(board);
+
+        generator.pinned = Kings::get_pinned_pieces(board);
+
+        gen_pawns_moves(generator);
+        gen_bishops_moves(generator);
+        gen_knights_moves(generator);
+        gen_rooks_moves(generator);
+        gen_queens_moves(generator);
+        gen_king_moves(generator);
+
+        return generator.get_generated();
+    }
+
+    MoveGenerator& gen_pawns_moves(MoveGenerator& generator) {
+        Board& board = generator.board;
+
         bitboard blockers = board.all_pieces(),
 
                  pawns = board.allied(Pieces::PAWNS);
+
+        // Remove pinned pawns
+        pawns &= ~generator.pinned;
 
         bitboard single_advances =
             Pawns::get_advances(pawns, blockers, board.turn);
@@ -170,47 +243,42 @@ namespace Game::Generators {
         bitboard west_captures =
             Pawns::west_attacks(pawns, board.turn) & board.enemies();
 
-        std::vector<Move> moves(
+        auto total_available =
             std::popcount(single_advances) + std::popcount(double_advances) +
-            std::popcount(east_captures) + std::popcount(west_captures));
+            std::popcount(east_captures) + std::popcount(west_captures);
 
-        if (moves.size() == 0) {
-            return moves;
+        if (total_available == 0) {
+            return generator;
         }
 
-        auto move = moves.begin();
+        Move& move = generator.next();
 
-        auto moves_from_bitboard = [&](bitboard &bitboard,
-                                       const auto &processor) {
+        auto moves_from_bitboard = [&](bitboard& bitboard,
+                                       const auto& processor) {
             for (square index = 0; bitboard != 0 && index < 64;
                  ++index, bitboard >>= 1) {
 
                 if (Utils::last_bit(bitboard)) {
+                    move.piece_moved = Pieces::PAWNS;
+
                     processor(index);
 
-                    move->piece_moved = Pieces::PAWNS;
-
-                    if (move == moves.end() && bitboard != 1) {
-                        throw std::out_of_range(
-                            "Moves generated exceeded allocated space");
-                    }
-
-                    std::advance(move, 1);
+                    move = generator.next();
                 }
             }
         };
 
         const auto advanced = [&](square index, int offset) {
-            move->from = index;
-            move->to =
+            move.from = index;
+            move.to =
                 (board.turn == Colors::WHITE) ? index + offset : index - offset;
         };
 
         const auto captured = [&](square index, int direction) {
-            move->to = index;
-            move->from = (board.turn == Colors::WHITE) ? index - 8 - direction
-                                                       : index + 8 - direction;
-            move->piece_captured = board.piece_at(index);
+            move.to = index;
+            move.from = (board.turn == Colors::WHITE) ? index - 8 - direction
+                                                      : index + 8 - direction;
+            move.piece_captured = board.piece_at(index);
         };
 
         // Process pawn advances without direction parameter
@@ -225,39 +293,41 @@ namespace Game::Generators {
         moves_from_bitboard(west_captures,
                             [&](square index) { captured(index, 1); });
 
-        return moves;
+        return generator;
     }
 
-    std::vector<Move> gen_rooks_moves(Board board) {
+    MoveGenerator& gen_rooks_moves(MoveGenerator& generator) {
         return Helpers::moves_from_generator<Magic::Rooks::get_avail_moves,
-                                             Pieces::ROOKS>(board);
+                                             Pieces::ROOKS>(generator);
     }
 
-    std::vector<Move> gen_bishops_moves(Board board) {
+    MoveGenerator& gen_bishops_moves(MoveGenerator& generator) {
         return Helpers::moves_from_generator<Magic::Bishops::get_avail_moves,
-                                             Pieces::BISHOPS>(board);
+                                             Pieces::BISHOPS>(generator);
     }
 
-    std::vector<Move> gen_queens_moves(Board board) {
+    MoveGenerator& gen_queens_moves(MoveGenerator& generator) {
         auto queen_generator = [](bitboard blockers, square index) {
             return Magic::Rooks::get_avail_moves(blockers, index) |
                    Magic::Bishops::get_avail_moves(blockers, index);
         };
 
         return Helpers::moves_from_generator<queen_generator, Pieces::QUEENS>(
-            board);
+            generator);
     }
 
-    std::vector<Move> gen_knights_moves(Board board) {
+    MoveGenerator& gen_knights_moves(MoveGenerator& generator) {
         auto knight_generator = [](bitboard blockers, square index) {
             return Knights::available_moves[index];
         };
 
         return Helpers::moves_from_generator<knight_generator, Pieces::KNIGHTS>(
-            board);
+            generator);
     }
 
-    std::vector<Move> gen_king_moves(Board board) {
+    MoveGenerator& gen_king_moves(MoveGenerator& generator) {
+        auto& board = generator.board;
+
         square king_position = std::countr_zero(board.allied(Pieces::KINGS));
 
         bitboard diagonal_sliders =
@@ -309,17 +379,57 @@ namespace Game::Generators {
 
         bitboard captures = (board.enemies() & ~attacked_squares) & bbmoves;
 
-        std::vector<Move> moves(std::popcount(bbmoves));
+        auto total_available = std::popcount(bbmoves);
 
-        if (moves.size() == 0) {
-            return moves;
+        if (total_available == 0) {
+            return generator;
         }
 
-        Helpers::populate_from_bitboard(std::span(moves.begin(), moves.size()),
-                                        bbmoves, captures, board,
+        std::span<Move> moves = generator.next_n(total_available);
+
+        Helpers::populate_from_bitboard(moves, bbmoves, captures, board,
                                         king_position);
 
-        return moves;
+        return generator;
     }
 
 } // namespace Game::Generators
+
+namespace Game::Generators {
+    MoveGenerator::MoveGenerator(Game::Board board) { this->board = board; }
+
+    std::vector<Move> MoveGenerator::get_generated() {
+        if (next_move == moves.begin())
+            // No moves have been generated
+            return std::vector<Move>(0);
+
+        return std::vector(moves.begin(), next_move);
+    }
+
+    Move& MoveGenerator::next() {
+        if (next_move > moves.end()) {
+            throw std::out_of_range(
+                "The generator execeeded allocated space for moves.");
+        }
+
+        Move& move = *next_move;
+        std::advance(next_move, 1);
+
+        return move;
+    }
+
+    std::span<Move> MoveGenerator::next_n(int n) {
+        std::span<Move> span(next_move, n);
+
+        if (span.end().base() > moves.end()) {
+            throw std::out_of_range(
+                "The generator tried to yield more moves than remaining.");
+        }
+
+        std::advance(next_move, n);
+
+        return span;
+    }
+
+} // namespace Game::Generators
+  //

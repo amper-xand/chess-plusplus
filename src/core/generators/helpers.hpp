@@ -2,9 +2,10 @@
 
 #include "../../utils/utils.hpp"
 #include "../game.hpp"
+#include "generators.hpp"
 
+#include <algorithm>
 #include <span>
-#include <vector>
 
 namespace Game::Generators::Helpers {
 
@@ -13,16 +14,20 @@ namespace Game::Generators::Helpers {
 
     template <bitboard (*mgenerator)(bitboard blockers, square index),
               Pieces::Piece piece>
-    std::vector<Move> moves_from_generator(Board board);
+    MoveGenerator& moves_from_generator(MoveGenerator& generator);
 
     // Definition
 
     template <bitboard (*mgenerator)(bitboard blockers, square index),
               Pieces::Piece piece>
-    std::vector<Move> moves_from_generator(Board board) {
+    MoveGenerator& moves_from_generator(MoveGenerator& generator) {
+        auto& board = generator.board;
 
         bitboard pieces = board.allied(piece), all = board.all_pieces(),
                  blockers = all;
+
+        // Remove pinned pieces
+        pieces &= ~generator.pinned;
 
         uint8_t pieces_count = std::popcount(pieces);
 
@@ -46,29 +51,27 @@ namespace Game::Generators::Helpers {
             }
         }
 
-        std::vector<Move> moves(total_avail_moves);
-
-        if (moves.size() == 0)
-            return moves;
-
-        std::fill(moves.begin(), moves.end(), Move{.piece_moved = piece});
-
-        auto current_move = moves.begin();
+        if (total_avail_moves == 0)
+            return generator;
 
         for (uint8_t current_piece = 0; current_piece < pieces_count;
              ++current_piece) {
 
-            uint8_t size = std::popcount(available_per_piece[current_piece]);
+            uint8_t move_count =
+                std::popcount(available_per_piece[current_piece]);
 
-            bitboard captures = available_per_piece[current_piece] & board.enemies();
+            bitboard captures =
+                available_per_piece[current_piece] & board.enemies();
 
-            populate_from_bitboard(std::span(current_move, size),
-                                   available_per_piece[current_piece], captures,
-                                   board, piece_positions[current_piece]);
+            std::span<Move> moves = generator.next_n(move_count);
 
-            std::advance(current_move, size);
+            std::fill(moves.begin(), moves.end(), Move{.piece_moved = piece});
+
+            populate_from_bitboard(moves, available_per_piece[current_piece],
+                                   captures, board,
+                                   piece_positions[current_piece]);
         }
 
-        return moves;
+        return generator;
     }
 } // namespace Game::Generators::Helpers

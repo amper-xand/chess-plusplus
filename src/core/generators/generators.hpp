@@ -2,18 +2,46 @@
 
 #include "../game.hpp"
 
+#include <array>
+#include <span>
 #include <vector>
 
 namespace Game::Generators {
+
+    constexpr uint8_t max_moves = 218;
+
+    struct MoveGenerator {
+      private:
+        std::array<Move, max_moves> moves;
+        std::array<Move, max_moves>::iterator next_move = moves.begin();
+
+      public:
+        Board board;
+        bitboard pinned;
+
+        MoveGenerator(Board board);
+
+        std::span<Move> next_n(int n);
+
+        Move& next();
+
+        std::vector<Move> get_generated();
+    };
+
     void initialize_tables();
 
-    std::vector<Move> gen_pawn_moves(Game::Board board);
+    std::vector<Move> generate_moves(Board board);
 
-    std::vector<Move> gen_rooks_moves(Game::Board board);
+    MoveGenerator& gen_pawns_moves(MoveGenerator& generator);
 
-    std::vector<Move> gen_bishops_moves(Game::Board board);
+    MoveGenerator& gen_rooks_moves(MoveGenerator& generator);
 
-    std::vector<Move> gen_queens_moves(Game::Board board);
+    MoveGenerator& gen_bishops_moves(MoveGenerator& generator);
 
-    std::vector<Move> gen_knights_moves(Game::Board board);
+    MoveGenerator& gen_queens_moves(MoveGenerator& generator);
+
+    MoveGenerator& gen_knights_moves(MoveGenerator& generator);
+
+    MoveGenerator& gen_king_moves(MoveGenerator& generator);
+
 } // namespace Game::Generators

@@ -1,7 +1,7 @@
 #include "magic.hpp"
 
-#include "../../utils/masks.hpp"
-#include "../../utils/utils.hpp"
+#include "../../../utils/masks.hpp"
+#include "../../../utils/utils.hpp"
 
 #include <bit>
 #include <cstdint>
