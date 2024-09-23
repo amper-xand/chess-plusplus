@@ -1,6 +1,7 @@
 #include "piecewise.hpp"
 
 #include "../../../utils/utils.hpp"
+#include <bit>
 
 namespace Game::Generators::Pawns {
     // clang-format off
@@ -82,15 +83,20 @@ namespace Game::Generators::Pawns {
             double_advances <<= 16;
         }
 
-        bitboard east_captures =
-            Pawns::east_attacks(pawns, board.turn) & board.enemies();
+        bitboard e_attacks = Pawns::east_attacks(pawns, board.turn);
+        bitboard w_attacks = Pawns::west_attacks(pawns, board.turn);
 
-        bitboard west_captures =
-            Pawns::west_attacks(pawns, board.turn) & board.enemies();
+        bitboard east_captures = e_attacks & board.enemies();
+
+        bitboard west_captures = w_attacks & board.enemies();
+
+        bitboard e_enpassant = e_attacks & Utils::bit_at(board.enpassant_tail);
+        bitboard w_enpassant = w_attacks & Utils::bit_at(board.enpassant_tail);
 
         auto total_available =
             std::popcount(single_advances) + std::popcount(double_advances) +
-            std::popcount(east_captures) + std::popcount(west_captures);
+            std::popcount(east_captures) + std::popcount(west_captures) +
+            std::popcount(e_enpassant) + std::popcount(w_enpassant);
 
         if (total_available == 0) {
             return generator;
@@ -129,6 +135,9 @@ namespace Game::Generators::Pawns {
             advanced(move, index, 8);
         });
         moves_from_bitboard(double_advances, [&](Move& move, square index) {
+            move.enpassant_set = true;
+            move.enpassant_capture = index;
+
             advanced(move, index, 16);
         });
 
@@ -136,7 +145,18 @@ namespace Game::Generators::Pawns {
         moves_from_bitboard(east_captures, [&](Move& move, square index) {
             captured(move, index, -1);
         });
+        moves_from_bitboard(e_enpassant, [&](Move& move, square index) {
+            move.enpassant_take = true;
+            move.enpassant_capture = board.enpassant_capture;
+            captured(move, index, -1);
+        });
+
         moves_from_bitboard(west_captures, [&](Move& move, square index) {
+            captured(move, index, 1);
+        });
+        moves_from_bitboard(w_enpassant, [&](Move& move, square index) {
+            move.enpassant_take = true;
+            move.enpassant_capture = board.enpassant_capture;
             captured(move, index, 1);
         });
 

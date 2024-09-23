@@ -132,6 +132,25 @@ namespace Game {
         pieces[move.piece_moved] &= ~Utils::bit_at(move.from);
         pieces[move.piece_moved] |= Utils::bit_at(move.to);
 
+        if (move.piece_captured != Pieces::NONE) {
+            colors[!turn] &= ~Utils::bit_at(move.to);
+            colors[move.piece_captured] &= ~Utils::bit_at(move.to);
+        }
+
+        this->enpassant_avail = move.enpassant_set;
+
+        if (move.enpassant_set) {
+            this->enpassant_capture = move.enpassant_capture;
+            this->enpassant_tail = (turn == Colors::WHITE)
+                                       ? move.enpassant_capture - 8
+                                       : move.enpassant_capture + 8;
+        }
+
+        if (move.enpassant_take) {
+            colors[!turn] &= ~Utils::bit_at(move.enpassant_capture);
+            colors[Pieces::PAWNS] &= ~Utils::bit_at(move.enpassant_capture);
+        }
+
         turn = Colors::BothColors[!turn];
     }
 

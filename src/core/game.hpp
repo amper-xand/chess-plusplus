@@ -29,21 +29,27 @@ namespace Game::Pieces {
 namespace Game {
     using namespace Types;
 
-    // clang-format off
     struct Move {
+    // clang-format off
+
         square        from, to;
         Pieces::Piece piece_moved, piece_captured = Pieces::NONE;
+
+        struct { bool enpassant_set : 1 = false; square enpassant_capture: 6;
+                 bool enpassant_take: 1 = false; };
     };
     // clang-format on
 
     struct Board {
         // clang-format off
+
         Colors::Color turn;
-        square        enpassant;
 
         union { bitboard colors[2]; struct { bitboard black, white; }; };
 
         union { bitboard pieces[6]; struct { bitboard pawns, knights, bishops, rooks, queens, kings; }; };
+
+        struct { bool enpassant_avail : 1 = false; square enpassant_capture : 6; square enpassant_tail : 6; };
         // clang-format on
 
         static Board parse_fen_string(std::string fen);
@@ -69,7 +75,6 @@ namespace Game {
         inline bitboard enemy(Pieces::Piece piece) {
             return pieces[piece] & colors[!turn];
         }
-
 
         void make_move(Move move);
     };
