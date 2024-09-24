@@ -2,6 +2,7 @@
 
 #include "../../../utils/utils.hpp"
 #include <bit>
+#include <cstdio>
 
 namespace Game::Generators::Pawns {
     // clang-format off
@@ -63,40 +64,49 @@ namespace Game::Generators::Pawns {
         // Remove pinned pawns
         pawns &= ~generator.pinned;
 
-        bitboard single_advances =
-            Pawns::get_advances(pawns, blockers, board.turn);
+        struct {
+            bitboard singles, doubles;
+        } advances;
 
-        bitboard double_advances =
-            single_advances &
+        advances.singles = Pawns::get_advances(pawns, blockers, board.turn);
+
+        advances.doubles =
+            advances.singles &
             // If a pawn advanced to the 3rd or 6th rank, advance it again
             (board.turn == Colors::WHITE ? 0x0000000000FF0000
                                          : 0x0000FF0000000000);
 
-        double_advances =
-            Pawns::get_advances(double_advances, blockers, board.turn);
+        advances.doubles =
+            Pawns::get_advances(advances.doubles, blockers, board.turn);
 
         // return pawns to their original positions
         if (board.turn == Colors::WHITE) {
-            single_advances >>= 8;
-            double_advances >>= 16;
+            advances.singles >>= 8;
+            advances.doubles >>= 16;
         } else {
-            single_advances <<= 8;
-            double_advances <<= 16;
+            advances.singles <<= 8;
+            advances.doubles <<= 16;
         }
 
-        bitboard e_attacks = Pawns::east_attacks(pawns, board.turn);
-        bitboard w_attacks = Pawns::west_attacks(pawns, board.turn);
+        struct {
+            bitboard east = 0, west = 0;
+        } attacks, captures, enpassant;
 
-        bitboard east_captures = e_attacks & board.enemies();
-        bitboard west_captures = w_attacks & board.enemies();
+        attacks.east = Pawns::east_attacks(pawns, board.turn);
+        attacks.west = Pawns::west_attacks(pawns, board.turn);
 
-        bitboard e_enpassant = e_attacks & Utils::bit_at(board.enpassant.tail);
-        bitboard w_enpassant = w_attacks & Utils::bit_at(board.enpassant.tail);
+        captures.east = attacks.east & board.enemies();
+        captures.west = attacks.west & board.enemies();
+
+        if (board.enpassant.available && generator.enpassant.pinned) {
+            enpassant.east = attacks.east & Utils::bit_at(board.enpassant.tail);
+            enpassant.west = attacks.west & Utils::bit_at(board.enpassant.tail);
+        }
 
         auto total_available =
-            std::popcount(single_advances) + std::popcount(double_advances) +
-            std::popcount(east_captures) + std::popcount(west_captures) +
-            std::popcount(e_enpassant) + std::popcount(w_enpassant);
+            std::popcount(advances.singles) + std::popcount(advances.doubles) +
+            std::popcount(captures.east) + std::popcount(captures.west) +
+            std::popcount(enpassant.east) + std::popcount(enpassant.west);
 
         if (total_available == 0) {
             return generator;
@@ -131,29 +141,29 @@ namespace Game::Generators::Pawns {
         };
 
         // Process pawn advances
-        moves_from_bitboard(single_advances, [&](Move& move, square index) {
+        moves_from_bitboard(advances.singles, [&](Move& move, square index) {
             advanced(move, index, 8);
         });
-        moves_from_bitboard(double_advances, [&](Move& move, square index) {
+        moves_from_bitboard(advances.doubles, [&](Move& move, square index) {
             move.enpassant.set = true;
 
             advanced(move, index, 16);
         });
 
         // Process pawn captures
-        moves_from_bitboard(east_captures, [&](Move& move, square index) {
+        moves_from_bitboard(captures.east, [&](Move& move, square index) {
             captured(move, index, -1);
         });
-        moves_from_bitboard(e_enpassant, [&](Move& move, square index) {
+        moves_from_bitboard(enpassant.east, [&](Move& move, square index) {
             move.enpassant.take = true;
             move.enpassant.captured = board.enpassant.capturable;
             captured(move, index, -1);
         });
 
-        moves_from_bitboard(west_captures, [&](Move& move, square index) {
+        moves_from_bitboard(captures.west, [&](Move& move, square index) {
             captured(move, index, 1);
         });
-        moves_from_bitboard(w_enpassant, [&](Move& move, square index) {
+        moves_from_bitboard(enpassant.west, [&](Move& move, square index) {
             move.enpassant.take = true;
             move.enpassant.captured = board.enpassant.capturable;
             captured(move, index, 1);

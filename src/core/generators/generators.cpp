@@ -61,6 +61,7 @@ namespace Game::Generators {
         MoveGenerator generator(board);
 
         generator.pinned = Kings::get_pinned_pieces(board);
+        generator.enpassant.pinned = Kings::is_enpassant_pinned(board);
 
         Pawns::gen_pawns_moves(generator);
 

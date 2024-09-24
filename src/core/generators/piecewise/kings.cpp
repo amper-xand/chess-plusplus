@@ -90,6 +90,43 @@ namespace Game::Generators::Kings {
         return pinned_pieces;
     }
 
+    bool is_enpassant_pinned(Board board) {
+        if (!board.enpassant.available)
+            return false;
+
+        bitboard king = board.allied(Pieces::KINGS);
+        square position = std::countr_zero(king);
+
+        bitboard diagonal_sliders =
+            (board.bishops | board.queens) & board.enemies();
+
+        // Remove sliders that already have line of sight to the king
+        diagonal_sliders &=
+            ~Magic::Bishops::get_avail_moves(board.all_pieces(), position);
+
+        bitboard straight_sliders =
+            (board.bishops | board.queens) & board.enemies();
+
+        // Remove sliders that already have line of sight to the king
+        straight_sliders &=
+            ~Magic::Rooks::get_avail_moves(board.all_pieces(), position);
+
+        // Get blockers without the enpassant pawn
+        bitboard blockers =
+            board.all_pieces() ^ Utils::bit_at(board.enpassant.capturable);
+
+        // Check for discovered attacks
+        bitboard is_pinned;
+
+        is_pinned = (diagonal_sliders &
+                     Magic::Bishops::get_avail_moves(blockers, position));
+
+        is_pinned |= (straight_sliders &
+                      Magic::Rooks::get_avail_moves(blockers, position));
+
+        return is_pinned != 0;
+    }
+
     void initialize_table() {
         for (square index = 0; index < 64; ++index) {
             available_moves[index] = get_available_moves(index);

@@ -39,6 +39,8 @@ namespace Game::Generators::Kings {
 
     bitboard get_pinned_pieces(Board board);
 
+    bool is_enpassant_pinned(Board board);
+
     MoveGenerator& gen_king_moves(MoveGenerator& generator);
 
 } // namespace Game::Generators::Kings
