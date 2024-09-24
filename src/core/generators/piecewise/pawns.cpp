@@ -53,6 +53,7 @@ namespace Game::Generators::Pawns {
     // clang-format on
 
     MoveGenerator& gen_pawns_moves(MoveGenerator& generator) {
+        // TODO: Implement promotions
         Board& board = generator.board;
 
         bitboard blockers = board.all_pieces(),
@@ -87,11 +88,10 @@ namespace Game::Generators::Pawns {
         bitboard w_attacks = Pawns::west_attacks(pawns, board.turn);
 
         bitboard east_captures = e_attacks & board.enemies();
-
         bitboard west_captures = w_attacks & board.enemies();
 
-        bitboard e_enpassant = e_attacks & Utils::bit_at(board.enpassant_tail);
-        bitboard w_enpassant = w_attacks & Utils::bit_at(board.enpassant_tail);
+        bitboard e_enpassant = e_attacks & Utils::bit_at(board.enpassant.tail);
+        bitboard w_enpassant = w_attacks & Utils::bit_at(board.enpassant.tail);
 
         auto total_available =
             std::popcount(single_advances) + std::popcount(double_advances) +
@@ -110,7 +110,7 @@ namespace Game::Generators::Pawns {
                 if (Utils::last_bit(bitboard)) {
                     Move& move = generator.next();
 
-                    move.piece_moved = Pieces::PAWNS;
+                    move.piece.moved = Pieces::PAWNS;
 
                     processor(move, index);
                 }
@@ -127,7 +127,7 @@ namespace Game::Generators::Pawns {
             move.to = index;
             move.from = (board.turn == Colors::WHITE) ? index - 8 - direction
                                                       : index + 8 - direction;
-            move.piece_captured = board.piece_at(index);
+            move.piece.captured = board.piece_at(index);
         };
 
         // Process pawn advances
@@ -135,8 +135,7 @@ namespace Game::Generators::Pawns {
             advanced(move, index, 8);
         });
         moves_from_bitboard(double_advances, [&](Move& move, square index) {
-            move.enpassant_set = true;
-            move.enpassant_capture = index;
+            move.enpassant.set = true;
 
             advanced(move, index, 16);
         });
@@ -146,8 +145,8 @@ namespace Game::Generators::Pawns {
             captured(move, index, -1);
         });
         moves_from_bitboard(e_enpassant, [&](Move& move, square index) {
-            move.enpassant_take = true;
-            move.enpassant_capture = board.enpassant_capture;
+            move.enpassant.take = true;
+            move.enpassant.captured = board.enpassant.capturable;
             captured(move, index, -1);
         });
 
@@ -155,8 +154,8 @@ namespace Game::Generators::Pawns {
             captured(move, index, 1);
         });
         moves_from_bitboard(w_enpassant, [&](Move& move, square index) {
-            move.enpassant_take = true;
-            move.enpassant_capture = board.enpassant_capture;
+            move.enpassant.take = true;
+            move.enpassant.captured = board.enpassant.capturable;
             captured(move, index, 1);
         });
 

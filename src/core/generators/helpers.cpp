@@ -16,7 +16,7 @@ namespace Game::Generators::Helpers {
                 next_move->to = index;
 
                 if (Utils::last_bit(captures))
-                    next_move->piece_captured = board.piece_at(index);
+                    next_move->piece.captured = board.piece_at(index);
 
                 if (next_move == target.end() && moves != 1) {
                     throw std::out_of_range("Bitboard has more elements than "

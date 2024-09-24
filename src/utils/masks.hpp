@@ -23,7 +23,7 @@ namespace Utils::Masks {
     const Game::bitboard horizontal_rel_blo_mask =
         horizontal_moves_mask & ~0x81;
 
-    const Game::bitboard diagonal_masks[] = {
+    const Game::bitboard diagonal_masks[]{
         0x0000000000000001, // 0
         0x0000000000000102, // 1
         0x0000000000010204, // 2
@@ -65,14 +65,11 @@ namespace Utils::Masks {
 
     inline Game::bitboard make_e_mask(Game::square index) {
         return (Utils::bit_at(Utils::column(index)) - 1) * 0x0101010101010101UL;
-        // return ((0xFF << Utils::column(index)) & 0xFF) *
-        // 0x0101010101010101UL;
     }
 
     inline Game::bitboard make_w_mask(Game::square index) {
         return (~make_e_mask(index)) ^
                Utils::bit_at(index) * 0x0101010101010101UL;
-        // return ~((0xFE << index % 8) & 0xFF) * 0x0101010101010101UL;
     }
 
 } // namespace Utils::Masks

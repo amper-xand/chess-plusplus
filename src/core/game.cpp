@@ -1,6 +1,9 @@
 #include "game.hpp"
 
 #include "../utils/utils.hpp"
+#include <format>
+#include <iostream>
+#include <strings.h>
 
 namespace Game::Pieces {
     // clang-format off
@@ -27,28 +30,23 @@ namespace Game::Pieces {
 
         return PAWNS;
     }
-    // clang-format on
 
     char piece_to_char(Piece piece, Colors::Color color) {
         switch (piece) {
-        case PAWNS:
-            return color ? 'P' : 'p';
-        case KNIGHTS:
-            return color ? 'N' : 'n';
-        case BISHOPS:
-            return color ? 'B' : 'b';
-        case ROOKS:
-            return color ? 'R' : 'r';
-        case QUEENS:
-            return color ? 'Q' : 'q';
-        case KINGS:
-            return color ? 'K' : 'k';
-        case NONE:
-            break;
+
+        case PAWNS   : return color ? 'P' : 'p';
+        case KNIGHTS : return color ? 'N' : 'n';
+        case BISHOPS : return color ? 'B' : 'b';
+        case ROOKS   : return color ? 'R' : 'r';
+        case QUEENS  : return color ? 'Q' : 'q';
+        case KINGS   : return color ? 'K' : 'k';
+
+        case NONE: break;
         }
 
         return 'X';
     }
+    // clang-format on
 } // namespace Game::Pieces
 
 namespace Game {
@@ -69,12 +67,15 @@ namespace Game {
             }
 
             if (std::isdigit(c)) {
-                index -= c - '0'; // Skip empty squares.
+                // Skip empty squares.
+                index -= c - '0';
             } else if (c == '/') {
-                continue; // Move to the next rank.
+                // Move to the next rank.
+                continue;
             } else {
-                Colors::Color color =
-                    std::isupper(c) ? Colors::WHITE : Colors::BLACK;
+                // Fill piece.
+                Colors::Color color = Colors::BothColors[std::isupper(c)];
+
                 Pieces::Piece piece = Pieces::char_to_piece(c);
 
                 board.colors[color] |= Utils::bit_at(index);
@@ -89,34 +90,39 @@ namespace Game {
     }
 
     void Board::print_board() {
-        std::printf("\n");
+        std::cout << std::endl;
+
         for (int rank = 7; rank >= 0; --rank) {
             for (int file = 7; file >= 0; --file) {
-                int index = rank * 8 + file;
-                if (is_square_occupied(index))
-                    std::printf(" %c ", Pieces::piece_to_char(piece_at(index),
-                                                              color_at(index)));
-                else
-                    std::printf(" - ");
+
+                int index = Utils::index_at(rank, file);
+
+                auto square =
+                    is_square_occupied(index)
+                        ? std::format(" {} ",
+                                      Pieces::piece_to_char(piece_at(index),
+                                                            color_at(index)))
+                        : " - ";
+
+                std::cout << square;
 
                 if (index % 8 == 0)
-                    std::printf("\n");
+                    std::cout << std::endl;
             }
         }
-        std::printf("\n");
+
+        std::cout << std::endl;
     }
 
     bool Board::is_square_occupied(square index) {
         return Utils::is_set_at(index, white | black);
     }
 
-    Game::Colors::Color Board::color_at(square index) {
-        if (Utils::is_set_at(index, white))
-            return Colors::WHITE;
-        return Colors::BLACK;
+    Colors::Color Board::color_at(square index) {
+        return Colors::BothColors[Utils::is_set_at(index, white)];
     }
 
-    Game::Pieces::Piece Board::piece_at(square index) {
+    Pieces::Piece Board::piece_at(square index) {
         for (auto piece : Pieces::AllPieces) {
             if (Utils::is_set_at(index, pieces[piece]))
                 return piece;
@@ -126,31 +132,41 @@ namespace Game {
     }
 
     void Board::make_move(Move move) {
-        colors[turn] &= ~Utils::bit_at(move.from);
-        colors[turn] |= Utils::bit_at(move.to);
+        // Change the position of the moved piece
+        auto switch_bits = [](bitboard& target, bitboard from, bitboard to) {
+            target &= ~from;
+            target |= to;
+        };
 
-        pieces[move.piece_moved] &= ~Utils::bit_at(move.from);
-        pieces[move.piece_moved] |= Utils::bit_at(move.to);
+        auto from = Utils::bit_at(move.from), to = Utils::bit_at(move.to);
 
-        if (move.piece_captured != Pieces::NONE) {
-            colors[!turn] &= ~Utils::bit_at(move.to);
-            colors[move.piece_captured] &= ~Utils::bit_at(move.to);
+        switch_bits(colors[turn], from, to);
+        switch_bits(pieces[move.piece.moved], from, to);
+
+        // Handle captures
+        auto capture_piece = [&](Pieces::Piece piece, bitboard captured) {
+            colors[!turn] &= ~captured;
+            colors[move.piece.captured] &= captured;
+        };
+
+        if (move.piece.captured != Pieces::NONE) {
+            capture_piece(move.piece.captured, to);
         }
 
-        this->enpassant_avail = move.enpassant_set;
+        // Set en passant state
+        enpassant.available = move.enpassant.set;
 
-        if (move.enpassant_set) {
-            this->enpassant_capture = move.enpassant_capture;
-            this->enpassant_tail = (turn == Colors::WHITE)
-                                       ? move.enpassant_capture - 8
-                                       : move.enpassant_capture + 8;
+        if (move.enpassant.set) {
+            enpassant.capturable = move.to;
+            enpassant.tail =
+                (turn == Colors::WHITE) ? move.to - 8 : move.to + 8;
         }
 
-        if (move.enpassant_take) {
-            colors[!turn] &= ~Utils::bit_at(move.enpassant_capture);
-            colors[Pieces::PAWNS] &= ~Utils::bit_at(move.enpassant_capture);
+        if (move.enpassant.take) {
+            capture_piece(Pieces::PAWNS, move.enpassant.captured);
         }
 
+        // Switch turns
         turn = Colors::BothColors[!turn];
     }
 

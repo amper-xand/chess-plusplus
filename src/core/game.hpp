@@ -17,8 +17,8 @@ namespace Game::Colors {
 
 namespace Game::Pieces {
     enum Piece { PAWNS, KNIGHTS, BISHOPS, ROOKS, QUEENS, KINGS, NONE };
-    static const Piece AllPieces[] = {PAWNS, KNIGHTS, BISHOPS,
-                                      ROOKS, QUEENS,  KINGS};
+    static const Piece AllPieces[]{PAWNS, KNIGHTS, BISHOPS,
+                                   ROOKS, QUEENS,  KINGS};
 
     Piece char_to_piece(char c);
 
@@ -30,13 +30,13 @@ namespace Game {
     using namespace Types;
 
     struct Move {
-    // clang-format off
+        // clang-format off
 
-        square        from, to;
-        Pieces::Piece piece_moved, piece_captured = Pieces::NONE;
+        square from, to;
 
-        struct { bool enpassant_set : 1 = false; square enpassant_capture: 6;
-                 bool enpassant_take: 1 = false; };
+        struct { Pieces::Piece moved, captured = Pieces::NONE; } piece;
+
+        struct { bool set : 1 = false; bool take: 1 = false; square captured: 6; } enpassant;
     };
     // clang-format on
 
@@ -49,7 +49,8 @@ namespace Game {
 
         union { bitboard pieces[6]; struct { bitboard pawns, knights, bishops, rooks, queens, kings; }; };
 
-        struct { bool enpassant_avail : 1 = false; square enpassant_capture : 6; square enpassant_tail : 6; };
+        struct { bool available : 1 = false; square capturable : 6; square tail : 6; }
+               enpassant;
         // clang-format on
 
         static Board parse_fen_string(std::string fen);

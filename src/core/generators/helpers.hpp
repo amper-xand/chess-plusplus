@@ -65,7 +65,7 @@ namespace Game::Generators::Helpers {
 
             std::span<Move> moves = generator.next_n(move_count);
 
-            std::fill(moves.begin(), moves.end(), Move{.piece_moved = piece});
+            std::fill(moves.begin(), moves.end(), Move{.piece = {piece}});
 
             populate_from_bitboard(moves, available_per_piece[current_piece],
                                    captures, board,
