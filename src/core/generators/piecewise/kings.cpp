@@ -35,12 +35,21 @@ namespace Game::Generators::Kings {
         bitboard diagonal_sliders =
             (board.bishops | board.queens) & board.enemies();
 
+        // Remove sliders that already have line of sight to the king
+        diagonal_sliders &=
+            ~Magic::Bishops::get_avail_moves(board.all_pieces(), position);
+
         bitboard straight_sliders =
             (board.bishops | board.queens) & board.enemies();
 
+        // Remove sliders that already have line of sight to the king
+        straight_sliders &=
+            ~Magic::Rooks::get_avail_moves(board.all_pieces(), position);
+
         bitboard pinned_pieces = 0;
 
-        auto check_candidates = [&](bitboard candidates, auto slider_moves) {
+        auto check_candidates = [&](bitboard candidates, bitboard sliders,
+                                    auto slider_moves) {
             for (bitboard unchecked_bits = candidates; unchecked_bits != 0;
                  // Remove the candidate we just checked
                  unchecked_bits &= unchecked_bits - 1) {
@@ -51,15 +60,15 @@ namespace Game::Generators::Kings {
                 // Remove the bits before the current bit
                 bitboard current_bit = bits_previous & unchecked_bits;
 
-                // Make a hole by removing the candidates
+                // Make a hole by removing the candidate
                 bitboard current_blockers = board.all_pieces() ^ current_bit;
 
                 // If removing the candidate exposes the king to a slider
                 auto is_pinned =
-                    diagonal_sliders & slider_moves(board.allies(), position);
+                    sliders & slider_moves(current_blockers, position);
 
                 // Then the piece is pinned
-                if (is_pinned) {
+                if (is_pinned != 0) {
                     pinned_pieces |= current_bit;
                 }
             }
@@ -73,8 +82,10 @@ namespace Game::Generators::Kings {
             board.allies() &
             Magic::Rooks::get_avail_moves(board.all_pieces(), position);
 
-        check_candidates(dia_candidates, Magic::Bishops::get_avail_moves);
-        check_candidates(str_candidates, Magic::Rooks::get_avail_moves);
+        check_candidates(dia_candidates, diagonal_sliders,
+                         Magic::Bishops::get_avail_moves);
+        check_candidates(str_candidates, straight_sliders,
+                         Magic::Rooks::get_avail_moves);
 
         return pinned_pieces;
     }
