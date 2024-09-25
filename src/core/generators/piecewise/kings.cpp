@@ -49,7 +49,7 @@ namespace Game::Generators::Kings {
         bitboard pinned_pieces = 0;
 
         auto check_candidates = [&](bitboard candidates, bitboard sliders,
-                                    auto slider_moves) {
+                                    const auto& slider_moves) {
             for (bitboard unchecked_bits = candidates; unchecked_bits != 0;
                  // Remove the candidate we just checked
                  unchecked_bits &= unchecked_bits - 1) {

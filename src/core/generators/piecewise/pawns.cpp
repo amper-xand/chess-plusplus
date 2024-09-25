@@ -1,6 +1,8 @@
 #include "piecewise.hpp"
 
 #include "../../../utils/utils.hpp"
+#include "../helpers.hpp"
+
 #include <bit>
 #include <cstdio>
 
@@ -112,61 +114,71 @@ namespace Game::Generators::Pawns {
             return generator;
         }
 
-        auto moves_from_bitboard = [&](bitboard& bitboard,
-                                       const auto& processor) {
-            for (square index = 0; bitboard != 0 && index < 64;
-                 ++index, bitboard >>= 1) {
-
-                if (Utils::last_bit(bitboard)) {
-                    Move& move = generator.next();
-
-                    move.piece.moved = Pieces::PAWNS;
-
-                    processor(move, index);
-                }
-            }
-        };
-
-        const auto advanced = [&](Move& move, square index, int offset) {
-            move.from = index;
-            move.to =
-                (board.turn == Colors::WHITE) ? index + offset : index - offset;
-        };
-
-        const auto captured = [&](Move& move, square index, int direction) {
-            move.to = index;
-            move.from = (board.turn == Colors::WHITE) ? index - 8 - direction
-                                                      : index + 8 - direction;
-            move.piece.captured = board.piece_at(index);
-        };
-
         // Process pawn advances
-        moves_from_bitboard(advances.singles, [&](Move& move, square index) {
-            advanced(move, index, 8);
+        Helpers::scan(advances.singles, [&](bitboard _, square index) {
+            Move& move = generator.next();
+            move.piece.moved = Pieces::PAWNS;
+
+            move.from = index;
+            move.to = board.turn ? index + 8 : index - 8;
         });
-        moves_from_bitboard(advances.doubles, [&](Move& move, square index) {
+
+        Helpers::scan(advances.singles, [&](bitboard _, square index) {
+            Move& move = generator.next();
+            move.piece.moved = Pieces::PAWNS;
+
             move.enpassant.set = true;
 
-            advanced(move, index, 16);
+            move.from = index;
+            move.to = board.turn ? index + 16 : index - 16;
         });
 
         // Process pawn captures
-        moves_from_bitboard(captures.east, [&](Move& move, square index) {
-            captured(move, index, -1);
-        });
-        moves_from_bitboard(enpassant.east, [&](Move& move, square index) {
-            move.enpassant.take = true;
-            move.enpassant.captured = board.enpassant.capturable;
-            captured(move, index, -1);
+        Helpers::scan(captures.east, [&](bitboard _, square index) {
+            Move& move = generator.next();
+            move.piece.moved = Pieces::PAWNS;
+
+            move.to = index;
+            move.from = board.turn ? index - 8 + 1 : index + 8 + 1;
+
+            move.piece.captured = board.piece_at(index);
         });
 
-        moves_from_bitboard(captures.west, [&](Move& move, square index) {
-            captured(move, index, 1);
+        Helpers::scan(captures.west, [&](bitboard _, square index) {
+            Move& move = generator.next();
+            move.piece.moved = Pieces::PAWNS;
+
+            move.to = index;
+            move.from = board.turn ? index - 8 - 1 : index + 8 - 1;
+
+            move.piece.captured = board.piece_at(index);
         });
-        moves_from_bitboard(enpassant.west, [&](Move& move, square index) {
+
+        // Process en passant
+        Helpers::scan(enpassant.east, [&](bitboard _, square index) {
+            Move& move = generator.next();
+            move.piece.moved = Pieces::PAWNS;
+
             move.enpassant.take = true;
             move.enpassant.captured = board.enpassant.capturable;
-            captured(move, index, 1);
+
+            move.to = index;
+            move.from = board.turn ? index - 8 + 1 : index + 8 + 1;
+
+            move.piece.captured = board.piece_at(index);
+        });
+
+        Helpers::scan(enpassant.east, [&](bitboard _, square index) {
+            Move& move = generator.next();
+            move.piece.moved = Pieces::PAWNS;
+
+            move.enpassant.take = true;
+            move.enpassant.captured = board.enpassant.capturable;
+
+            move.to = index;
+            move.from = board.turn ? index - 8 - 1 : index + 8 - 1;
+
+            move.piece.captured = board.piece_at(index);
         });
 
         return generator;

@@ -60,6 +60,7 @@ namespace Game::Generators {
     std::vector<Move> generate_moves(Board board) {
         MoveGenerator generator(board);
 
+        // TODO: Check for partial pins
         generator.pinned = Kings::get_pinned_pieces(board);
         generator.enpassant.pinned = Kings::is_enpassant_pinned(board);
 

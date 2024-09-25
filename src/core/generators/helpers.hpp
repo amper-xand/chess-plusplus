@@ -5,51 +5,64 @@
 #include "generators.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <span>
+#include <tuple>
 
 namespace Game::Generators::Helpers {
 
     void populate_from_bitboard(std::span<Move> target, bitboard moves,
                                 bitboard captures, Board board, square origin);
 
-    template <bitboard (*mgenerator)(bitboard blockers, square index),
-              Pieces::Piece piece>
-    MoveGenerator& moves_from_generator(MoveGenerator& generator);
+    inline void scan(bitboard bitboard, const auto& proccess) {
+        for (square index = 0; bitboard != 0 && index < 64;
+             ++index, bitboard >>= 1) {
 
-    // Definition
+            if (Utils::last_bit(bitboard)) {
+                proccess(bitboard, index);
+            }
+        }
+    }
 
-    template <bitboard (*mgenerator)(bitboard blockers, square index),
-              Pieces::Piece piece>
+    template <uint8_t piece_count, auto get_moves>
+    inline std::tuple<uint16_t, bitboard[piece_count], square[piece_count]>
+    scan_moves(bitboard pieces, bitboard blockers, bitboard noncaptures) {
+
+        uint16_t total_avail_moves = 0;
+        bitboard available_per_piece[piece_count];
+        square piece_positions[piece_count];
+
+        uint8_t current_piece = 0;
+        auto move_scanner = [&](bitboard pieces, square index) {
+            auto available_moves = get_moves(blockers, index) & ~noncaptures;
+
+            piece_positions[current_piece] = index;
+
+            available_per_piece[current_piece] = available_moves;
+            total_avail_moves += std::popcount(available_moves);
+
+            ++current_piece;
+        };
+
+        scan(pieces, move_scanner);
+
+        return {total_avail_moves, available_per_piece, piece_positions};
+    }
+
+    template <auto get_moves, Pieces::Piece piece>
     MoveGenerator& moves_from_generator(MoveGenerator& generator) {
         auto& board = generator.board;
 
-        bitboard pieces = board.allied(piece), all = board.all_pieces(),
-                 blockers = all;
+        bitboard pieces = board.allied(piece), blockers = board.all_pieces(),
+                 noncaptures = board.allies();
 
         // Remove pinned pieces
         pieces &= ~generator.pinned;
 
         uint8_t pieces_count = std::popcount(pieces);
 
-        uint16_t total_avail_moves = 0;
-        bitboard available_per_piece[pieces_count];
-        square piece_positions[pieces_count];
-
-        for (square index = 0, current_piece = 0; pieces != 0 && index < 64;
-             ++index, pieces >>= 1) {
-
-            if (Utils::last_bit(pieces)) {
-                auto available_moves =
-                    mgenerator(blockers, index) & ~board.allies();
-
-                piece_positions[current_piece] = index;
-
-                available_per_piece[current_piece] = available_moves;
-                total_avail_moves += std::popcount(available_moves);
-
-                ++current_piece;
-            }
-        }
+        auto [total_avail_moves, available_per_piece, piece_positions] =
+            scan_moves<pieces_count, get_moves>(pieces, blockers, noncaptures);
 
         if (total_avail_moves == 0)
             return generator;
@@ -65,7 +78,8 @@ namespace Game::Generators::Helpers {
 
             std::span<Move> moves = generator.next_n(move_count);
 
-            std::fill(moves.begin(), moves.end(), Move{.piece = {piece}});
+            std::fill(moves.begin(), moves.end(),
+                      Move{.piece = {.moved = piece}});
 
             populate_from_bitboard(moves, available_per_piece[current_piece],
                                    captures, board,
