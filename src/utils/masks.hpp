@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/game.hpp"
+#include "../core/representation/representation.hpp"
 #include "utils.hpp"
 
 namespace Utils::Masks {

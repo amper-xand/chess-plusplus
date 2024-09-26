@@ -2,7 +2,7 @@
 
 #include "piecewise/piecewise.hpp"
 
-#include "../game.hpp"
+#include "../representation/representation.hpp"
 #include "magic/magic.hpp"
 
 #include <climits>

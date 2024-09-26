@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../game.hpp"
+#include "../representation/representation.hpp"
 
 #include <array>
 #include <span>

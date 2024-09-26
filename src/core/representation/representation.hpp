@@ -1,34 +1,11 @@
 #pragma once
 
-#include <cstdint>
+#include "types.hpp"
+#include "enums.hpp"
+
 #include <string>
 
-namespace Types {
-    typedef uint64_t bitboard;
-    typedef uint8_t square;
-
-} // namespace Types
-
-namespace Game::Colors {
-    enum Color { BLACK = false, WHITE = true };
-    static const Color BothColors[]{BLACK, WHITE};
-
-} // namespace Game::Colors
-
-namespace Game::Pieces {
-    enum Piece { PAWNS, KNIGHTS, BISHOPS, ROOKS, QUEENS, KINGS, NONE };
-    static const Piece AllPieces[]{PAWNS, KNIGHTS, BISHOPS,
-                                   ROOKS, QUEENS,  KINGS};
-
-    Piece char_to_piece(char c);
-
-    char piece_to_char(Piece piece, Colors::Color color);
-
-} // namespace Game::Pieces
-
 namespace Game {
-    using namespace Types;
-
     struct Move {
         // clang-format off
 
@@ -37,9 +14,12 @@ namespace Game {
         struct { Pieces::Piece moved, captured = Pieces::NONE; } piece;
 
         struct { bool set : 1 = false; bool take: 1 = false; square captured: 6; } enpassant;
-    };
-    // clang-format on
 
+        // clang-format on
+    };
+} // namespace Game
+
+namespace Game {
     struct Board {
         // clang-format off
 
@@ -55,7 +35,7 @@ namespace Game {
 
         static Board parse_fen_string(std::string fen);
 
-        void print_board();
+        void print();
 
         bool is_square_occupied(square index);
 
