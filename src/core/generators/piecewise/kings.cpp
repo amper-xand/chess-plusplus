@@ -1,6 +1,5 @@
 #include "piecewise.hpp"
 
-#include "../../../utils/utils.hpp"
 #include "../helpers.hpp"
 #include "../magic/magic.hpp"
 
@@ -8,9 +7,9 @@ namespace Game::Generators::Kings {
     bitboard available_moves[64];
 
     bitboard get_available_moves(square index) {
-        bitboard moves = 0, position = Utils::bit_at(index);
+        bitboard moves = 0, position = bitboard::bit_at(index);
 
-        square col = Utils::column(index);
+        square col = index.column();
 
         moves |= position << 8;
         moves |= position >> 8;
@@ -113,7 +112,7 @@ namespace Game::Generators::Kings {
 
         // Get blockers without the enpassant pawn
         bitboard blockers =
-            board.all_pieces() ^ Utils::bit_at(board.enpassant.capturable);
+            board.all_pieces() ^ bitboard::bit_at(board.enpassant.capturable);
 
         // Check for discovered attacks
         bitboard is_pinned;
@@ -150,17 +149,17 @@ namespace Game::Generators::Kings {
 
         for (square index = 0; index < 64; ++index) {
 
-            if (Utils::last_bit(diagonal_sliders)) {
+            if (diagonal_sliders.last_bit()) {
                 attacked_squares |=
                     Magic::Bishops::get_avail_moves(blockers, index);
             }
 
-            if (Utils::last_bit(straight_sliders)) {
+            if (straight_sliders.last_bit()) {
                 attacked_squares |=
                     Magic::Rooks::get_avail_moves(blockers, index);
             }
 
-            if (Utils::last_bit(straight_sliders)) {
+            if (straight_sliders.last_bit()) {
                 attacked_squares |= Knights::available_moves[index];
             }
 

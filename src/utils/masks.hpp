@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../core/representation/representation.hpp"
-#include "utils.hpp"
 
 namespace Utils::Masks {
     const Game::bitboard fullboard_mask = 0xFFFFFFFFFFFFFFFF;
@@ -44,32 +43,33 @@ namespace Utils::Masks {
     };
 
     inline Game::bitboard get_diagonal_at(Game::square index) {
-        return diagonal_masks[Utils::column(index) + Utils::row(index)];
+        return diagonal_masks[index.column() + index.row()];
     }
 
     inline Game::bitboard get_rev_diagonal_at(Game::square index) {
-        return Utils::flip_horizontally(get_diagonal_at(
-            Utils::start_of_row(index) + (7 - Utils::column(index))));
+        return get_diagonal_at(index.start_of_row() + (7 - index.column()))
+            .flip_horizontally();
     }
 
     inline Game::bitboard make_n_mask(Game::square index) {
         return Masks::fullboard_mask
                // Moves the mask one above the Game::square
-               << (Utils::start_of_row(index) + 8);
+               << (index.start_of_row() + 8);
     }
 
     inline Game::bitboard make_s_mask(Game::square index) {
         // Moves one row above the Game::square and gets the trailing zeros
-        return Utils::bit_at(Utils::start_of_row(index) + 8) - 1;
+        return Game::bitboard::bit_at(index.start_of_row() + 8) - 1;
     }
 
     inline Game::bitboard make_e_mask(Game::square index) {
-        return (Utils::bit_at(Utils::column(index)) - 1) * 0x0101010101010101UL;
+        return (Game::bitboard::bit_at(index.column()) - 1) *
+               0x0101010101010101UL;
     }
 
     inline Game::bitboard make_w_mask(Game::square index) {
         return (~make_e_mask(index)) ^
-               Utils::bit_at(index) * 0x0101010101010101UL;
+               Game::bitboard::bit_at(index) * 0x0101010101010101UL;
     }
 
 } // namespace Utils::Masks

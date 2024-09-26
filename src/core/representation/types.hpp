@@ -1,5 +1,6 @@
 #include <bit>
 #include <cstdint>
+#include <iostream>
 
 namespace Game {
 
@@ -23,8 +24,19 @@ namespace Game {
     };
 
     struct square : public LiteralWrapper<square_t> {
-        public:
-            constexpr square(square_t value = 0) : LiteralWrapper<square_t>(value) {}
+      public:
+        constexpr square(square_t value = 0)
+            : LiteralWrapper<square_t>(value) {}
+
+        inline constexpr uint8_t column() { return value_ % 8; }
+
+        inline constexpr uint8_t row() { return value_ / 8; }
+
+        inline constexpr uint8_t start_of_row() { return value_ - column(); }
+
+        static inline constexpr square index_at(uint8_t row, uint8_t col) {
+            return col + 8 * row;
+        }
     };
 
     struct bitboard : public LiteralWrapper<bitboard_t> {
@@ -66,6 +78,18 @@ namespace Game {
             value = ((value >> 2) & k2) + 4 * (value & k2);
             value = ((value >> 4) & k4) + 16 * (value & k4);
             return value;
+        }
+
+        static void print(bitboard bboard) {
+            for (int rank = 7; rank >= 0; --rank) {
+                for (int file = 7; file >= 0; --file) {
+                    int square_index = rank * 8 + file;
+                    std::cout << ((bboard >> square_index) & 1ULL ? '1' : '0')
+                              << " ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl;
         }
     };
 } // namespace Game

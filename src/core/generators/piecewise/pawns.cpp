@@ -1,6 +1,5 @@
 #include "piecewise.hpp"
 
-#include "../../../utils/utils.hpp"
 #include "../helpers.hpp"
 
 #include <cstdio>
@@ -100,8 +99,8 @@ namespace Game::Generators::Pawns {
         captures.west = attacks.west & board.enemies();
 
         if (board.enpassant.available && generator.enpassant.pinned) {
-            enpassant.east = attacks.east & Utils::bit_at(board.enpassant.tail);
-            enpassant.west = attacks.west & Utils::bit_at(board.enpassant.tail);
+            enpassant.east = attacks.east & bitboard::bit_at(board.enpassant.tail);
+            enpassant.west = attacks.west & bitboard::bit_at(board.enpassant.tail);
         }
 
         auto total_available =

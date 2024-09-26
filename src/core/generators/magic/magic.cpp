@@ -1,7 +1,6 @@
 #include "magic.hpp"
 
 #include "../../../utils/masks.hpp"
-#include "../../../utils/utils.hpp"
 
 #include <bit>
 #include <cstdint>
@@ -76,13 +75,13 @@ namespace Game::Generators::Magic::Rooks {
 #include "magicsr.data"
 
     inline bitboard get_relevant_blockers(square index) {
-        return (Masks::horizontal_rel_blo_mask << Utils::start_of_row(index)) ^
-               (Masks::vertical_rel_blo_mask << Utils::column(index));
+        return (Masks::horizontal_rel_blo_mask << index.start_of_row()) ^
+               (Masks::vertical_rel_blo_mask << index.column());
     }
 
     inline bitboard get_slider(square index) {
-        return (Masks::horizontal_moves_mask << Utils::start_of_row(index)) ^
-               (Masks::vertical_moves_mask << Utils::column(index));
+        return (Masks::horizontal_moves_mask << index.start_of_row()) ^
+               (Masks::vertical_moves_mask << index.column());
     }
 
     bitboard get_avail_moves(bitboard blockers, square index) {
@@ -103,11 +102,11 @@ namespace Game::Generators::Magic::Rooks {
 
         const bitboard south_mask = Masks::make_s_mask(index);
         bitboard s_ray = blockers & (slider & south_mask);
-        s_ray = Utils::flip_vertically(s_ray);
+        s_ray = s_ray.flip_vertically();
         s_ray &= ~s_ray + 1;
         // Turn it into a ray from the blocker
         s_ray |= s_ray - 1;
-        s_ray = Utils::flip_vertically(s_ray);
+        s_ray = s_ray.flip_vertically();
         s_ray &= slider & south_mask;
 
         const bitboard west_mask = Masks::make_w_mask(index);
@@ -119,10 +118,10 @@ namespace Game::Generators::Magic::Rooks {
 
         const bitboard east_mask = Masks::make_e_mask(index);
         bitboard e_ray = blockers & (slider & east_mask);
-        e_ray = Utils::flip_horizontally(e_ray);
+        e_ray = e_ray.flip_horizontally();
         e_ray &= ~e_ray + 1;
         e_ray |= e_ray - 1;
-        e_ray = Utils::flip_horizontally(e_ray);
+        e_ray = e_ray.flip_horizontally();
         e_ray &= slider & east_mask;
 
         return n_ray | s_ray | w_ray | e_ray;
@@ -135,7 +134,7 @@ namespace Game::Generators::Magic::Bishops {
 
     MagicEntry entries[64];
 
-    bitboard avail_moves[64][Utils::bit_at(bits)];
+    bitboard avail_moves[64][bitboard::bit_at(bits)];
 
 #include "magicsb.data"
 
@@ -175,18 +174,18 @@ namespace Game::Generators::Magic::Bishops {
 
         const bitboard sw_mask = s_mask & w_mask;
         bitboard sw_ray = blockers & (slider & sw_mask);
-        sw_ray = Utils::flip_vertically(sw_ray);
+        sw_ray = sw_ray.flip_vertically();
         sw_ray &= ~sw_ray + 1;
         sw_ray |= sw_ray - 1;
-        sw_ray = Utils::flip_vertically(sw_ray);
+        sw_ray = sw_ray.flip_vertically();
         sw_ray &= slider & sw_mask;
 
         const bitboard se_mask = s_mask & e_mask;
         bitboard se_ray = blockers & (slider & se_mask);
-        se_ray = Utils::flip_vertically(se_ray);
+        se_ray = se_ray.flip_vertically();
         se_ray &= ~se_ray + 1;
         se_ray |= se_ray - 1;
-        se_ray = Utils::flip_vertically(se_ray);
+        se_ray = se_ray.flip_vertically();
         se_ray &= slider & se_mask;
 
         return nw_ray | ne_ray | sw_ray | se_ray;
@@ -201,7 +200,7 @@ namespace Game::Generators::Magic {
     void gen_magic_numbers(MagicEntry &entry, bitboard table[], square index,
                            mgenerator generator) {
         const bitboard addition_mask = ~entry.mask;
-        const uint32_t table_size = Utils::bit_at(entry.bits);
+        const uint32_t table_size = 1 << entry.bits;
         constexpr uint64_t default_value = 0;
 
         // Precalculate the moves bitboards for every blocker
@@ -297,7 +296,7 @@ namespace Game::Generators::Magic {
     void initialize_magic_table(bitboard table[], MagicEntry &entry,
                                 square index, mgenerator move_generator) {
         const bitboard addition_mask = ~entry.mask;
-        const uint32_t table_size = Utils::bit_at(entry.bits);
+        const uint32_t table_size = 1 << entry.bits;
 
         // clang-format off
         for (bitboard curr_blocker_mask = 0;; curr_blocker_mask = (curr_blocker_mask + addition_mask + 1) & entry.mask) { // clang-format on

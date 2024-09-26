@@ -1,22 +1,22 @@
 #include "representation.hpp"
 
-#include "../../utils/utils.hpp"
 #include <format>
 #include <iostream>
 #include <strings.h>
 
 namespace Game {
     bool Board::is_square_occupied(square index) {
-        return Utils::is_set_at(index, white | black);
+        return static_cast<bitboard>(white | black).is_set_at(index);
     }
 
     Colors::Color Board::color_at(square index) {
-        return Colors::BothColors[Utils::is_set_at(index, white)];
+        return Colors::BothColors[static_cast<bitboard>(white).is_set_at(
+            index)];
     }
 
     Pieces::Piece Board::piece_at(square index) {
         for (auto piece : Pieces::AllPieces) {
-            if (Utils::is_set_at(index, pieces[piece]))
+            if (pieces[piece].is_set_at(index))
                 return piece;
         }
 
@@ -30,7 +30,7 @@ namespace Game {
             target |= to;
         };
 
-        auto from = Utils::bit_at(move.from), to = Utils::bit_at(move.to);
+        auto from = bitboard::bit_at(move.from), to = bitboard::bit_at(move.to);
 
         switch_bits(colors[turn], from, to);
         switch_bits(pieces[move.piece.moved], from, to);
@@ -84,8 +84,8 @@ namespace Game {
 
                 Pieces::Piece piece = Pieces::char_to_piece(c);
 
-                board.colors[color] |= Utils::bit_at(index);
-                board.pieces[piece] |= Utils::bit_at(index);
+                board.colors[color] |= bitboard::bit_at(index);
+                board.pieces[piece] |= bitboard::bit_at(index);
                 index--;
             }
         }
@@ -101,7 +101,7 @@ namespace Game {
         for (int rank = 7; rank >= 0; --rank) {
             for (int file = 7; file >= 0; --file) {
 
-                int index = Utils::index_at(rank, file);
+                square index = square::index_at(rank, file);
 
                 auto square =
                     is_square_occupied(index)

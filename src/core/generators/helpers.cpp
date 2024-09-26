@@ -11,11 +11,11 @@ namespace Game::Generators::Helpers {
         for (square index = 0; index < 64;
              ++index, moves >>= 1, captures >>= 1) {
 
-            if (Utils::last_bit(moves)) {
+            if (moves.last_bit()) {
                 next_move->from = origin;
                 next_move->to = index;
 
-                if (Utils::last_bit(captures))
+                if (captures.last_bit())
                     next_move->piece.captured = board.piece_at(index);
 
                 if (next_move == target.end() && moves != 1) {

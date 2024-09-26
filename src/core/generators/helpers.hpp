@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../../utils/utils.hpp"
 #include "../representation/representation.hpp"
 #include "generators.hpp"
 
@@ -17,7 +16,7 @@ namespace Game::Generators::Helpers {
         for (square index = 0; bitboard != 0 && index < 64;
              ++index, bitboard >>= 1) {
 
-            if (Utils::last_bit(bitboard)) {
+            if (bitboard.last_bit()) {
                 proccess(bitboard, index);
             }
         }
