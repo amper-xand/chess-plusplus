@@ -1,7 +1,7 @@
 #pragma once
 
-#include "types.hpp"
 #include "enums.hpp"
+#include "types.hpp"
 
 #include <string>
 
@@ -13,7 +13,7 @@ namespace Game {
 
         struct { Pieces::Piece moved, captured = Pieces::NONE; } piece;
 
-        struct { bool set : 1 = false; bool take: 1 = false; square captured: 6; } enpassant;
+        struct { bool set : 1 = false; bool take: 1 = false; square_t captured: 6; } enpassant;
 
         // clang-format on
     };
@@ -25,13 +25,15 @@ namespace Game {
 
         Colors::Color turn;
 
-        union { bitboard colors[2]; struct { bitboard black, white; }; };
+        union { bitboard colors[2]; struct { bitboard_t black, white; }; };
 
-        union { bitboard pieces[6]; struct { bitboard pawns, knights, bishops, rooks, queens, kings; }; };
+        union { bitboard pieces[6]; struct { bitboard_t pawns, knights, bishops, rooks, queens, kings; }; };
 
-        struct { bool available : 1 = false; square capturable : 6; square tail : 6; }
+        struct { bool available : 1 = false; square_t capturable : 6; square_t tail : 6; }
                enpassant;
         // clang-format on
+
+        Board() : colors{bitboard(0)}, pieces{bitboard(0)} {}
 
         static Board parse_fen_string(std::string fen);
 

@@ -33,7 +33,7 @@ namespace Game::Generators::Helpers {
         // Remove pinned pieces
         pieces &= ~generator.pinned;
 
-        uint8_t piece_count = std::popcount(pieces);
+        uint8_t piece_count = pieces.popcount();
 
         uint16_t total_avail_moves = 0;
         bitboard available_per_piece[piece_count];
@@ -41,12 +41,12 @@ namespace Game::Generators::Helpers {
 
         uint8_t current_piece = 0;
         auto move_scanner = [&](bitboard pieces, square index) {
-            auto available_moves = get_moves(blockers, index) & ~noncaptures;
+            bitboard available_moves = get_moves(blockers, index) & ~noncaptures;
 
             piece_positions[current_piece] = index;
 
             available_per_piece[current_piece] = available_moves;
-            total_avail_moves += std::popcount(available_moves);
+            total_avail_moves += available_moves.popcount();
 
             ++current_piece;
         };
@@ -59,8 +59,7 @@ namespace Game::Generators::Helpers {
         for (uint8_t current_piece = 0; current_piece < piece_count;
              ++current_piece) {
 
-            uint8_t move_count =
-                std::popcount(available_per_piece[current_piece]);
+            uint8_t move_count = available_per_piece[current_piece].popcount();
 
             bitboard captures =
                 available_per_piece[current_piece] & board.enemies();

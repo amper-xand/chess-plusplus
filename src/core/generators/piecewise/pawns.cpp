@@ -3,7 +3,6 @@
 #include "../../../utils/utils.hpp"
 #include "../helpers.hpp"
 
-#include <bit>
 #include <cstdio>
 
 namespace Game::Generators::Pawns {
@@ -106,9 +105,9 @@ namespace Game::Generators::Pawns {
         }
 
         auto total_available =
-            std::popcount(advances.singles) + std::popcount(advances.doubles) +
-            std::popcount(captures.east) + std::popcount(captures.west) +
-            std::popcount(enpassant.east) + std::popcount(enpassant.west);
+            advances.singles.popcount() + advances.doubles.popcount() +
+            captures.east.popcount() + captures.west.popcount() +
+            enpassant.east.popcount() + enpassant.west.popcount();
 
         if (total_available == 0) {
             return generator;

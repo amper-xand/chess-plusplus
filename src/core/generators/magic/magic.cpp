@@ -71,7 +71,7 @@ namespace Game::Generators::Magic::Rooks {
 
     MagicEntry entries[64];
 
-    bitboard avail_moves[64][Utils::bit_at(bits)];
+    bitboard avail_moves[64][bitboard::bit_at(bits)];
 
 #include "magicsr.data"
 

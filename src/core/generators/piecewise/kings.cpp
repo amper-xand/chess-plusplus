@@ -30,7 +30,7 @@ namespace Game::Generators::Kings {
 
     bitboard get_pinned_pieces(Board board) {
         bitboard king = board.allied(Pieces::KINGS);
-        square position = std::countr_zero(king);
+        square position = king.rzeros();
 
         bitboard diagonal_sliders =
             (board.bishops | board.queens) & board.enemies();
@@ -95,7 +95,7 @@ namespace Game::Generators::Kings {
             return false;
 
         bitboard king = board.allied(Pieces::KINGS);
-        square position = std::countr_zero(king);
+        square position = king.rzeros();
 
         bitboard diagonal_sliders =
             (board.bishops | board.queens) & board.enemies();
@@ -136,7 +136,7 @@ namespace Game::Generators::Kings {
     MoveGenerator& gen_king_moves(MoveGenerator& generator) {
         auto& board = generator.board;
 
-        square king_position = std::countr_zero(board.allied(Pieces::KINGS));
+        square king_position = board.allied(Pieces::KINGS).rzeros();
 
         bitboard diagonal_sliders =
                      (board.bishops | board.queens) & board.enemies(),
@@ -176,8 +176,8 @@ namespace Game::Generators::Kings {
             Pawns::west_attacks(board.enemy(Pieces::PAWNS), !board.turn);
 
         // Add the other kings's attacks
-        attacked_squares |= Kings::available_moves[std::countr_zero(
-            board.enemy(Pieces::KINGS))];
+        attacked_squares |=
+            Kings::available_moves[board.enemy(Pieces::KINGS).rzeros()];
 
         bitboard bbmoves = Kings::available_moves[king_position];
 
@@ -187,7 +187,7 @@ namespace Game::Generators::Kings {
 
         bitboard captures = (board.enemies() & ~attacked_squares) & bbmoves;
 
-        auto total_available = std::popcount(bbmoves);
+        auto total_available = bbmoves.popcount();
 
         if (total_available == 0) {
             return generator;

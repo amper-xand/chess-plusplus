@@ -65,12 +65,6 @@ namespace Game {
     Board Board::parse_fen_string(std::string fen) {
         Board board;
 
-        for (auto piece : Pieces::AllPieces)
-            board.pieces[piece] = 0ul;
-
-        board.white = 0ul;
-        board.black = 0ul;
-
         square index = 63;
 
         for (char c : fen) {
