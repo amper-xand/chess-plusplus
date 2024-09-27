@@ -60,8 +60,11 @@ namespace Game::Generators {
     std::vector<Move> generate_moves(Board board) {
         MoveGenerator generator(board);
 
-        // TODO: Check for partial pins
-        generator.pinned = Kings::get_pinned_pieces(board);
+        // TODO: Check for partialy pinned pawns
+        auto [absolute_pins, partial_pins, pinners] =
+            Kings::get_pinned_pieces(board);
+        generator.pins = {absolute_pins, partial_pins, pinners};
+
         generator.enpassant.pinned = Kings::is_enpassant_pinned(board);
 
         Pawns::gen_pawns_moves(generator);

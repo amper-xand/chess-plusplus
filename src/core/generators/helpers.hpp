@@ -29,8 +29,8 @@ namespace Game::Generators::Helpers {
         bitboard pieces = board.allied(piece), blockers = board.all_pieces(),
                  noncaptures = board.allies();
 
-        // Remove pinned pieces
-        pieces &= ~generator.pinned;
+        // Remove absolutely pinned pieces
+        pieces &= ~generator.pins.absolute;
 
         uint8_t piece_count = pieces.popcount();
 
@@ -39,8 +39,9 @@ namespace Game::Generators::Helpers {
         square piece_positions[piece_count];
 
         uint8_t current_piece = 0;
-        auto move_scanner = [&](bitboard pieces, square index) {
-            bitboard available_moves = get_moves(blockers, index) & ~noncaptures;
+        auto move_scanner = [&](square index) {
+            bitboard available_moves =
+                get_moves(blockers, index) & ~noncaptures;
 
             piece_positions[current_piece] = index;
 
@@ -50,18 +51,29 @@ namespace Game::Generators::Helpers {
             ++current_piece;
         };
 
-        scan(pieces, move_scanner);
+        bitboard::scan(pieces, move_scanner);
 
+        // NOTE: Partial pins change the total available
         if (total_avail_moves == 0)
             return generator;
 
         for (uint8_t current_piece = 0; current_piece < piece_count;
              ++current_piece) {
 
-            uint8_t move_count = available_per_piece[current_piece].popcount();
+            if (generator.pins
+                    .partial
+                    // Check if piece is partially pinned
+                    .is_set_at(piece_positions[current_piece])) {
+
+                // Only allow the partially pinned piece
+                // to capture its pinner
+                available_per_piece[current_piece] &= generator.pins.pinners;
+            }
 
             bitboard captures =
-                available_per_piece[current_piece] & board.enemies();
+                available_per_piece[current_piece].mask(board.enemies());
+
+            uint8_t move_count = available_per_piece[current_piece].popcount();
 
             std::span<Move> moves = generator.next_n(move_count);
 

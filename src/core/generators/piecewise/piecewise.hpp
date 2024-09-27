@@ -37,7 +37,7 @@ namespace Game::Generators::Kings {
 
     void initialize_table();
 
-    bitboard get_pinned_pieces(Board board);
+    std::tuple<bitboard, bitboard, bitboard> get_pinned_pieces(Board board);
 
     bool is_enpassant_pinned(Board board);
 

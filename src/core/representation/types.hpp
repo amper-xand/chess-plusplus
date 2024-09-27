@@ -1,5 +1,6 @@
 #include <bit>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 
 namespace Game {
@@ -80,6 +81,16 @@ namespace Game {
             value = ((value >> 2) & k2) + 4 * (value & k2);
             value = ((value >> 4) & k4) + 16 * (value & k4);
             return value;
+        }
+
+        static inline void scan(bitboard bitboard, const std::function<void(square)>& processor) {
+            for (square index = 0; bitboard != 0 && index < 64;
+                 ++index, bitboard >>= 1) {
+
+                if (bitboard.last_bit()) {
+                    processor(index);
+                }
+            }
         }
 
         static void print(bitboard bboard) {

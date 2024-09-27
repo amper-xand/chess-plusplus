@@ -2,6 +2,7 @@
 
 #include "../helpers.hpp"
 #include "../magic/magic.hpp"
+#include <tuple>
 
 namespace Game::Generators::Kings {
     bitboard available_moves[64];
@@ -27,7 +28,7 @@ namespace Game::Generators::Kings {
         return moves;
     }
 
-    bitboard get_pinned_pieces(Board board) {
+    std::tuple<bitboard, bitboard, bitboard> get_pinned_pieces(Board board) {
         bitboard king = board.allied(Pieces::KINGS);
         square position = king.rzeros();
 
@@ -45,7 +46,7 @@ namespace Game::Generators::Kings {
         straight_sliders &=
             ~Magic::Rooks::get_avail_moves(board.all_pieces(), position);
 
-        bitboard pinned_pieces = 0;
+        bitboard pinned_pieces = 0, pinners = 0;
 
         auto check_candidates = [&](bitboard candidates, bitboard sliders,
                                     const auto& slider_moves) {
@@ -64,27 +65,48 @@ namespace Game::Generators::Kings {
 
                 // If removing the candidate exposes the king to a slider
                 auto is_pinned =
-                    sliders & slider_moves(current_blockers, position);
+                    sliders.mask(slider_moves(current_blockers, position));
 
                 // Then the piece is pinned
                 if (is_pinned != 0) {
+                    pinners |= is_pinned; // Store pinner
                     pinned_pieces |= current_bit;
                 }
             }
         };
 
-        bitboard dia_candidates = board.allies().mask(
-            Magic::Bishops::get_avail_moves(board.all_pieces(), position));
+        // Determine which are the pinned pieces
 
-        bitboard str_candidates = board.allies().mask(
-            Magic::Rooks::get_avail_moves(board.all_pieces(), position));
+        bitboard dia_candidates =
+            board.allies() &
+            Magic::Bishops::get_avail_moves(board.all_pieces(), position);
+
+        bitboard str_candidates =
+            board.allies() &
+            Magic::Rooks::get_avail_moves(board.all_pieces(), position);
 
         check_candidates(dia_candidates, diagonal_sliders,
                          Magic::Bishops::get_avail_moves);
         check_candidates(str_candidates, straight_sliders,
                          Magic::Rooks::get_avail_moves);
 
-        return pinned_pieces;
+        // Determine relative pins
+
+        bitboard partial_pins = 0;
+
+        partial_pins = pinned_pieces
+                           .mask(dia_candidates)
+                           // Get diagonaly pinned pieces that can capture back
+                           .mask(board.bishops | board.queens);
+
+        partial_pins |= pinned_pieces
+                            .mask(str_candidates)
+                            // Get pinned in cross pieces that can capture back
+                            .mask(board.rooks | board.queens);
+
+        bitboard absolute_pins = pinned_pieces.mask(~partial_pins);
+
+        return {absolute_pins, partial_pins, pinners};
     }
 
     bool is_enpassant_pinned(Board board) {

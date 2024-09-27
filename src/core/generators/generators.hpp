@@ -19,7 +19,7 @@ namespace Game::Generators {
       public:
         Board board;
 
-        bitboard pinned;
+        struct { bitboard absolute, partial, pinners; } pins;
 
         struct { bool pinned = false; } enpassant;
         // clang-format on
