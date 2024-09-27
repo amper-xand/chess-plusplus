@@ -57,6 +57,8 @@ namespace Game {
         inline constexpr uint8_t popcount() { return std::popcount(value_); }
         inline constexpr uint8_t rzeros() { return std::countr_zero(value_); }
 
+        inline constexpr bitboard mask(bitboard mask) { return value_ & mask; };
+
         inline constexpr bitboard flip_vertically() {
             auto value = value_;
 
@@ -91,5 +93,74 @@ namespace Game {
             }
             std::cout << std::endl;
         }
+
+        struct Masks {
+            static constexpr bitboard_t fullboard = 0xFFFFFFFFFFFFFFFF;
+            static constexpr bitboard_t border = 0xFF818181818181FF;
+
+            static constexpr bitboard_t vertical = 0101010101010101;
+            static constexpr bitboard_t horizontal = 0xFF;
+
+            static constexpr bitboard_t diagonal_rightleft = 0x0102040810204080;
+            static constexpr bitboard_t diagonal_leftright = 0x8040201008040201;
+
+            static constexpr bitboard_t rel_blockers_vertical =
+                vertical & ~0x0100000000000001;
+            static constexpr bitboard_t rel_blockers_horizontal =
+                horizontal & ~0x81;
+
+            static constexpr bitboard_t diagonals[]{
+                0x0000000000000001, // 0
+                0x0000000000000102, // 1
+                0x0000000000010204, // 2
+                0x0000000001020408, // 3
+                0x0000000102040810, // 4
+                0x0000010204081020, // 5
+                0x0001020408102040, // 6
+                /*---------------*/
+                0x0102040810204080, // 7
+                /*---------------*/
+                0x0204081020408000, // 8
+                0x0408102040800000, // 9
+                0x0810204080000000, // 10
+                0x1020408000000000, // 11
+                0x2040800000000000, // 12
+                0x4080000000000000, // 13
+                0x8000000000000000, // 14
+            };
+
+            static inline constexpr bitboard get_diagonal_at(square index) {
+                return diagonals[index.column() + index.row()];
+            }
+
+            static inline constexpr bitboard get_rev_diagonal_at(square index) {
+                return get_diagonal_at(index.start_of_row() +
+                                       (7 - index.column()))
+                    .flip_horizontally();
+            }
+
+            static inline constexpr bitboard make_n_mask(square index) {
+                return fullboard
+                       // Moves the mask one above the square
+                       << (index.start_of_row() + 8);
+            }
+
+            static inline constexpr bitboard make_s_mask(square index) {
+                // Moves one row above the square
+                // and gets the trailing zeros
+                return bitboard::bit_at(index.start_of_row() + 8) - 1;
+            }
+
+            static inline constexpr bitboard make_e_mask(square index) {
+                return (bitboard::bit_at(index.column()) - 1) *
+                       0x0101010101010101UL;
+            }
+
+            static inline constexpr bitboard make_w_mask(square index) {
+                return (~make_e_mask(index)) ^
+                       bitboard::bit_at(index) * 0x0101010101010101UL;
+            }
+        };
     };
+
 } // namespace Game

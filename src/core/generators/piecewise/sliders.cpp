@@ -1,7 +1,7 @@
 #include "piecewise.hpp"
 
-#include "../magic/magic.hpp"
 #include "../helpers.hpp"
+#include "../magic/magic.hpp"
 
 namespace Game::Generators::Sliders {
     MoveGenerator& gen_rooks_moves(MoveGenerator& generator) {
@@ -24,4 +24,4 @@ namespace Game::Generators::Sliders {
             generator);
     }
 
-}
+} // namespace Game::Generators::Sliders

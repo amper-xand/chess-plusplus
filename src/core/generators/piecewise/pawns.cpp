@@ -11,7 +11,7 @@ namespace Game::Generators::Pawns {
         if (color == Colors::WHITE) pawns <<= 8;
         else                        pawns >>= 8;
 
-        return pawns & ~blockers;
+        return pawns.mask(~blockers);
     }
 
     bitboard get_advances(bitboard pawns, bitboard blockers, Colors::Color color) {
@@ -20,7 +20,7 @@ namespace Game::Generators::Pawns {
 
     bitboard east_attacks(bitboard pawns, bool color) {
         // Filter pawns that will wrap around the board
-        bitboard attacks = pawns & ~0x0101010101010101;
+        bitboard attacks = pawns.mask(~0x0101010101010101);
 
         if (color == Colors::WHITE) {
             attacks <<= 7; // up + right
@@ -37,7 +37,7 @@ namespace Game::Generators::Pawns {
 
     bitboard west_attacks(bitboard pawns, bool color) {
         // Filter pawns that will wrap around the board
-        bitboard attacks = pawns & ~0x8080808080808080;
+        bitboard attacks = pawns.mask(~0x8080808080808080);
 
         if (color == Colors::WHITE) {
             attacks <<= 9; // up + left
@@ -71,16 +71,15 @@ namespace Game::Generators::Pawns {
         advances.singles = Pawns::get_advances(pawns, blockers, board.turn);
 
         advances.doubles =
-            advances.singles &
+            advances.singles.mask
             // If a pawn advanced to the 3rd or 6th rank, advance it again
-            (board.turn == Colors::WHITE ? 0x0000000000FF0000
-                                         : 0x0000FF0000000000);
+            (board.turn ? 0x0000000000FF0000 : 0x0000FF0000000000);
 
         advances.doubles =
             Pawns::get_advances(advances.doubles, blockers, board.turn);
 
         // return pawns to their original positions
-        if (board.turn == Colors::WHITE) {
+        if (board.turn) {
             advances.singles >>= 8;
             advances.doubles >>= 16;
         } else {
@@ -95,12 +94,14 @@ namespace Game::Generators::Pawns {
         attacks.east = Pawns::east_attacks(pawns, board.turn);
         attacks.west = Pawns::west_attacks(pawns, board.turn);
 
-        captures.east = attacks.east & board.enemies();
-        captures.west = attacks.west & board.enemies();
+        captures.east = board.enemies().mask(attacks.east);
+        captures.west = board.enemies().mask(attacks.west);
 
         if (board.enpassant.available && generator.enpassant.pinned) {
-            enpassant.east = attacks.east & bitboard::bit_at(board.enpassant.tail);
-            enpassant.west = attacks.west & bitboard::bit_at(board.enpassant.tail);
+            enpassant.east =
+                attacks.east.mask(bitboard::bit_at(board.enpassant.tail));
+            enpassant.west =
+                attacks.west.mask(bitboard::bit_at(board.enpassant.tail));
         }
 
         auto total_available =

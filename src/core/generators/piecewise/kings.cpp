@@ -32,14 +32,14 @@ namespace Game::Generators::Kings {
         square position = king.rzeros();
 
         bitboard diagonal_sliders =
-            (board.bishops | board.queens) & board.enemies();
+            board.enemies().mask(board.bishops | board.queens);
 
         // Remove sliders that already have line of sight to the king
         diagonal_sliders &=
             ~Magic::Bishops::get_avail_moves(board.all_pieces(), position);
 
         bitboard straight_sliders =
-            (board.bishops | board.queens) & board.enemies();
+            board.enemies().mask(board.rooks | board.queens);
 
         // Remove sliders that already have line of sight to the king
         straight_sliders &=
@@ -57,7 +57,7 @@ namespace Game::Generators::Kings {
                 bitboard bits_previous = unchecked_bits ^ (unchecked_bits - 1);
 
                 // Remove the bits before the current bit
-                bitboard current_bit = bits_previous & unchecked_bits;
+                bitboard current_bit = bits_previous.mask(unchecked_bits);
 
                 // Make a hole by removing the candidate
                 bitboard current_blockers = board.all_pieces() ^ current_bit;
@@ -73,13 +73,11 @@ namespace Game::Generators::Kings {
             }
         };
 
-        bitboard dia_candidates =
-            board.allies() &
-            Magic::Bishops::get_avail_moves(board.all_pieces(), position);
+        bitboard dia_candidates = board.allies().mask(
+            Magic::Bishops::get_avail_moves(board.all_pieces(), position));
 
-        bitboard str_candidates =
-            board.allies() &
-            Magic::Rooks::get_avail_moves(board.all_pieces(), position);
+        bitboard str_candidates = board.allies().mask(
+            Magic::Rooks::get_avail_moves(board.all_pieces(), position));
 
         check_candidates(dia_candidates, diagonal_sliders,
                          Magic::Bishops::get_avail_moves);
@@ -97,14 +95,14 @@ namespace Game::Generators::Kings {
         square position = king.rzeros();
 
         bitboard diagonal_sliders =
-            (board.bishops | board.queens) & board.enemies();
+            board.enemies().mask(board.bishops | board.queens);
 
         // Remove sliders that already have line of sight to the king
         diagonal_sliders &=
             ~Magic::Bishops::get_avail_moves(board.all_pieces(), position);
 
         bitboard straight_sliders =
-            (board.bishops | board.queens) & board.enemies();
+            board.enemies().mask(board.rooks | board.queens);
 
         // Remove sliders that already have line of sight to the king
         straight_sliders &=
@@ -117,11 +115,11 @@ namespace Game::Generators::Kings {
         // Check for discovered attacks
         bitboard is_pinned;
 
-        is_pinned = (diagonal_sliders &
-                     Magic::Bishops::get_avail_moves(blockers, position));
+        is_pinned = diagonal_sliders.mask(
+            Magic::Bishops::get_avail_moves(blockers, position));
 
-        is_pinned |= (straight_sliders &
-                      Magic::Rooks::get_avail_moves(blockers, position));
+        is_pinned |= straight_sliders.mask(
+            Magic::Rooks::get_avail_moves(blockers, position));
 
         return is_pinned != 0;
     }
@@ -138,10 +136,10 @@ namespace Game::Generators::Kings {
         square king_position = board.allied(Pieces::KINGS).rzeros();
 
         bitboard diagonal_sliders =
-                     (board.bishops | board.queens) & board.enemies(),
+                     board.enemies().mask(board.bishops | board.queens),
 
                  straight_sliders =
-                     (board.rooks | board.queens) & board.enemies(),
+                     board.enemies().mask(board.rooks | board.queens),
 
                  knights = board.enemy(Pieces::KNIGHTS);
 
@@ -178,15 +176,16 @@ namespace Game::Generators::Kings {
         attacked_squares |=
             Kings::available_moves[board.enemy(Pieces::KINGS).rzeros()];
 
-        bitboard bbmoves = Kings::available_moves[king_position];
+        bitboard king_moves = Kings::available_moves[king_position];
 
         // Remove attacked and blocked squares
-        bbmoves &= ~attacked_squares;
-        bbmoves &= ~board.allies();
+        king_moves &= ~attacked_squares;
+        king_moves &= ~board.allies();
 
-        bitboard captures = (board.enemies() & ~attacked_squares) & bbmoves;
+        bitboard captures =
+            board.enemies().mask(~attacked_squares).mask(king_moves);
 
-        auto total_available = bbmoves.popcount();
+        auto total_available = king_moves.popcount();
 
         if (total_available == 0) {
             return generator;
@@ -194,7 +193,7 @@ namespace Game::Generators::Kings {
 
         std::span<Move> moves = generator.next_n(total_available);
 
-        Helpers::populate_from_bitboard(moves, bbmoves, captures, board,
+        Helpers::populate_from_bitboard(moves, king_moves, captures, board,
                                         king_position);
 
         return generator;
