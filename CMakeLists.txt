@@ -7,8 +7,6 @@ set(EXECUTABLE_OUTPUT_PATH "bin")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-file(GLOB CORE_FILES scr/core/*.cpp)
-
 add_executable(chessy 
     src/main.cpp
 
