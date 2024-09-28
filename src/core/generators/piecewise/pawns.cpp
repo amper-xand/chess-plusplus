@@ -134,7 +134,7 @@ namespace Game::Generators::Pawns {
             move.to = board.turn ? index + 8 : index - 8;
         });
 
-        bitboard::scan(advances.singles, [&](square index) {
+        bitboard::scan(advances.doubles, [&](square index) {
             Move& move = generator.next();
             move.piece.moved = Pieces::PAWNS;
 
@@ -179,7 +179,7 @@ namespace Game::Generators::Pawns {
             move.piece.captured = board.piece_at(index);
         });
 
-        bitboard::scan(enpassant.east, [&](square index) {
+        bitboard::scan(enpassant.west, [&](square index) {
             Move& move = generator.next();
             move.piece.moved = Pieces::PAWNS;
 
