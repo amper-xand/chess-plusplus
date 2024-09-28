@@ -1,7 +1,5 @@
 #include "piecewise.hpp"
 
-#include "../helpers.hpp"
-
 #include <cstdio>
 
 namespace Game::Generators::Pawns {
@@ -57,18 +55,19 @@ namespace Game::Generators::Pawns {
         // TODO: Implement promotions
         Board& board = generator.board;
 
-        bitboard blockers = board.all_pieces(),
+        bitboard blockers = board.all_pieces();
 
-                 pawns = board.allied(Pieces::PAWNS);
-
-        // Remove pinned pawns
-        pawns &= ~generator.pinned;
+        bitboard pawns = board.allied(Pieces::PAWNS)
+                         // Remove pinned pawns
+                         & ~generator.pins.absolute;
 
         struct {
             bitboard singles, doubles;
         } advances;
 
-        advances.singles = Pawns::get_advances(pawns, blockers, board.turn);
+        advances.singles = Pawns::get_advances(
+            // Partial pins can only capture
+            pawns.mask(~generator.pins.partial), blockers, board.turn);
 
         advances.doubles =
             advances.singles.mask
@@ -91,8 +90,21 @@ namespace Game::Generators::Pawns {
             bitboard east = 0, west = 0;
         } attacks, captures, enpassant;
 
-        attacks.east = Pawns::east_attacks(pawns, board.turn);
-        attacks.west = Pawns::west_attacks(pawns, board.turn);
+        square king_position = board.allied(Pieces::KINGS).rzeros();
+
+        bitboard east_partial = bitboard::Masks::make_e_mask(king_position)
+                                    .mask(generator.pins.partial);
+
+        bitboard west_partial = bitboard::Masks::make_w_mask(king_position)
+                                    .mask(generator.pins.partial);
+
+        attacks.east = Pawns::east_attacks(
+            // The west partially pinned pawns cannot make east captures
+            pawns.mask(~west_partial), board.turn);
+
+        attacks.west = Pawns::west_attacks(
+            // The east partially pinned pawns cannot make west captures
+            pawns.mask(~east_partial), board.turn);
 
         captures.east = board.enemies().mask(attacks.east);
         captures.west = board.enemies().mask(attacks.west);
@@ -114,7 +126,7 @@ namespace Game::Generators::Pawns {
         }
 
         // Process pawn advances
-        Helpers::scan(advances.singles, [&](bitboard _, square index) {
+        bitboard::scan(advances.singles, [&](square index) {
             Move& move = generator.next();
             move.piece.moved = Pieces::PAWNS;
 
@@ -122,7 +134,7 @@ namespace Game::Generators::Pawns {
             move.to = board.turn ? index + 8 : index - 8;
         });
 
-        Helpers::scan(advances.singles, [&](bitboard _, square index) {
+        bitboard::scan(advances.singles, [&](square index) {
             Move& move = generator.next();
             move.piece.moved = Pieces::PAWNS;
 
@@ -133,7 +145,7 @@ namespace Game::Generators::Pawns {
         });
 
         // Process pawn captures
-        Helpers::scan(captures.east, [&](bitboard _, square index) {
+        bitboard::scan(captures.east, [&](square index) {
             Move& move = generator.next();
             move.piece.moved = Pieces::PAWNS;
 
@@ -143,7 +155,7 @@ namespace Game::Generators::Pawns {
             move.piece.captured = board.piece_at(index);
         });
 
-        Helpers::scan(captures.west, [&](bitboard _, square index) {
+        bitboard::scan(captures.west, [&](square index) {
             Move& move = generator.next();
             move.piece.moved = Pieces::PAWNS;
 
@@ -154,7 +166,7 @@ namespace Game::Generators::Pawns {
         });
 
         // Process en passant
-        Helpers::scan(enpassant.east, [&](bitboard _, square index) {
+        bitboard::scan(enpassant.east, [&](square index) {
             Move& move = generator.next();
             move.piece.moved = Pieces::PAWNS;
 
@@ -167,7 +179,7 @@ namespace Game::Generators::Pawns {
             move.piece.captured = board.piece_at(index);
         });
 
-        Helpers::scan(enpassant.east, [&](bitboard _, square index) {
+        bitboard::scan(enpassant.east, [&](square index) {
             Move& move = generator.next();
             move.piece.moved = Pieces::PAWNS;
 

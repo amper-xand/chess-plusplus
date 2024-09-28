@@ -104,6 +104,11 @@ namespace Game::Generators::Kings {
                             // Get pinned in cross pieces that can capture back
                             .mask(board.rooks | board.queens);
 
+        partial_pins |= pinned_pieces
+                            .mask(dia_candidates)
+                            // Get diagonaly pinned pawns
+                            .mask(board.pawns);
+
         bitboard absolute_pins = pinned_pieces.mask(~partial_pins);
 
         return {absolute_pins, partial_pins, pinners};
