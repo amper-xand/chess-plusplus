@@ -1,11 +1,11 @@
 namespace Game::Colors {
-    enum Color { BLACK = false, WHITE = true };
+    enum Color : char { BLACK = false, WHITE = true };
     static const Color BothColors[]{BLACK, WHITE};
 
 } // namespace Game::Colors
 
 namespace Game::Pieces {
-    enum Piece { PAWNS, KNIGHTS, BISHOPS, ROOKS, QUEENS, KINGS, NONE };
+    enum Piece : char { PAWNS, KNIGHTS, BISHOPS, ROOKS, QUEENS, KINGS, NONE };
     static const Piece AllPieces[]{PAWNS, KNIGHTS, BISHOPS,
                                    ROOKS, QUEENS,  KINGS};
 

@@ -35,16 +35,23 @@ namespace Game {
 
 namespace Game {
     struct Board {
+        // PERF: There is not much need to optimize size too much
+        // since there are going to be only a few instances
+
         // clang-format off
 
         Colors::Color turn;
+
+        struct { bool white_west: 1 = true, white_east: 1 = true, black_west: 1 = true, black_east: 1 = true; }
+        castling;
+
+        struct { bool available : 1 = false; square_t capturable : 6; square_t tail : 6; }
+               enpassant;
 
         union { bitboard colors[2]; struct { bitboard_t black, white; }; };
 
         union { bitboard pieces[6]; struct { bitboard_t pawns, knights, bishops, rooks, queens, kings; }; };
 
-        struct { bool available : 1 = false; square_t capturable : 6; square_t tail : 6; }
-               enpassant;
         // clang-format on
 
         Board() : colors{bitboard(0)}, pieces{bitboard(0)} {}
