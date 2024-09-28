@@ -52,7 +52,6 @@ namespace Game::Generators::Pawns {
     // clang-format on
 
     MoveGenerator& gen_pawns_moves(MoveGenerator& generator) {
-        // TODO: Implement promotions
         Board& board = generator.board;
 
         bitboard blockers = board.all_pieces();
@@ -125,6 +124,19 @@ namespace Game::Generators::Pawns {
             return generator;
         }
 
+        // NOTE: Usually only single advances and captures could promote
+        auto promote = [&](Move& m) {
+            if (m.to.row() == 0 || m.to.row() == 7) {
+                m.promotion = Pieces::QUEENS;
+
+                for (auto promotion :
+                     {Pieces::KNIGHTS, Pieces::BISHOPS, Pieces::ROOKS}) {
+
+                    generator.next().copy(m).promotion = promotion;
+                }
+            }
+        };
+
         // Process pawn advances
         bitboard::scan(advances.singles, [&](square index) {
             Move& move = generator.next();
@@ -132,6 +144,8 @@ namespace Game::Generators::Pawns {
 
             move.from = index;
             move.to = board.turn ? index + 8 : index - 8;
+
+            promote(move);
         });
 
         bitboard::scan(advances.doubles, [&](square index) {
@@ -153,6 +167,8 @@ namespace Game::Generators::Pawns {
             move.from = board.turn ? index - 8 + 1 : index + 8 + 1;
 
             move.piece.captured = board.piece_at(index);
+
+            promote(move);
         });
 
         bitboard::scan(captures.west, [&](square index) {
@@ -163,6 +179,8 @@ namespace Game::Generators::Pawns {
             move.from = board.turn ? index - 8 - 1 : index + 8 - 1;
 
             move.piece.captured = board.piece_at(index);
+
+            promote(move);
         });
 
         // Process en passant

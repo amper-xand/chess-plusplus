@@ -13,8 +13,22 @@ namespace Game {
 
         struct { Pieces::Piece moved, captured = Pieces::NONE; } piece;
 
+        Pieces::Piece promotion = Pieces::NONE;
+
         struct { bool set : 1 = false; bool take: 1 = false; square_t captured: 6; } enpassant;
 
+        inline Move& copy(Move other) {
+            this->from = other.from;
+            this->to = other.to;
+
+            this->piece = other.piece;
+
+            this->promotion = other.promotion;
+
+            this->enpassant = other.enpassant;
+
+            return *this;
+        }
         // clang-format on
     };
 } // namespace Game
