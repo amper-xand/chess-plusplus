@@ -35,10 +35,42 @@ namespace Game {
         switch_bits(colors[turn], from, to);
         switch_bits(pieces[move.piece.moved], from, to);
 
+        // Handle castling
+        if (move.piece.moved == Pieces::KINGS) {
+            if (turn == Colors::WHITE) {
+                castling.white_east = false;
+                castling.white_west = false;
+            } else {
+                castling.black_east = false;
+                castling.black_west = false;
+            }
+        }
+
+        if (move.piece.moved == Pieces::ROOKS) {
+            if (move.from == 0) {
+                (turn ? castling.white_east : castling.black_east) = false;
+            } else if (move.from == 7) {
+                (turn ? castling.white_west : castling.black_west) = false;
+            }
+        }
+
+        if (move.castle.take) {
+            // Move the rook
+            bitboard rook =
+                move.castle.west ? 0x0100000000000001 : 0x8000000000000080;
+
+            rook.mask(allied(Pieces::ROOKS));
+
+            bitboard rook_to = move.castle.west ? (from << 1) : (from >> 1);
+
+            switch_bits(colors[turn], rook, rook_to);
+            switch_bits(pieces[Pieces::ROOKS], rook, rook_to);
+        }
+
         // Handle captures
         auto capture_piece = [&](Pieces::Piece piece, bitboard captured) {
             colors[!turn] &= ~captured;
-            colors[move.piece.captured] &= captured;
+            colors[move.piece.captured] &= ~captured;
         };
 
         if (move.piece.captured != Pieces::NONE) {
@@ -64,6 +96,8 @@ namespace Game {
 
     Board Board::parse_fen_string(std::string fen) {
         Board board;
+
+        // TODO: Parse other aspects about board state
 
         square index = 63;
 

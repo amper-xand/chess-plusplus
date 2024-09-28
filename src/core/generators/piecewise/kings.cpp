@@ -2,6 +2,7 @@
 
 #include "../helpers.hpp"
 #include "../magic/magic.hpp"
+#include <algorithm>
 #include <tuple>
 
 namespace Game::Generators::Kings {
@@ -203,6 +204,48 @@ namespace Game::Generators::Kings {
         attacked_squares |=
             Kings::available_moves[board.enemy(Pieces::KINGS).rzeros()];
 
+        // Generate castling
+        if (board.can_castle(true)) {
+            bitboard cast_squares = 0b11111000;
+
+            if (!board.turn) {
+                cast_squares <<= square::index_at(7, 0);
+            }
+
+            if (cast_squares ==
+                // Check that the castling path is not obstructed
+                cast_squares.mask(!(board.all_pieces() | attacked_squares))) {
+
+                Move& move = generator.next();
+                move.piece.moved = Pieces::KINGS;
+                move.castle = {.take = true, .west = false};
+
+                move.from = king_position;
+                move.to = king_position + 2;
+            }
+        }
+
+        if (board.can_castle(false)) {
+            bitboard cast_squares = 0b00001111;
+
+            if (!board.turn) {
+                cast_squares <<= square::index_at(7, 0);
+            }
+
+            if (cast_squares ==
+                // Check that the castling path is not obstructed
+                cast_squares.mask(!(board.all_pieces() | attacked_squares))) {
+
+                Move& move = generator.next();
+                move.piece.moved = Pieces::KINGS;
+                move.castle = {.take = true, .west = true};
+
+                move.from = king_position;
+                move.to = king_position - 2;
+            }
+
+        }
+        // Generate the rest of the moves
         bitboard king_moves = Kings::available_moves[king_position];
 
         // Remove attacked and blocked squares
@@ -219,6 +262,9 @@ namespace Game::Generators::Kings {
         }
 
         std::span<Move> moves = generator.next_n(total_available);
+
+        std::fill(moves.begin(), moves.end(),
+                  Move{.piece{.moved = Pieces::KINGS}});
 
         Helpers::populate_from_bitboard(moves, king_moves, captures, board,
                                         king_position);

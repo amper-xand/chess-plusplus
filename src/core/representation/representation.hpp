@@ -15,7 +15,9 @@ namespace Game {
 
         Pieces::Piece promotion = Pieces::NONE;
 
-        struct { bool set : 1 = false; bool take: 1 = false; square_t captured: 6; } enpassant;
+        struct { bool set: 1 = false; bool take: 1 = false; square_t captured: 6; } enpassant;
+
+        struct { bool take: 1 = false, west: 1 = true;} castle;
 
         inline Move& copy(Move other) {
             this->from = other.from;
@@ -27,6 +29,8 @@ namespace Game {
 
             this->enpassant = other.enpassant;
 
+            this->castle = other.castle;
+
             return *this;
         }
         // clang-format on
@@ -35,9 +39,6 @@ namespace Game {
 
 namespace Game {
     struct Board {
-        // PERF: There is not much need to optimize size too much
-        // since there are going to be only a few instances
-
         // clang-format off
 
         Colors::Color turn;
@@ -78,6 +79,13 @@ namespace Game {
 
         inline bitboard enemy(Pieces::Piece piece) {
             return pieces[piece] & colors[!turn];
+        }
+
+        inline bool can_castle(bool west) {
+            bool cast[2][2] = {{castling.black_east, castling.white_east},
+                               {castling.black_west, castling.white_west}};
+
+            return cast[west][turn];
         }
 
         void make_move(Move move);
