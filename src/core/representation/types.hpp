@@ -109,7 +109,7 @@ namespace Game {
             static constexpr bitboard_t fullboard = 0xFFFFFFFFFFFFFFFF;
             static constexpr bitboard_t border = 0xFF818181818181FF;
 
-            static constexpr bitboard_t vertical = 0101010101010101;
+            static constexpr bitboard_t vertical = 0x0101010101010101;
             static constexpr bitboard_t horizontal = 0xFF;
 
             static constexpr bitboard_t diagonal_rightleft = 0x0102040810204080;
