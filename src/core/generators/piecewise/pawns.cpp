@@ -54,7 +54,7 @@ namespace Game::Generators::Pawns {
     MoveGenerator& gen_pawns_moves(MoveGenerator& generator) {
         Board& board = generator.board;
 
-        bitboard blockers = board.all_pieces();
+        bitboard blockers = board.all();
 
         bitboard pawns = board.allied(Pieces::PAWNS)
                          // Remove pinned pawns

@@ -38,14 +38,14 @@ namespace Game::Generators::Kings {
 
         // Remove sliders that already have line of sight to the king
         diagonal_sliders &=
-            ~Magic::Bishops::get_avail_moves(board.all_pieces(), position);
+            ~Magic::Bishops::get_avail_moves(board.all(), position);
 
         bitboard straight_sliders =
             board.enemies().mask(board.rooks | board.queens);
 
         // Remove sliders that already have line of sight to the king
         straight_sliders &=
-            ~Magic::Rooks::get_avail_moves(board.all_pieces(), position);
+            ~Magic::Rooks::get_avail_moves(board.all(), position);
 
         bitboard pinned_pieces = 0, pinners = 0;
 
@@ -62,7 +62,7 @@ namespace Game::Generators::Kings {
                 bitboard current_bit = bits_previous.mask(unchecked_bits);
 
                 // Make a hole by removing the candidate
-                bitboard current_blockers = board.all_pieces() ^ current_bit;
+                bitboard current_blockers = board.all() ^ current_bit;
 
                 // If removing the candidate exposes the king to a slider
                 auto is_pinned =
@@ -80,11 +80,11 @@ namespace Game::Generators::Kings {
 
         bitboard dia_candidates =
             board.allies() &
-            Magic::Bishops::get_avail_moves(board.all_pieces(), position);
+            Magic::Bishops::get_avail_moves(board.all(), position);
 
         bitboard str_candidates =
             board.allies() &
-            Magic::Rooks::get_avail_moves(board.all_pieces(), position);
+            Magic::Rooks::get_avail_moves(board.all(), position);
 
         check_candidates(dia_candidates, diagonal_sliders,
                          Magic::Bishops::get_avail_moves);
@@ -127,18 +127,18 @@ namespace Game::Generators::Kings {
 
         // Remove sliders that already have line of sight to the king
         diagonal_sliders &=
-            ~Magic::Bishops::get_avail_moves(board.all_pieces(), position);
+            ~Magic::Bishops::get_avail_moves(board.all(), position);
 
         bitboard straight_sliders =
             board.enemies().mask(board.rooks | board.queens);
 
         // Remove sliders that already have line of sight to the king
         straight_sliders &=
-            ~Magic::Rooks::get_avail_moves(board.all_pieces(), position);
+            ~Magic::Rooks::get_avail_moves(board.all(), position);
 
         // Get blockers without the enpassant pawn
         bitboard blockers =
-            board.all_pieces() ^ bitboard::bit_at(board.enpassant.capturable);
+            board.all() ^ bitboard::bit_at(board.enpassant.capturable);
 
         // Check for discovered attacks
         bitboard is_pinned;
@@ -171,7 +171,7 @@ namespace Game::Generators::Kings {
 
                  knights = board.enemy(Pieces::KNIGHTS);
 
-        bitboard attacked_squares = 0, blockers = board.all_pieces();
+        bitboard attacked_squares = 0, blockers = board.all();
 
         for (square index = 0; index < 64; ++index) {
 
@@ -214,7 +214,7 @@ namespace Game::Generators::Kings {
 
             if (cast_squares ==
                 // Check that the castling path is not obstructed
-                cast_squares.mask(!(board.all_pieces() | attacked_squares))) {
+                cast_squares.mask(!(board.all() | attacked_squares))) {
 
                 Move& move = generator.next();
                 move.piece.moved = Pieces::KINGS;
@@ -234,7 +234,7 @@ namespace Game::Generators::Kings {
 
             if (cast_squares ==
                 // Check that the castling path is not obstructed
-                cast_squares.mask(!(board.all_pieces() | attacked_squares))) {
+                cast_squares.mask(!(board.all() | attacked_squares))) {
 
                 Move& move = generator.next();
                 move.piece.moved = Pieces::KINGS;

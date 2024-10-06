@@ -26,7 +26,7 @@ namespace Game::Generators::Helpers {
     MoveGenerator& moves_from_generator(MoveGenerator& generator) {
         auto& board = generator.board;
 
-        bitboard pieces = board.allied(piece), blockers = board.all_pieces(),
+        bitboard pieces = board.allied(piece), blockers = board.all(),
                  noncaptures = board.allies();
 
         // Remove absolutely pinned pieces

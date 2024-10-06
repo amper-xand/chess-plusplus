@@ -1,5 +1,5 @@
 namespace Game::Colors {
-    enum Color : char { BLACK = false, WHITE = true };
+    enum Color : bool { BLACK = false, WHITE = true };
     static const Color BothColors[]{BLACK, WHITE};
 
 } // namespace Game::Colors

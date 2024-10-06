@@ -5,7 +5,7 @@
 #include <strings.h>
 
 namespace Game {
-    bool Board::is_square_occupied(square index) {
+    bool Board::is_occupied(square index) {
         return static_cast<bitboard>(white | black).is_set_at(index);
     }
 
@@ -23,7 +23,7 @@ namespace Game {
         return Pieces::NONE;
     }
 
-    void Board::make_move(Move move) {
+    void Board::play(Move move) {
         // Change the position of the moved piece
         auto switch_bits = [](bitboard& target, bitboard from, bitboard to) {
             target &= ~from;
@@ -91,10 +91,10 @@ namespace Game {
         }
 
         // Switch turns
-        turn = Colors::BothColors[!turn];
+        turn = static_cast<Colors::Color>(!turn);
     }
 
-    Board Board::parse_fen_string(std::string fen) {
+    Board Board::from_fen(std::string fen) {
         Board board;
 
         // TODO: Parse other aspects about board state
@@ -138,7 +138,7 @@ namespace Game {
                 square index = square::index_at(rank, file);
 
                 auto square =
-                    is_square_occupied(index)
+                    is_occupied(index)
                         ? std::format(" {} ",
                                       Pieces::piece_to_char(piece_at(index),
                                                             color_at(index)))
