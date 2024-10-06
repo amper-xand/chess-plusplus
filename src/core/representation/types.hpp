@@ -33,6 +33,11 @@ namespace Game {
 
         inline constexpr uint8_t row() { return value_ / 8; }
 
+        inline constexpr square right(uint8_t v = 1) { return value_ - v; }
+        inline constexpr square left(uint8_t v = 1) { return value_ + v; }
+        inline constexpr square up(uint8_t v = 1) { return value_ + 8 * v; }
+        inline constexpr square down(uint8_t v = 1) { return value_ - 8 * v; }
+
         inline constexpr uint8_t start_of_row() { return value_ - column(); }
 
         static inline constexpr square index_at(uint8_t row, uint8_t col) {
@@ -59,6 +64,8 @@ namespace Game {
         inline constexpr uint8_t rzeros() { return std::countr_zero(value_); }
 
         inline constexpr bitboard mask(bitboard mask) { return value_ & mask; };
+        inline constexpr bitboard pop(bitboard mask) { return value_ & ~mask; }
+        inline constexpr bitboard join(bitboard mask) { return value_ | mask; }
 
         inline constexpr bitboard flip_vertically() {
             auto value = value_;
@@ -83,7 +90,8 @@ namespace Game {
             return value;
         }
 
-        static inline void scan(bitboard bitboard, const std::function<void(square)>& processor) {
+        static inline void scan(bitboard bitboard,
+                                const std::function<void(square)>& processor) {
             for (square index = 0; bitboard != 0 && index < 64;
                  ++index, bitboard >>= 1) {
 
