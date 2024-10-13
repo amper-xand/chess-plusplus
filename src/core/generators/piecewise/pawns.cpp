@@ -143,7 +143,7 @@ namespace Game::Generators::Pawns {
             move.piece.moved = Pieces::PAWNS;
 
             move.from = index;
-            move.to = board.turn ? index + 8 : index - 8;
+            move.to = board.turn ? index.up() : index.down();
 
             promote(move);
         });
@@ -155,7 +155,7 @@ namespace Game::Generators::Pawns {
             move.enpassant.set = true;
 
             move.from = index;
-            move.to = board.turn ? index + 16 : index - 16;
+            move.to = board.turn ? index.up(2) : index.up(2);
         });
 
         // Process pawn captures
@@ -164,7 +164,7 @@ namespace Game::Generators::Pawns {
             move.piece.moved = Pieces::PAWNS;
 
             move.to = index;
-            move.from = board.turn ? index - 8 + 1 : index + 8 + 1;
+            move.from = board.turn ? index.down().left() : index.up().left();
 
             move.piece.captured = board.piece_at(index);
 
@@ -176,7 +176,8 @@ namespace Game::Generators::Pawns {
             move.piece.moved = Pieces::PAWNS;
 
             move.to = index;
-            move.from = board.turn ? index - 8 - 1 : index + 8 - 1;
+            move.from =
+                board.turn ? index.down().right() : index.down().right();
 
             move.piece.captured = board.piece_at(index);
 
@@ -192,7 +193,7 @@ namespace Game::Generators::Pawns {
             move.enpassant.captured = board.enpassant.capturable;
 
             move.to = index;
-            move.from = board.turn ? index - 8 + 1 : index + 8 + 1;
+            move.from = board.turn ? index.down().left() : index.up().left();
 
             move.piece.captured = board.piece_at(index);
         });
@@ -205,7 +206,7 @@ namespace Game::Generators::Pawns {
             move.enpassant.captured = board.enpassant.capturable;
 
             move.to = index;
-            move.from = board.turn ? index - 8 - 1 : index + 8 - 1;
+            move.from = board.turn ? index.down().right() : index.up().right();
 
             move.piece.captured = board.piece_at(index);
         });

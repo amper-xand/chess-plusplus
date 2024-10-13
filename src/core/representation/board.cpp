@@ -26,8 +26,7 @@ namespace Game {
     void Board::play(Move move) {
         // Change the position of the moved piece
         auto switch_bits = [](bitboard& target, bitboard from, bitboard to) {
-            target &= ~from;
-            target |= to;
+            target = target.pop(from).join(to);
         };
 
         auto from = bitboard::bit_at(move.from), to = bitboard::bit_at(move.to);
@@ -83,7 +82,7 @@ namespace Game {
         if (move.enpassant.set) {
             enpassant.capturable = move.to;
             enpassant.tail =
-                (turn == Colors::WHITE) ? move.to - 8 : move.to + 8;
+                (turn == Colors::WHITE) ? move.to.down() : move.to.up();
         }
 
         if (move.enpassant.take) {
