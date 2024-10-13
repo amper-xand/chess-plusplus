@@ -1,5 +1,5 @@
 // Rooks
-uint64_t precalc_magics[] = {
+static constexpr uint64_t precalc_magics[64]{
     0x2080028220400012UL,
     0xD40009000600048UL,
     0xA280081000A00006UL,

@@ -1,5 +1,5 @@
 // Bishops
-uint64_t precalc_magics[] = {
+static constexpr uint64_t precalc_magics[64]{
     0x4144050014004009UL,
     0x89A0082208404080UL,
     0x4080E84100221010UL,
