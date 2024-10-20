@@ -48,6 +48,23 @@ namespace Game::Generators {
         return span;
     }
 
+    void MoveGenerator::from_bitboard(Pieces::Piece piece, square from,
+                                      bitboard moves, bitboard captures) {
+
+        bitboard::scan(moves, [&](square to) {
+            auto& move = next();
+
+            move.piece.moved = piece;
+
+            move.from = from;
+            move.to = to;
+
+            if (captures.is_set_at(to)) {
+                move.piece.captured = board.piece_at(to);
+            }
+        });
+    }
+
 } // namespace Game::Generators
 
 namespace Game::Generators {
