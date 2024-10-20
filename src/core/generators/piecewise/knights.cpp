@@ -60,4 +60,25 @@ namespace Game::Generators::Knights {
             generator);
     }
 
+    MoveGenerator& gen_check_blocks(MoveGenerator& generator,
+                                    bitboard allowed) {
+
+        auto& board = generator.board;
+
+        bitboard capturable = board.enemies();
+
+        // Pinned pieces cannot move or capture a piece giving check
+        bitboard pinned = generator.pins.absolute | generator.pins.partial;
+
+        bitboard knights = board.allied(Pieces::KNIGHTS).pop(pinned);
+
+        bitboard::scan(knights, [&](square index) {
+            bitboard moves = Knights::available_moves[index].mask(allowed);
+            bitboard captures = moves.mask(capturable);
+
+            generator.from_bitboard(Pieces::KNIGHTS, index, moves, captures);
+        });
+
+        return generator;
+    }
 } // namespace Game::Generators::Knights

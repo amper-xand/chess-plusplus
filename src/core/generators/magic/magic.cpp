@@ -204,12 +204,20 @@ namespace Game::Generators::Magic::Rooks {
         return Rookst::get_moves(blockers, index);
     }
 
+    bitboard get_slider(square index) {
+        return Rookst::slider(index);
+    }
+
 } // namespace Game::Generators::Magic::Rooks
 
 namespace Game::Generators::Magic::Bishops {
 
     bitboard get_avail_moves(bitboard blockers, square index) {
         return Bishopst::get_moves(blockers, index);
+    }
+
+    bitboard get_slider(square index) {
+        return Bishopst::slider(index);
     }
 
 } // namespace Game::Generators::Magic::Bishops

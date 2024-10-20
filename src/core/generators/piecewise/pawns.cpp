@@ -221,7 +221,51 @@ namespace Game::Generators::Pawns {
         gen_from_captures(generator, captures.west, captures.east);
         gen_enpassant(generator, enpassant.west, enpassant.east);
 
+        return generator;
+    }
 
+    MoveGenerator& gen_check_blocks(MoveGenerator& generator,
+                                    bitboard allowed) {
+
+        auto& board = generator.board;
+
+        bitboard pawns =
+            board.allied(Pieces::PAWNS)
+                .pop(generator.pins.absolute | generator.pins.partial);
+
+        bitboard blockers = board.all();
+
+        bitboard singles = get_advances(pawns, blockers, board.turn);
+        bitboard doubles = get_advances(singles, blockers, board.turn);
+
+        gen_from_advances(generator, //
+                          singles.mask(allowed), doubles.mask(allowed));
+
+        bitboard capturable = board.enemies().mask(allowed);
+
+        bitboard attacks_east = east_attacks(pawns, board.turn);
+        bitboard attacks_west = west_attacks(pawns, board.turn);
+
+        bitboard captures_east = attacks_east.mask(capturable);
+        bitboard captures_west = attacks_west.mask(capturable);
+
+        gen_from_captures(generator, captures_west, captures_east);
+
+        if (
+            // if there is only one place to block
+            (allowed & (allowed - 1)) == 0  //
+            && (allowed & board.pawns) != 0 // and it is a pawn
+            && board.enpassant.available    // and en passant is available
+        ) {
+            // then check if a pawn can stop the check with en passant
+            bitboard east_ep =
+                attacks_east.mask(bitboard::bit_at(board.enpassant.tail));
+
+            bitboard west_ep =
+                attacks_west.mask(bitboard::bit_at(board.enpassant.tail));
+
+            gen_enpassant(generator, west_ep, east_ep);
+        }
 
         return generator;
     }

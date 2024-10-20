@@ -158,11 +158,7 @@ namespace Game::Generators::Kings {
         }
     }
 
-    MoveGenerator& gen_king_moves(MoveGenerator& generator) {
-        auto& board = generator.board;
-
-        square king_position = board.allied(Pieces::KINGS).rzeros();
-
+    bitboard get_attacked_squares(Board& board) {
         bitboard diagonal_sliders =
                      board.enemies().mask(board.bishops | board.queens),
 
@@ -204,8 +200,18 @@ namespace Game::Generators::Kings {
         attacked_squares |=
             Kings::available_moves[board.enemy(Pieces::KINGS).rzeros()];
 
+        return attacked_squares;
+    }
+
+    MoveGenerator& gen_king_moves(MoveGenerator& generator, bool gencastle) {
+        auto& board = generator.board;
+
+        square king_position = board.allied(Pieces::KINGS).rzeros();
+
+        bitboard attacked_squares = get_attacked_squares(board);
+
         // Generate castling
-        if (board.can_castle(true)) {
+        if (gencastle && board.can_castle(true)) {
             bitboard cast_squares = 0b11111000;
 
             if (!board.turn) {
@@ -221,11 +227,11 @@ namespace Game::Generators::Kings {
                 move.castle = {.take = true, .west = false};
 
                 move.from = king_position;
-                move.to = king_position + 2;
+                move.to = king_position.left(2);
             }
         }
 
-        if (board.can_castle(false)) {
+        if (gencastle && board.can_castle(false)) {
             bitboard cast_squares = 0b00001111;
 
             if (!board.turn) {
@@ -241,9 +247,8 @@ namespace Game::Generators::Kings {
                 move.castle = {.take = true, .west = true};
 
                 move.from = king_position;
-                move.to = king_position - 2;
+                move.to = king_position.right(2);
             }
-
         }
         // Generate the rest of the moves
         bitboard king_moves = Kings::available_moves[king_position];
@@ -270,6 +275,38 @@ namespace Game::Generators::Kings {
                                         king_position);
 
         return generator;
+    }
+
+    bitboard checking_pieces(Board& board) {
+
+        square king = board.allied(Pieces::KINGS).rzeros();
+
+        bitboard checks;
+
+        checks |=
+            board.enemy(Pieces::KNIGHTS).mask(Knights::available_moves[king]);
+
+        checks |= Magic::Rooks::get_avail_moves(board.all(), king)
+                      .mask(board.rooks | board.queens);
+
+        checks |= Magic::Bishops::get_avail_moves(board.all(), king)
+                      .mask(board.bishops | board.queens);
+
+        bitboard pawns_attackers = // west attackers
+            board.allied(Pieces::KINGS).pop(0x8080808080808080) << 1;
+
+        pawns_attackers |= // east attackers
+            board.allied(Pieces::KINGS).pop(0x0101010101010101) >> 1;
+
+        if (board.turn) {
+            pawns_attackers <<= 8;
+        } else {
+            pawns_attackers >>= 8;
+        }
+
+        checks |= pawns_attackers;
+
+        return checks;
     }
 
 } // namespace Game::Generators::Kings

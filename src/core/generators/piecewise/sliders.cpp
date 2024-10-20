@@ -24,4 +24,44 @@ namespace Game::Generators::Sliders {
             generator);
     }
 
+    MoveGenerator& gen_check_blocks(MoveGenerator& generator,
+                                    bitboard allowed) {
+
+        auto& board = generator.board;
+
+        bitboard blockers = board.all();
+        bitboard capturable = board.enemies();
+
+        // Pinned pieces cannot move or capture a piece giving check
+        bitboard pinned = generator.pins.absolute | generator.pins.partial;
+
+        bitboard::scan(board.allied(Pieces::BISHOPS).pop(pinned), [&](square index) {
+            bitboard moves =
+                Magic::Bishops::get_avail_moves(blockers, index).mask(allowed);
+            bitboard captures = moves.mask(capturable);
+
+            generator.from_bitboard(Pieces::BISHOPS, index, moves, captures);
+        });
+
+        bitboard::scan(board.allied(Pieces::ROOKS).pop(pinned), [&](square index) {
+            bitboard moves =
+                Magic::Rooks::get_avail_moves(blockers, index).mask(allowed);
+            bitboard captures = moves.mask(capturable);
+
+            generator.from_bitboard(Pieces::ROOKS, index, moves, captures);
+        });
+
+        bitboard::scan(board.allied(Pieces::QUEENS).pop(pinned), [&](square index) {
+            bitboard moves =
+                Magic::Rooks::get_avail_moves(blockers, index)
+                    .join(Magic::Bishops::get_avail_moves(blockers, index))
+                    .mask(allowed);
+
+            bitboard captures = moves.mask(capturable);
+
+            generator.from_bitboard(Pieces::QUEENS, index, moves, captures);
+        });
+
+        return generator;
+    }
 } // namespace Game::Generators::Sliders

@@ -90,6 +90,14 @@ namespace Game {
             return value;
         }
 
+        /*
+         * Takes two bits and returns the set of bits between them (inclusive)
+         * */
+        static inline constexpr bitboard interval(bitboard first,
+                                                  bitboard second) {
+            return ((first - 1) ^ (second - 1)) | first | second;
+        }
+
         static inline void scan(bitboard bitboard,
                                 const std::function<void(square)>& processor) {
             for (square index = 0; bitboard != 0 && index < 64;

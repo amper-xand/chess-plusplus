@@ -2,6 +2,7 @@
 
 namespace Game::Generators::Pawns {
     MoveGenerator& gen_pawns_moves(MoveGenerator& generator);
+    MoveGenerator& gen_check_blocks(MoveGenerator& generator, bitboard allowed);
 
     bitboard get_advances(bitboard pawns, bitboard blockers, bool color);
     bitboard get_advances(bitboard pawns, bitboard blockers,
@@ -22,6 +23,7 @@ namespace Game::Generators::Sliders {
 
     MoveGenerator& gen_queens_moves(MoveGenerator& generator);
 
+    MoveGenerator& gen_check_blocks(MoveGenerator& generator, bitboard allowed);
 } // namespace Game::Generators::Sliders
 
 namespace Game::Generators::Knights {
@@ -29,7 +31,7 @@ namespace Game::Generators::Knights {
 
     void initialize_table();
     MoveGenerator& gen_knights_moves(MoveGenerator& generator);
-
+    MoveGenerator& gen_check_blocks(MoveGenerator& generator, bitboard allowed);
 } // namespace Game::Generators::Knights
 
 namespace Game::Generators::Kings {
@@ -41,6 +43,6 @@ namespace Game::Generators::Kings {
 
     bool is_enpassant_pinned(Board board);
 
-    MoveGenerator& gen_king_moves(MoveGenerator& generator);
-
+    MoveGenerator& gen_king_moves(MoveGenerator& generator, bool gencastle = true);
+    bitboard checking_pieces(Board& board);
 } // namespace Game::Generators::Kings
