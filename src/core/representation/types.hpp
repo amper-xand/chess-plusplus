@@ -60,12 +60,40 @@ namespace Game {
 
         inline constexpr bitboard last_bit() { return value_ & 1; }
 
+        inline constexpr bitboard LSB() {
+            bitboard x = value_;
+
+            return x & (-x);
+        }
+
+        inline constexpr bitboard MSB() {
+            bitboard x = value_;
+
+            x |= (x >> 1);
+            x |= (x >> 2);
+            x |= (x >> 4);
+            x |= (x >> 8);
+            x |= (x >> 16);
+            x |= (x >> 32);
+            x++;
+            x >>= 1;
+
+            return x;
+        }
+
         inline constexpr uint8_t popcount() { return std::popcount(value_); }
         inline constexpr uint8_t rzeros() { return std::countr_zero(value_); }
 
         inline constexpr bitboard mask(bitboard mask) { return value_ & mask; };
         inline constexpr bitboard pop(bitboard mask) { return value_ & ~mask; }
         inline constexpr bitboard join(bitboard mask) { return value_ | mask; }
+
+        /*
+         * Makes a ray from a bit to the next set blocker
+         */
+        inline constexpr bitboard ray_next(bitboard blockers) {
+            return (blockers - value_) ^ blockers;
+        }
 
         inline constexpr bitboard flip_vertically() {
             auto value = value_;

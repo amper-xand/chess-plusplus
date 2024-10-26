@@ -107,6 +107,8 @@ namespace Game::Generators::Magic {
         static bitboard gen_moves(bitboard blockers, square index) {
             const bitboard slider = Rookst::slider(index);
 
+            const bitboard rook = bitboard::bit_at(index);
+
             // Masks the blockers with a north ray
             const bitboard north_mask = Masks::make_n_mask(index);
             bitboard n_ray = blockers.mask(slider & north_mask);
@@ -117,12 +119,8 @@ namespace Game::Generators::Magic {
 
             const bitboard south_mask = Masks::make_s_mask(index);
             bitboard s_ray = blockers.mask(slider & south_mask);
-            s_ray = s_ray.flip_vertically();
-            s_ray &= ~s_ray + 1;
-            // Turn it into a ray from the blocker
-            s_ray |= s_ray - 1;
-            s_ray = s_ray.flip_vertically();
-            s_ray &= slider & south_mask;
+            s_ray =
+                bitboard::interval(rook, s_ray.MSB()).mask(slider & south_mask);
 
             const bitboard west_mask = Masks::make_w_mask(index);
             bitboard w_ray = blockers.mask(slider & west_mask);
@@ -133,11 +131,8 @@ namespace Game::Generators::Magic {
 
             const bitboard east_mask = Masks::make_e_mask(index);
             bitboard e_ray = blockers.mask(slider & east_mask);
-            e_ray = e_ray.flip_horizontally();
-            e_ray &= ~e_ray + 1;
-            e_ray |= e_ray - 1;
-            e_ray = e_ray.flip_horizontally();
-            e_ray &= slider & east_mask;
+            e_ray =
+                bitboard::interval(rook, e_ray.MSB()).mask(slider & east_mask);
 
             return n_ray | s_ray | w_ray | e_ray;
         }
@@ -164,6 +159,8 @@ namespace Game::Generators::Magic {
             const bitboard w_mask = Masks::make_w_mask(index);
             const bitboard e_mask = Masks::make_e_mask(index);
 
+            const bitboard bishop = bitboard::bit_at(index);
+
             const bitboard nw_mask = n_mask & w_mask;
             bitboard nw_ray = blockers.mask(slider & nw_mask);
             nw_ray &= ~nw_ray + 1;
@@ -178,19 +175,13 @@ namespace Game::Generators::Magic {
 
             const bitboard sw_mask = s_mask & w_mask;
             bitboard sw_ray = blockers.mask(slider & sw_mask);
-            sw_ray = sw_ray.flip_vertically();
-            sw_ray &= ~sw_ray + 1;
-            sw_ray |= sw_ray - 1;
-            sw_ray = sw_ray.flip_vertically();
-            sw_ray &= slider & sw_mask;
+            sw_ray =
+                bitboard::interval(bishop, sw_ray.MSB()).mask(slider & sw_mask);
 
             const bitboard se_mask = s_mask & e_mask;
             bitboard se_ray = blockers.mask(slider & se_mask);
-            se_ray = se_ray.flip_vertically();
-            se_ray &= ~se_ray + 1;
-            se_ray |= se_ray - 1;
-            se_ray = se_ray.flip_vertically();
-            se_ray &= slider & se_mask;
+            se_ray =
+                bitboard::interval(bishop, se_ray.MSB()).mask(slider & se_mask);
 
             return nw_ray | ne_ray | sw_ray | se_ray;
         }
@@ -204,9 +195,7 @@ namespace Game::Generators::Magic::Rooks {
         return Rookst::get_moves(blockers, index);
     }
 
-    bitboard get_slider(square index) {
-        return Rookst::slider(index);
-    }
+    bitboard get_slider(square index) { return Rookst::slider(index); }
 
 } // namespace Game::Generators::Magic::Rooks
 
@@ -216,9 +205,7 @@ namespace Game::Generators::Magic::Bishops {
         return Bishopst::get_moves(blockers, index);
     }
 
-    bitboard get_slider(square index) {
-        return Bishopst::slider(index);
-    }
+    bitboard get_slider(square index) { return Bishopst::slider(index); }
 
 } // namespace Game::Generators::Magic::Bishops
 
