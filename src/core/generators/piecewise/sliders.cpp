@@ -1,27 +1,81 @@
 #include "piecewise.hpp"
 
-#include "../helpers.hpp"
 #include "../magic/magic.hpp"
 
 namespace Game::Generators::Sliders {
-    MoveGenerator& gen_rooks_moves(MoveGenerator& generator) {
-        return Helpers::moves_from_generator<Magic::Rooks::get_avail_moves,
-                                             Pieces::ROOKS>(generator);
+
+    template <const auto sld_moves, Pieces::Piece slider>
+    MoveGenerator& gen_slider(MoveGenerator& generator, bitboard king_slider) {
+        auto& board = generator.board;
+
+        bitboard pieces = board.allied(slider), blockers = board.all(),
+                 noncaptures = board.allies();
+
+        // Remove absolutely pinned pieces
+        pieces &= ~generator.pins.absolute;
+
+        uint8_t piece_count = pieces.popcount();
+
+        bitboard available_per_piece[piece_count];
+        square piece_positions[piece_count];
+
+        uint8_t current_piece = 0;
+
+        bitboard::scan(pieces, [&](square index) {
+            bitboard available_moves =
+                sld_moves(blockers, index) & ~noncaptures;
+
+            piece_positions[current_piece] = index;
+
+            available_per_piece[current_piece] = available_moves;
+
+            ++current_piece;
+        });
+
+        for (uint8_t current_piece = 0; current_piece < piece_count;
+             ++current_piece) {
+
+            if (generator.pins
+                    .partial
+                    // Check if piece is partially pinned
+                    .is_set_at(piece_positions[current_piece])) {
+
+                // Only allow the partially pinned piece
+                // to move colinearly to the king and the pinners
+                // based on the slider
+                available_per_piece[current_piece] &= king_slider;
+            }
+
+            bitboard captures =
+                available_per_piece[current_piece].mask(board.enemies());
+
+            generator.from_bitboard(slider, piece_positions[current_piece],
+                                    available_per_piece[current_piece],
+                                    captures);
+        }
+
+        return generator;
     }
 
-    MoveGenerator& gen_bishops_moves(MoveGenerator& generator) {
-        return Helpers::moves_from_generator<Magic::Bishops::get_avail_moves,
-                                             Pieces::BISHOPS>(generator);
-    }
+    MoveGenerator& gen_slider_moves(MoveGenerator& generator) {
+        square king_position = generator.board.allied(Pieces::KINGS).rzeros();
 
-    MoveGenerator& gen_queens_moves(MoveGenerator& generator) {
-        auto queen_generator = [](bitboard blockers, square index) {
-            return Magic::Rooks::get_avail_moves(blockers, index) |
-                   Magic::Bishops::get_avail_moves(blockers, index);
-        };
+        bitboard king_b_sld = Magic::Bishops::get_slider(king_position);
+        bitboard king_r_sld = Magic::Rooks::get_slider(king_position);
 
-        return Helpers::moves_from_generator<queen_generator, Pieces::QUEENS>(
-            generator);
+        gen_slider<Magic::Bishops::get_avail_moves, Pieces::BISHOPS> //
+            (generator, king_b_sld);
+
+        gen_slider<Magic::Rooks::get_avail_moves, Pieces::ROOKS> //
+            (generator, king_r_sld);
+
+        gen_slider<Magic::Bishops::get_avail_moves, Pieces::QUEENS> //
+            (generator, king_b_sld);
+
+        gen_slider<Magic::Rooks::get_avail_moves, Pieces::QUEENS> //
+            (generator, king_r_sld);
+
+        return generator;
     }
 
     MoveGenerator& gen_check_blocks(MoveGenerator& generator,
@@ -35,6 +89,7 @@ namespace Game::Generators::Sliders {
         // Pinned pieces cannot move or capture a piece giving check
         bitboard pinned = generator.pins.absolute | generator.pins.partial;
 
+        // clang-format off
         bitboard::scan(board.allied(Pieces::BISHOPS).pop(pinned), [&](square index) {
             bitboard moves =
                 Magic::Bishops::get_avail_moves(blockers, index).mask(allowed);
@@ -61,6 +116,7 @@ namespace Game::Generators::Sliders {
 
             generator.from_bitboard(Pieces::QUEENS, index, moves, captures);
         });
+        // clang-format on
 
         return generator;
     }

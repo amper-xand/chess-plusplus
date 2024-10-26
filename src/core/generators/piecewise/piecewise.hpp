@@ -17,12 +17,7 @@ namespace Game::Generators::Pawns {
 } // namespace Game::Generators::Pawns
 
 namespace Game::Generators::Sliders {
-    MoveGenerator& gen_rooks_moves(MoveGenerator& generator);
-
-    MoveGenerator& gen_bishops_moves(MoveGenerator& generator);
-
-    MoveGenerator& gen_queens_moves(MoveGenerator& generator);
-
+    MoveGenerator& gen_slider_moves(MoveGenerator& generator);
     MoveGenerator& gen_check_blocks(MoveGenerator& generator, bitboard allowed);
 } // namespace Game::Generators::Sliders
 
@@ -43,6 +38,7 @@ namespace Game::Generators::Kings {
 
     bool is_enpassant_pinned(Board board);
 
-    MoveGenerator& gen_king_moves(MoveGenerator& generator, bool gencastle = true);
+    MoveGenerator& gen_king_moves(MoveGenerator& generator,
+                                  bool gencastle = true);
     bitboard checking_pieces(Board& board);
 } // namespace Game::Generators::Kings

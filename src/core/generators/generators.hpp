@@ -3,7 +3,6 @@
 #include "../representation/representation.hpp"
 
 #include <array>
-#include <span>
 #include <vector>
 
 namespace Game::Generators {
@@ -25,8 +24,6 @@ namespace Game::Generators {
         // clang-format on
 
         MoveGenerator(Board board);
-
-        std::span<Move> next_n(int n);
 
         Move& next();
 

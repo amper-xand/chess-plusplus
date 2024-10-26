@@ -1,46 +1,45 @@
 #include "piecewise.hpp"
 
-#include "../helpers.hpp"
-
 namespace Game::Generators::Knights {
     bitboard available_moves[64];
 
     bitboard gen_knight_moves(square index) {
         bitboard moves = 0;
+
         square col = index.column();
         square row = index.row();
 
         // Top-most left
         if (row <= 5 && 1 <= col)
-            moves |= bitboard::bit_at(square::index_at(row + 2, col - 1));
+            moves |= bitboard::bit_at(index.up(2).right());
 
         // Bottom-most left
         if (2 <= row && 1 <= col)
-            moves |= bitboard::bit_at(square::index_at(row - 2, col - 1));
+            moves |= bitboard::bit_at(index.down(2).right());
 
         // Top-most right
         if (row <= 5 && col <= 6)
-            moves |= bitboard::bit_at(square::index_at(row + 2, col + 1));
+            moves |= bitboard::bit_at(index.up(2).left());
 
         // Bottom-most right
         if (2 <= row && col <= 6)
-            moves |= bitboard::bit_at(square::index_at(row - 2, col + 1));
+            moves |= bitboard::bit_at(index.down(2).left());
 
         // Top left-most
         if (row <= 6 && 2 <= col)
-            moves |= bitboard::bit_at(square::index_at(row + 1, col - 2));
+            moves |= bitboard::bit_at(index.up().right(2));
 
         // Bottom left-most
         if (1 <= row && 2 <= col)
-            moves |= bitboard::bit_at(square::index_at(row - 1, col - 2));
+            moves |= bitboard::bit_at(index.down().right());
 
         // Top right-most
         if (row <= 6 && col <= 5)
-            moves |= bitboard::bit_at(square::index_at(row + 1, col + 2));
+            moves |= bitboard::bit_at(index.up().left(2));
 
         // Bottom right-most
         if (1 <= row && col <= 5)
-            moves |= bitboard::bit_at(square::index_at(row - 1, col + 2));
+            moves |= bitboard::bit_at(index.down().left(2));
 
         return moves;
     }
@@ -52,12 +51,19 @@ namespace Game::Generators::Knights {
     }
 
     MoveGenerator& gen_knights_moves(MoveGenerator& generator) {
-        auto knight_generator = [](bitboard blockers, square index) {
-            return Knights::available_moves[index];
-        };
+        bitboard knights = generator.board.allied(Pieces::KNIGHTS)
+                               .pop(generator.pins.absolute);
+        bitboard capturable = generator.board.enemies();
+        bitboard blockers = generator.board.allies();
 
-        return Helpers::moves_from_generator<knight_generator, Pieces::KNIGHTS>(
-            generator);
+        bitboard::scan(knights, [&](square index) {
+            bitboard moves = Knights::available_moves[index].pop(blockers);
+            bitboard captures = moves.mask(capturable);
+
+            generator.from_bitboard(Pieces::KNIGHTS, index, moves, captures);
+        });
+
+        return generator;
     }
 
     MoveGenerator& gen_check_blocks(MoveGenerator& generator,
@@ -66,14 +72,16 @@ namespace Game::Generators::Knights {
         auto& board = generator.board;
 
         bitboard capturable = board.enemies();
+        bitboard blockers = generator.board.allies();
 
         // Pinned pieces cannot move or capture a piece giving check
-        bitboard pinned = generator.pins.absolute | generator.pins.partial;
+        bitboard pinned = generator.pins.absolute;
 
         bitboard knights = board.allied(Pieces::KNIGHTS).pop(pinned);
 
         bitboard::scan(knights, [&](square index) {
-            bitboard moves = Knights::available_moves[index].mask(allowed);
+            bitboard moves =
+                Knights::available_moves[index].mask(allowed).pop(blockers);
             bitboard captures = moves.mask(capturable);
 
             generator.from_bitboard(Pieces::KNIGHTS, index, moves, captures);

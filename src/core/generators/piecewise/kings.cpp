@@ -1,9 +1,6 @@
 #include "piecewise.hpp"
 
-#include "../helpers.hpp"
 #include "../magic/magic.hpp"
-#include <algorithm>
-#include <tuple>
 
 namespace Game::Generators::Kings {
     bitboard available_moves[64];
@@ -251,28 +248,15 @@ namespace Game::Generators::Kings {
             }
         }
         // Generate the rest of the moves
-        bitboard king_moves = Kings::available_moves[king_position];
+        bitboard moves = Kings::available_moves[king_position];
 
         // Remove attacked and blocked squares
-        king_moves &= ~attacked_squares;
-        king_moves &= ~board.allies();
+        moves &= ~attacked_squares;
+        moves &= ~board.allies();
 
-        bitboard captures =
-            board.enemies().mask(~attacked_squares).mask(king_moves);
+        bitboard captures = board.enemies().mask(moves);
 
-        auto total_available = king_moves.popcount();
-
-        if (total_available == 0) {
-            return generator;
-        }
-
-        std::span<Move> moves = generator.next_n(total_available);
-
-        std::fill(moves.begin(), moves.end(),
-                  Move{.piece{.moved = Pieces::KINGS}});
-
-        Helpers::populate_from_bitboard(moves, king_moves, captures, board,
-                                        king_position);
+        generator.from_bitboard(Pieces::KINGS, king_position, moves, captures);
 
         return generator;
     }

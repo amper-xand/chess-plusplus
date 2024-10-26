@@ -7,7 +7,6 @@
 
 #include <climits>
 #include <cstdio>
-#include <span>
 #include <stdexcept>
 #include <strings.h>
 #include <vector>
@@ -33,19 +32,6 @@ namespace Game::Generators {
         std::advance(next_move, 1);
 
         return move;
-    }
-
-    std::span<Move> MoveGenerator::next_n(int n) {
-        std::span<Move> span(next_move, n);
-
-        if (span.end().base() > moves.end()) {
-            throw std::out_of_range(
-                "The generator tried to yield more moves than remaining.");
-        }
-
-        std::advance(next_move, n);
-
-        return span;
     }
 
     void MoveGenerator::from_bitboard(Pieces::Piece piece, square from,
@@ -123,9 +109,7 @@ namespace Game::Generators {
 
         Pawns::gen_pawns_moves(generator);
 
-        Sliders::gen_bishops_moves(generator);
-        Sliders::gen_rooks_moves(generator);
-        Sliders::gen_queens_moves(generator);
+        Sliders::gen_slider_moves(generator);
 
         Knights::gen_knights_moves(generator);
 
