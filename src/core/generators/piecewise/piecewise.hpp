@@ -38,7 +38,8 @@ namespace Game::Generators::Kings {
 
     bool is_enpassant_pinned(Board board);
 
-    MoveGenerator& gen_king_moves(MoveGenerator& generator,
-                                  bool gencastle = true);
+    template <bool generate_castle = true>
+    MoveGenerator& gen_king_moves(MoveGenerator& generator);
+
     bitboard checking_pieces(Board& board);
 } // namespace Game::Generators::Kings

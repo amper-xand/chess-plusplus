@@ -85,10 +85,12 @@ namespace Game {
 
         // State
 
-        inline bool can_castle(bool west) const {
-            return (turn == Colors::WHITE)
-                       ? (west ? castling.white_west : castling.white_east)
-                       : (west ? castling.black_west : castling.black_east);
+        inline bool west_castle() const {
+            return turn ? castling.white_west : castling.black_west;
+        }
+
+        inline bool east_castle() const {
+            return turn ? castling.white_east : castling.black_east;
         }
 
         void play(Move move);

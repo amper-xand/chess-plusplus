@@ -4,7 +4,7 @@
 
 namespace Game::Generators::Sliders {
 
-    template <const auto sld_moves, Pieces::Piece slider>
+    template <const auto& sld_moves, Pieces::Piece slider>
     MoveGenerator& gen_slider(MoveGenerator& generator, bitboard king_slider) {
         auto& board = generator.board;
 

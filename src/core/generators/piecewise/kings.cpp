@@ -46,8 +46,8 @@ namespace Game::Generators::Kings {
 
         bitboard pinned_pieces = 0, pinners = 0;
 
-        auto check_candidates = [&](bitboard candidates, bitboard sliders,
-                                    const auto& slider_moves) {
+        // clang-format off
+        auto check_candidates = [&]<const auto& slider_moves>(bitboard candidates, bitboard sliders) {
             for (bitboard unchecked_bits = candidates; unchecked_bits != 0;
                  // Remove the candidate we just checked
                  unchecked_bits &= unchecked_bits - 1) {
@@ -72,6 +72,7 @@ namespace Game::Generators::Kings {
                 }
             }
         };
+        // clang-format on
 
         // Determine which are the pinned pieces
 
@@ -83,10 +84,11 @@ namespace Game::Generators::Kings {
             board.allies() &
             Magic::Rooks::get_avail_moves(board.all(), position);
 
-        check_candidates(dia_candidates, diagonal_sliders,
-                         Magic::Bishops::get_avail_moves);
-        check_candidates(str_candidates, straight_sliders,
-                         Magic::Rooks::get_avail_moves);
+        check_candidates.template operator()<Magic::Bishops::get_avail_moves>(
+            dia_candidates, diagonal_sliders);
+
+        check_candidates.template operator()<Magic::Rooks::get_avail_moves>(
+            str_candidates, straight_sliders);
 
         // Determine relative pins
 
@@ -200,7 +202,8 @@ namespace Game::Generators::Kings {
         return attacked_squares;
     }
 
-    MoveGenerator& gen_king_moves(MoveGenerator& generator, bool gencastle) {
+    template <bool generate_castle>
+    MoveGenerator& gen_king_moves(MoveGenerator& generator) {
         auto& board = generator.board;
 
         square king_position = board.allied(Pieces::KINGS).rzeros();
@@ -208,7 +211,7 @@ namespace Game::Generators::Kings {
         bitboard attacked_squares = get_attacked_squares(board);
 
         // Generate castling
-        if (gencastle && board.can_castle(true)) {
+        if (generate_castle && board.west_castle()) {
             bitboard cast_squares = 0b11111000;
 
             if (!board.turn) {
@@ -228,7 +231,7 @@ namespace Game::Generators::Kings {
             }
         }
 
-        if (gencastle && board.can_castle(false)) {
+        if (generate_castle && board.east_castle()) {
             bitboard cast_squares = 0b00001111;
 
             if (!board.turn) {
@@ -247,6 +250,7 @@ namespace Game::Generators::Kings {
                 move.to = king_position.right(2);
             }
         }
+
         // Generate the rest of the moves
         bitboard moves = Kings::available_moves[king_position];
 
@@ -262,25 +266,26 @@ namespace Game::Generators::Kings {
     }
 
     bitboard checking_pieces(Board& board) {
+        bitboard king = board.allied(Pieces::KINGS);
 
-        square king = board.allied(Pieces::KINGS).rzeros();
+        square king_pos = king.rzeros();
 
         bitboard checks;
 
-        checks |=
-            board.enemy(Pieces::KNIGHTS).mask(Knights::available_moves[king]);
+        checks |= board.enemy(Pieces::KNIGHTS)
+                      .mask(Knights::available_moves[king_pos]);
 
-        checks |= Magic::Rooks::get_avail_moves(board.all(), king)
+        checks |= Magic::Rooks::get_avail_moves(board.all(), king_pos)
                       .mask(board.rooks | board.queens);
 
-        checks |= Magic::Bishops::get_avail_moves(board.all(), king)
+        checks |= Magic::Bishops::get_avail_moves(board.all(), king_pos)
                       .mask(board.bishops | board.queens);
 
         bitboard pawns_attackers = // west attackers
-            board.allied(Pieces::KINGS).pop(0x8080808080808080) << 1;
+            king.pop(0x8080808080808080) << 1;
 
         pawns_attackers |= // east attackers
-            board.allied(Pieces::KINGS).pop(0x0101010101010101) >> 1;
+            king.pop(0x0101010101010101) >> 1;
 
         if (board.turn) {
             pawns_attackers <<= 8;

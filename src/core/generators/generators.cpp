@@ -71,7 +71,7 @@ namespace Game::Generators {
 
         if (checkers != 0) {
 
-            Kings::gen_king_moves(generator, false);
+            Kings::gen_king_moves<false>(generator);
 
             // If there is more than one checking piece
             // then just generate the king moves
