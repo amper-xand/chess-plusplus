@@ -7,6 +7,7 @@
 
 #include <climits>
 #include <cstdio>
+#include <iostream>
 #include <stdexcept>
 #include <strings.h>
 #include <vector>
@@ -75,7 +76,7 @@ namespace Game::Generators {
                                       .mask(str_pins | dia_pins)
                                       .pop(generator.pins.partial);
 
-        generator.enpassant.pinned = Kings::is_enpassant_pinned(board);
+        generator.enpassant.pinned = Kings::is_enpassant_pinned(generator);
     }
 
     std::vector<Move> check_generation(MoveGenerator& generator,

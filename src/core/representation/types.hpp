@@ -13,7 +13,7 @@ namespace Game {
         type value_ = 0;
 
       public:
-        constexpr LiteralWrapper<type>(type value) : value_(value) {}
+        constexpr LiteralWrapper(type value) : value_(value) {}
 
         // Overload operators to forward to the wrapped type
         constexpr operator type &() { return value_; }

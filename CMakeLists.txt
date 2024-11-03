@@ -15,7 +15,6 @@ add_executable(chessy
 
     src/core/generators/generators.cpp
     src/core/generators/magic/magic.cpp
-    src/core/generators/helpers.cpp
 
     src/core/generators/piecewise/pawns.cpp
     src/core/generators/piecewise/sliders.cpp

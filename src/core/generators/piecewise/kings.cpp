@@ -32,7 +32,6 @@ namespace Game::Generators::Kings {
         }
     }
 
-
     template <Pieces::Piece piece>
     bitboard pin_xray(Board& board, bitboard direction) {
         bitboard king = board.allied(Pieces::KINGS);
@@ -209,6 +208,9 @@ namespace Game::Generators::Kings {
 
         return generator;
     }
+
+    template MoveGenerator& gen_king_moves<true>(MoveGenerator& generator);
+    template MoveGenerator& gen_king_moves<false>(MoveGenerator& generator);
 
     bitboard checking_pieces(Board& board) {
         bitboard king = board.allied(Pieces::KINGS);

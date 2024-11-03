@@ -37,10 +37,10 @@ namespace Game::Generators::Kings {
     bitboard pin_rook_xrays(Board& board);
     bitboard pin_bishop_xrays(Board& board);
 
-    bool is_enpassant_pinned(Board board);
+    bool is_enpassant_pinned(MoveGenerator& board);
 
     template <bool generate_castle = true>
-    MoveGenerator& gen_king_moves(MoveGenerator& generator);
+    extern MoveGenerator& gen_king_moves(MoveGenerator& generator);
 
     bitboard checking_pieces(Board& board);
 } // namespace Game::Generators::Kings
