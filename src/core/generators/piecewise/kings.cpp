@@ -26,129 +26,65 @@ namespace Game::Generators::Kings {
         return moves;
     }
 
-    std::tuple<bitboard, bitboard, bitboard> get_pinned_pieces(Board board) {
+    template <Pieces::Piece piece>
+    bitboard pin_xray(Board& board, bitboard direction) {
         bitboard king = board.allied(Pieces::KINGS);
-        square position = king.rzeros();
 
-        bitboard diagonal_sliders =
-            board.enemies().mask(board.bishops | board.queens);
+        bitboard pinnable =
+            board.allies() | board.pawns; // pin enemy pawns for ep
+        bitboard blockers = board.enemies();
 
-        // Remove sliders that already have line of sight to the king
-        diagonal_sliders &=
-            ~Magic::Bishops::get_avail_moves(board.all(), position);
+        bitboard sliders = board.enemies()
+                               .mask(board.pieces[piece] | board.queens)
+                               .mask(direction);
 
-        bitboard straight_sliders =
-            board.enemies().mask(board.rooks | board.queens);
+        // Make a ray a zero it out if there are no sliders
 
-        // Remove sliders that already have line of sight to the king
-        straight_sliders &=
-            ~Magic::Rooks::get_avail_moves(board.all(), position);
+        bitboard before = sliders.mask(king - 1).MSB();
+        before = bitboard::interval(king, before) & -before;
 
-        bitboard pinned_pieces = 0, pinners = 0;
+        bitboard after = sliders.pop(king - 1).LSB();
+        after = bitboard::interval(king, after) * (after != 0);
 
-        // clang-format off
-        auto check_candidates = [&]<const auto& slider_moves>(bitboard candidates, bitboard sliders) {
-            for (bitboard unchecked_bits = candidates; unchecked_bits != 0;
-                 // Remove the candidate we just checked
-                 unchecked_bits &= unchecked_bits - 1) {
+        // block and check if the rays are pinning a single piece
+        bitboard pinned;
 
-                // Get the bits from the current bit (inclusive) to then end
-                bitboard bits_previous = unchecked_bits ^ (unchecked_bits - 1);
+        pinned = pinnable.mask(before);
+        before *=
+            (blockers.mask(before) == 0) && ((pinned & (pinned - 1)) == 0);
 
-                // Remove the bits before the current bit
-                bitboard current_bit = bits_previous.mask(unchecked_bits);
+        pinned = pinnable.mask(after);
+        after *= (blockers.mask(after) == 0) && ((pinned & (pinned - 1)) == 0);
 
-                // Make a hole by removing the candidate
-                bitboard current_blockers = board.all() ^ current_bit;
-
-                // If removing the candidate exposes the king to a slider
-                auto is_pinned =
-                    sliders.mask(slider_moves(current_blockers, position));
-
-                // Then the piece is pinned
-                if (is_pinned != 0) {
-                    pinners |= is_pinned; // Store pinner
-                    pinned_pieces |= current_bit;
-                }
-            }
-        };
-        // clang-format on
-
-        // Determine which are the pinned pieces
-
-        bitboard dia_candidates =
-            board.allies() &
-            Magic::Bishops::get_avail_moves(board.all(), position);
-
-        bitboard str_candidates =
-            board.allies() &
-            Magic::Rooks::get_avail_moves(board.all(), position);
-
-        check_candidates.template operator()<Magic::Bishops::get_avail_moves>(
-            dia_candidates, diagonal_sliders);
-
-        check_candidates.template operator()<Magic::Rooks::get_avail_moves>(
-            str_candidates, straight_sliders);
-
-        // Determine relative pins
-
-        bitboard partial_pins = 0;
-
-        partial_pins = pinned_pieces
-                           .mask(dia_candidates)
-                           // Get diagonaly pinned pieces that can capture back
-                           .mask(board.bishops | board.queens);
-
-        partial_pins |= pinned_pieces
-                            .mask(str_candidates)
-                            // Get pinned in cross pieces that can capture back
-                            .mask(board.rooks | board.queens);
-
-        partial_pins |= pinned_pieces
-                            .mask(dia_candidates)
-                            // Get diagonaly pinned pawns
-                            .mask(board.pawns);
-
-        bitboard absolute_pins = pinned_pieces.mask(~partial_pins);
-
-        return {absolute_pins, partial_pins, pinners};
+        return ((before | after) ^ king) & direction;
     }
 
-    bool is_enpassant_pinned(Board board) {
-        if (!board.enpassant.available)
-            return false;
-
+    bitboard pin_rook_xrays(Board& board) {
         bitboard king = board.allied(Pieces::KINGS);
         square position = king.rzeros();
 
-        bitboard diagonal_sliders =
-            board.enemies().mask(board.bishops | board.queens);
+        return pin_xray<Pieces::ROOKS>(board, bitboard::Masks::horizontal
+                                                  << position.start_of_row()) |
+               pin_xray<Pieces::ROOKS>(board, bitboard::Masks::vertical
+                                                  << position.column());
+    }
 
-        // Remove sliders that already have line of sight to the king
-        diagonal_sliders &=
-            ~Magic::Bishops::get_avail_moves(board.all(), position);
+    bitboard pin_bishop_xrays(Board& board) {
+        bitboard king = board.allied(Pieces::KINGS);
+        square position = king.rzeros();
 
-        bitboard straight_sliders =
-            board.enemies().mask(board.rooks | board.queens);
+        return pin_xray<Pieces::BISHOPS>(
+                   board, bitboard::Masks::get_diagonal_at(position)) |
+               pin_xray<Pieces::BISHOPS>(
+                   board, bitboard::Masks::get_rev_diagonal_at(position));
+    }
 
-        // Remove sliders that already have line of sight to the king
-        straight_sliders &=
-            ~Magic::Rooks::get_avail_moves(board.all(), position);
+    bool is_enpassant_pinned(MoveGenerator& generator) {
+        if (!generator.board.enpassant.available)
+            return false;
 
-        // Get blockers without the enpassant pawn
-        bitboard blockers =
-            board.all() ^ bitboard::bit_at(board.enpassant.capturable);
-
-        // Check for discovered attacks
-        bitboard is_pinned;
-
-        is_pinned = diagonal_sliders.mask(
-            Magic::Bishops::get_avail_moves(blockers, position));
-
-        is_pinned |= straight_sliders.mask(
-            Magic::Rooks::get_avail_moves(blockers, position));
-
-        return is_pinned != 0;
+        return generator.pins.absolute.is_set_at(
+            generator.board.enpassant.capturable);
     }
 
     void initialize_table() {
