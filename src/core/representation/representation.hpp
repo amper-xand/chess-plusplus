@@ -94,6 +94,10 @@ namespace Game {
         }
 
         void play(Move move);
+        void update_castling(Move move);
+        void take_castling(Move move, bitboard king);
+        void capture_piece(Pieces::Piece piece, bitboard captured);
+        void handle_enpassant(Move move);
 
         // Misc
 
