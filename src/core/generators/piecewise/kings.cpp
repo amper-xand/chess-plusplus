@@ -221,10 +221,10 @@ namespace Game::Generators::Kings {
                       .mask(Knights::available_moves[king_pos]);
 
         checks |= Magic::Rooks::get_avail_moves(board.all(), king_pos)
-                      .mask(board.rooks | board.queens);
+                      .mask(board.rooks | board.queens).mask(board.enemies());
 
         checks |= Magic::Bishops::get_avail_moves(board.all(), king_pos)
-                      .mask(board.bishops | board.queens);
+                      .mask(board.bishops | board.queens).mask(board.enemies());
 
         bitboard pawns_attackers = // west attackers
             king.pop(0x8080808080808080) << 1;
@@ -238,7 +238,7 @@ namespace Game::Generators::Kings {
             pawns_attackers >>= 8;
         }
 
-        checks |= pawns_attackers;
+        checks |= pawns_attackers.mask(board.enemy(Pieces::PAWNS));
 
         return checks;
     }
