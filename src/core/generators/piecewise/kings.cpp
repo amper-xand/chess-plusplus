@@ -26,6 +26,13 @@ namespace Game::Generators::Kings {
         return moves;
     }
 
+    void initialize_table() {
+        for (square index = 0; index < 64; ++index) {
+            available_moves[index] = get_available_moves(index);
+        }
+    }
+
+
     template <Pieces::Piece piece>
     bitboard pin_xray(Board& board, bitboard direction) {
         bitboard king = board.allied(Pieces::KINGS);
@@ -87,12 +94,6 @@ namespace Game::Generators::Kings {
             generator.board.enpassant.capturable);
     }
 
-    void initialize_table() {
-        for (square index = 0; index < 64; ++index) {
-            available_moves[index] = get_available_moves(index);
-        }
-    }
-
     bitboard get_attacked_squares(Board& board) {
         bitboard diagonal_sliders =
                      board.enemies().mask(board.bishops | board.queens),
@@ -138,16 +139,12 @@ namespace Game::Generators::Kings {
         return attacked_squares;
     }
 
-    template <bool generate_castle>
-    MoveGenerator& gen_king_moves(MoveGenerator& generator) {
-        auto& board = generator.board;
+    void handle_castling(MoveGenerator& generator, square king_position,
+                         bitboard attacked_squares) {
 
-        square king_position = board.allied(Pieces::KINGS).rzeros();
+        Board& board = generator.board;
 
-        bitboard attacked_squares = get_attacked_squares(board);
-
-        // Generate castling
-        if (generate_castle && board.west_castle()) {
+        if (board.west_castle()) {
             bitboard cast_squares = 0b11111000;
 
             if (!board.turn) {
@@ -167,7 +164,7 @@ namespace Game::Generators::Kings {
             }
         }
 
-        if (generate_castle && board.east_castle()) {
+        if (board.east_castle()) {
             bitboard cast_squares = 0b00001111;
 
             if (!board.turn) {
@@ -186,6 +183,18 @@ namespace Game::Generators::Kings {
                 move.to = king_position.right(2);
             }
         }
+    }
+
+    template <bool generate_castle>
+    MoveGenerator& gen_king_moves(MoveGenerator& generator) {
+        auto& board = generator.board;
+
+        square king_position = board.allied(Pieces::KINGS).rzeros();
+
+        bitboard attacked_squares = get_attacked_squares(board);
+
+        if constexpr (generate_castle)
+            handle_castling(generator, king_position, attacked_squares);
 
         // Generate the rest of the moves
         bitboard moves = Kings::available_moves[king_position];
