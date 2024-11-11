@@ -16,7 +16,7 @@ namespace Game {
         struct { Pieces::Piece moved, captured = Pieces::NONE; }
                piece;
 
-        struct { bool set: 1 = false; bool take: 1 = false; square_t captured: 6; }
+        struct { bool set: 1 = false; bool take: 1 = false; square_t captured: 6 = 0; }
                enpassant;
 
         struct { bool take: 1 = false, west: 1 = true;}
@@ -63,6 +63,8 @@ namespace Game {
 
         Board() : colors{bitboard(0)}, pieces{bitboard(0)} {}
 
+        static Board from_fen(std::string fen);
+
         // Squares state
 
         bool is_occupied(square index);
@@ -98,10 +100,11 @@ namespace Game {
         void take_castling(Move move, bitboard king);
         void capture_piece(Pieces::Piece piece, bitboard captured);
         void handle_enpassant(Move move);
+        void promote(Pieces::Piece promotion, bitboard to);
 
-        // Misc
+        void unplay(Move move);
+        void uncastle(Move move);
 
-        static Board from_fen(std::string fen);
         void print();
     };
 

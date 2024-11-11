@@ -29,7 +29,6 @@ namespace Game {
 
         handle_enpassant(move);
 
-        // Switch turns
         turn = static_cast<Colors::Color>(!turn);
     }
 
@@ -58,7 +57,7 @@ namespace Game {
         bitboard rook =
             move.castle.west ? 0x0100000000000001 : 0x8000000000000080;
 
-        rook.mask(allied(Pieces::ROOKS));
+        rook = rook.mask(allied(Pieces::ROOKS));
 
         bitboard rook_to = move.castle.west ? (king << 1) : (king >> 1);
 
@@ -102,6 +101,48 @@ namespace Game {
         }
 
         return Pieces::NONE;
+    }
+
+    void Board::promote(Pieces::Piece promotion, bitboard to) {
+        pieces[promotion] |= to;
+        pawns &= ~to;
+    }
+
+    void Board::unplay(Move move) {
+        turn = static_cast<Colors::Color>(!turn);
+
+        auto from = bitboard::bit_at(move.from);
+        auto to = bitboard::bit_at(move.to);
+
+        // return the piece to its previous position
+        switch_bits(colors[turn], to, from);
+        switch_bits(pieces[move.piece.moved], to, from);
+
+        if (move.piece.captured != Pieces::NONE) {
+            pieces[move.piece.captured] |= to;
+            colors[!turn] |= to;
+        }
+
+        // check if move rejected ep
+        enpassant.available = !move.enpassant.take && move.enpassant.captured;
+
+        if (move.castle.take) {
+            uncastle(move);
+        }
+
+        if (move.promotion != Pieces::NONE) {
+            pieces[move.promotion] &= ~to;
+        }
+    }
+
+    void Board::uncastle(Move move) {
+        if (turn) {
+            (move.castle.west ? castling.white_west : castling.white_east) =
+                true;
+        } else {
+            (move.castle.west ? castling.black_west : castling.black_east) =
+                true;
+        }
     }
 
     Board Board::from_fen(std::string fen) {

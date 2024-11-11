@@ -74,6 +74,9 @@ namespace Game::Generators::Pawns {
             move.from = index;
             move.to = generator.board.turn ? index.up() : index.down();
 
+            // Mark ep as rejected
+            move.enpassant.captured = generator.board.enpassant.available;
+
             gen_promotion(generator, move);
         });
 
@@ -85,6 +88,9 @@ namespace Game::Generators::Pawns {
 
             move.from = index;
             move.to = generator.board.turn ? index.up(2) : index.down(2);
+
+            // Mark ep as rejected
+            move.enpassant.captured = generator.board.enpassant.available;
         });
     }
 
@@ -101,6 +107,9 @@ namespace Game::Generators::Pawns {
 
             move.piece.captured = generator.board.piece_at(index);
 
+            // Mark ep as rejected
+            move.enpassant.captured = generator.board.enpassant.available;
+
             gen_promotion(generator, move);
         });
 
@@ -113,6 +122,9 @@ namespace Game::Generators::Pawns {
                                              : index.down().right();
 
             move.piece.captured = generator.board.piece_at(index);
+
+            // Mark ep as rejected
+            move.enpassant.captured = generator.board.enpassant.available;
 
             gen_promotion(generator, move);
         });
