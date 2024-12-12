@@ -25,7 +25,38 @@ namespace Game {
         constexpr const type *operator->() const { return &value_; }
     };
 
-    struct square : public LiteralWrapper<square_t> {
+    template <typename type> struct OperatorWrapper {
+        inline constexpr type operator+(const auto& other) {
+            return *this + other;
+        }
+
+        inline constexpr type operator-(const auto& other) {
+            return *this + other;
+        }
+
+        inline constexpr type operator*(const auto& other) {
+            return *this + other;
+        }
+
+        inline constexpr type operator/(const auto& other) {
+            return *this + other;
+        }
+
+        inline constexpr type operator&(const auto& other) {
+            return *this + other;
+        }
+
+        inline constexpr type operator|(const auto& other) {
+            return *this + other;
+        }
+
+        inline constexpr type operator^(const auto& other) {
+            return *this + other;
+        }
+
+    };
+
+    struct square : public LiteralWrapper<square_t>, public OperatorWrapper<square> {
       public:
         constexpr square(square_t value = 0)
             : LiteralWrapper<square_t>(value) {}
@@ -46,7 +77,7 @@ namespace Game {
         }
     };
 
-    struct bitboard : public LiteralWrapper<bitboard_t> {
+    struct bitboard : public LiteralWrapper<bitboard_t>, public OperatorWrapper<bitboard> {
       public:
         constexpr bitboard(bitboard_t value = 0)
             : LiteralWrapper<bitboard_t>(value) {}
@@ -234,12 +265,12 @@ namespace Game {
     struct Piece : public LiteralWrapper<piece_t> {
       public:
         static constexpr piece_t PAWNS = 0, KNIGHTS = 1, BISHOPS = 2, ROOKS = 3,
-                              QUEENS = 4, KINGS = 5, NONE = 6;
+                                 QUEENS = 4, KINGS = 5, NONE = 6;
 
         constexpr Piece(piece_t piece) : LiteralWrapper<piece_t>(piece) {}
 
         static constexpr piece_t AllPieces[]{PAWNS, KNIGHTS, BISHOPS,
-                                          ROOKS, QUEENS,  KINGS};
+                                             ROOKS, QUEENS,  KINGS};
 
         static Piece char_to_piece(char c);
         static char piece_to_char(Piece piece, Color color);
