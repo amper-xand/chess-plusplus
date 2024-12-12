@@ -6,13 +6,13 @@ namespace Game::Generators::Pawns {
     // clang-format off
     bitboard get_advances(bitboard pawns, bitboard blockers, bool color) {
 
-        if (color == Colors::WHITE) pawns <<= 8;
-        else                        pawns >>= 8;
+        if (color == Color::WHITE) pawns <<= 8;
+        else                       pawns >>= 8;
 
         return pawns.pop(blockers);
     }
 
-    bitboard get_advances(bitboard pawns, bitboard blockers, Colors::Color color) {
+    bitboard get_advances(bitboard pawns, bitboard blockers, Color color) {
         return get_advances(pawns, blockers, (bool) color);
     }
 
@@ -20,7 +20,7 @@ namespace Game::Generators::Pawns {
         // Filter pawns that will wrap around the board
         bitboard attacks = pawns.pop(0x0101010101010101);
 
-        if (color == Colors::WHITE) {
+        if (color == Color::WHITE) {
             attacks <<= 7; // up + right
         } else {
             attacks >>= 9; // down + right
@@ -29,7 +29,7 @@ namespace Game::Generators::Pawns {
         return attacks;
     }
 
-    bitboard east_attacks(bitboard pawns, Colors::Color color) {
+    bitboard east_attacks(bitboard pawns, Color color) {
         return east_attacks(pawns, (bool) color);
     }
 
@@ -37,7 +37,7 @@ namespace Game::Generators::Pawns {
         // Filter pawns that will wrap around the board
         bitboard attacks = pawns.pop(0x8080808080808080);
 
-        if (color == Colors::WHITE) {
+        if (color == Color::WHITE) {
             attacks <<= 9; // up + left
         } else {
             attacks >>= 7; // down + left
@@ -46,7 +46,7 @@ namespace Game::Generators::Pawns {
         return attacks;
     }
 
-    bitboard west_attacks(bitboard pawns, Colors::Color color) {
+    bitboard west_attacks(bitboard pawns, Color color) {
         return west_attacks(pawns, (bool) color);
     }
     // clang-format on
@@ -55,10 +55,9 @@ namespace Game::Generators::Pawns {
         if (!(move.to.row() == 0 || move.to.row() == 7))
             return;
 
-        move.promotion = Pieces::QUEENS;
+        move.promotion = Piece::QUEENS;
 
-        for (auto promotion :
-             {Pieces::KNIGHTS, Pieces::BISHOPS, Pieces::ROOKS}) {
+        for (auto promotion : {Piece::KNIGHTS, Piece::BISHOPS, Piece::ROOKS}) {
 
             generator.next().copy(move).promotion = promotion;
         }
@@ -69,7 +68,7 @@ namespace Game::Generators::Pawns {
 
         bitboard::scan(singles, [&](square index) {
             Move& move = generator.next();
-            move.piece.moved = Pieces::PAWNS;
+            move.piece.moved = Piece::PAWNS;
 
             move.from = index;
             move.to = generator.board.turn ? index.up() : index.down();
@@ -82,7 +81,7 @@ namespace Game::Generators::Pawns {
 
         bitboard::scan(doubles, [&](square index) {
             Move& move = generator.next();
-            move.piece.moved = Pieces::PAWNS;
+            move.piece.moved = Piece::PAWNS;
 
             move.enpassant.set = true;
 
@@ -99,7 +98,7 @@ namespace Game::Generators::Pawns {
 
         bitboard::scan(east, [&](square index) {
             Move& move = generator.next();
-            move.piece.moved = Pieces::PAWNS;
+            move.piece.moved = Piece::PAWNS;
 
             move.to = index;
             move.from =
@@ -115,7 +114,7 @@ namespace Game::Generators::Pawns {
 
         bitboard::scan(west, [&](square index) {
             Move& move = generator.next();
-            move.piece.moved = Pieces::PAWNS;
+            move.piece.moved = Piece::PAWNS;
 
             move.to = index;
             move.from = generator.board.turn ? index.down().right()
@@ -136,7 +135,7 @@ namespace Game::Generators::Pawns {
             square index = east.rzeros();
 
             Move& move = generator.next();
-            move.piece.moved = Pieces::PAWNS;
+            move.piece.moved = Piece::PAWNS;
 
             move.enpassant.take = true;
             move.enpassant.captured = generator.board.enpassant.capturable;
@@ -152,7 +151,7 @@ namespace Game::Generators::Pawns {
             square index = west.rzeros();
 
             Move& move = generator.next();
-            move.piece.moved = Pieces::PAWNS;
+            move.piece.moved = Piece::PAWNS;
 
             move.enpassant.take = true;
             move.enpassant.captured = generator.board.enpassant.capturable;
@@ -170,7 +169,7 @@ namespace Game::Generators::Pawns {
 
         bitboard blockers = board.all();
 
-        bitboard pawns = board.allied(Pieces::PAWNS)
+        bitboard pawns = board.allied(Piece::PAWNS)
                          // Remove pinned pawns
                          & ~generator.pins.absolute;
 
@@ -203,7 +202,7 @@ namespace Game::Generators::Pawns {
             bitboard east = 0, west = 0;
         } attacks, captures, enpassant;
 
-        square king_position = board.allied(Pieces::KINGS).rzeros();
+        square king_position = board.allied(Piece::KINGS).rzeros();
 
         bitboard east_partial = bitboard::Masks::make_e_mask(king_position)
                                     .mask(generator.pins.partial);
@@ -242,7 +241,7 @@ namespace Game::Generators::Pawns {
         auto& board = generator.board;
 
         bitboard pawns =
-            board.allied(Pieces::PAWNS)
+            board.allied(Piece::PAWNS)
                 .pop(generator.pins.absolute | generator.pins.partial);
 
         bitboard blockers = board.all();

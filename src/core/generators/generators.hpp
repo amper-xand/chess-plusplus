@@ -27,8 +27,8 @@ namespace Game::Generators {
 
         Move& next();
 
-        void from_bitboard(Pieces::Piece piece, square from, bitboard moves,
-                           bitboard captures);
+        void from_bitboard(Piece piece, square from, bitboard moves,
+                           bitboard captures, Move base = Move());
 
         std::vector<Move> get_generated();
     };

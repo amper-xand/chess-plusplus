@@ -51,7 +51,7 @@ namespace Game::Generators::Knights {
     }
 
     MoveGenerator& gen_knights_moves(MoveGenerator& generator) {
-        bitboard knights = generator.board.allied(Pieces::KNIGHTS)
+        bitboard knights = generator.board.allied(Piece::KNIGHTS)
                                .pop(generator.pins.absolute);
         bitboard capturable = generator.board.enemies();
         bitboard blockers = generator.board.allies();
@@ -60,7 +60,7 @@ namespace Game::Generators::Knights {
             bitboard moves = Knights::available_moves[index].pop(blockers);
             bitboard captures = moves.mask(capturable);
 
-            generator.from_bitboard(Pieces::KNIGHTS, index, moves, captures);
+            generator.from_bitboard(Piece::KNIGHTS, index, moves, captures);
         });
 
         return generator;
@@ -77,14 +77,14 @@ namespace Game::Generators::Knights {
         // Pinned pieces cannot move or capture a piece giving check
         bitboard pinned = generator.pins.absolute;
 
-        bitboard knights = board.allied(Pieces::KNIGHTS).pop(pinned);
+        bitboard knights = board.allied(Piece::KNIGHTS).pop(pinned);
 
         bitboard::scan(knights, [&](square index) {
             bitboard moves =
                 Knights::available_moves[index].mask(allowed).pop(blockers);
             bitboard captures = moves.mask(capturable);
 
-            generator.from_bitboard(Pieces::KNIGHTS, index, moves, captures);
+            generator.from_bitboard(Piece::KNIGHTS, index, moves, captures);
         });
 
         return generator;

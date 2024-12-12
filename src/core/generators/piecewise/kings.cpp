@@ -32,9 +32,8 @@ namespace Game::Generators::Kings {
         }
     }
 
-    template <Pieces::Piece piece>
-    bitboard pin_xray(Board& board, bitboard direction) {
-        bitboard king = board.allied(Pieces::KINGS);
+    template <char piece> bitboard pin_xray(Board& board, bitboard direction) {
+        bitboard king = board.allied(Piece::KINGS);
 
         bitboard pinnable =
             board.allies() | board.pawns; // pin enemy pawns for ep
@@ -66,22 +65,22 @@ namespace Game::Generators::Kings {
     }
 
     bitboard pin_rook_xrays(Board& board) {
-        bitboard king = board.allied(Pieces::KINGS);
+        bitboard king = board.allied(Piece::KINGS);
         square position = king.rzeros();
 
-        return pin_xray<Pieces::ROOKS>(board, bitboard::Masks::horizontal
+        return pin_xray<Piece::ROOKS>(board, bitboard::Masks::horizontal
                                                   << position.start_of_row()) |
-               pin_xray<Pieces::ROOKS>(board, bitboard::Masks::vertical
+               pin_xray<Piece::ROOKS>(board, bitboard::Masks::vertical
                                                   << position.column());
     }
 
     bitboard pin_bishop_xrays(Board& board) {
-        bitboard king = board.allied(Pieces::KINGS);
+        bitboard king = board.allied(Piece::KINGS);
         square position = king.rzeros();
 
-        return pin_xray<Pieces::BISHOPS>(
+        return pin_xray<Piece::BISHOPS>(
                    board, bitboard::Masks::get_diagonal_at(position)) |
-               pin_xray<Pieces::BISHOPS>(
+               pin_xray<Piece::BISHOPS>(
                    board, bitboard::Masks::get_rev_diagonal_at(position));
     }
 
@@ -100,7 +99,7 @@ namespace Game::Generators::Kings {
                  straight_sliders =
                      board.enemies().mask(board.rooks | board.queens),
 
-                 knights = board.enemy(Pieces::KNIGHTS);
+                 knights = board.enemy(Piece::KNIGHTS);
 
         bitboard attacked_squares = 0, blockers = board.all();
 
@@ -126,14 +125,14 @@ namespace Game::Generators::Kings {
         }
 
         attacked_squares |=
-            Pawns::west_attacks(board.enemy(Pieces::PAWNS), !board.turn);
+            Pawns::west_attacks(board.enemy(Piece::PAWNS), !board.turn);
 
         attacked_squares |=
-            Pawns::west_attacks(board.enemy(Pieces::PAWNS), !board.turn);
+            Pawns::west_attacks(board.enemy(Piece::PAWNS), !board.turn);
 
         // Add the other kings's attacks
         attacked_squares |=
-            Kings::available_moves[board.enemy(Pieces::KINGS).rzeros()];
+            Kings::available_moves[board.enemy(Piece::KINGS).rzeros()];
 
         return attacked_squares;
     }
@@ -142,6 +141,10 @@ namespace Game::Generators::Kings {
                          bitboard attacked_squares) {
 
         Board& board = generator.board;
+
+        if ((board.turn && !board.castling.white) ||
+            (!board.turn && !board.castling.black))
+            return;
 
         if (board.west_castle()) {
             bitboard cast_squares = 0b11111000;
@@ -155,7 +158,7 @@ namespace Game::Generators::Kings {
                 cast_squares.mask(!(board.all() | attacked_squares))) {
 
                 Move& move = generator.next();
-                move.piece.moved = Pieces::KINGS;
+                move.piece.moved = Piece::KINGS;
                 move.castle = {.take = true, .west = false};
 
                 move.from = king_position;
@@ -175,7 +178,7 @@ namespace Game::Generators::Kings {
                 cast_squares.mask(!(board.all() | attacked_squares))) {
 
                 Move& move = generator.next();
-                move.piece.moved = Pieces::KINGS;
+                move.piece.moved = Piece::KINGS;
                 move.castle = {.take = true, .west = true};
 
                 move.from = king_position;
@@ -188,7 +191,7 @@ namespace Game::Generators::Kings {
     MoveGenerator& gen_king_moves(MoveGenerator& generator) {
         auto& board = generator.board;
 
-        square king_position = board.allied(Pieces::KINGS).rzeros();
+        square king_position = board.allied(Piece::KINGS).rzeros();
 
         bitboard attacked_squares = get_attacked_squares(board);
 
@@ -204,7 +207,12 @@ namespace Game::Generators::Kings {
 
         bitboard captures = board.enemies().mask(moves);
 
-        generator.from_bitboard(Pieces::KINGS, king_position, moves, captures);
+        Move base;
+        base.castle.reject =
+            board.turn ? board.castling.white : board.castling.black;
+
+        generator.from_bitboard(Piece::KINGS, king_position, moves, captures,
+                                base);
 
         return generator;
     }
@@ -213,20 +221,22 @@ namespace Game::Generators::Kings {
     template MoveGenerator& gen_king_moves<false>(MoveGenerator& generator);
 
     bitboard checking_pieces(Board& board) {
-        bitboard king = board.allied(Pieces::KINGS);
+        bitboard king = board.allied(Piece::KINGS);
 
         square king_pos = king.rzeros();
 
         bitboard checks;
 
-        checks |= board.enemy(Pieces::KNIGHTS)
+        checks |= board.enemy(Piece::KNIGHTS)
                       .mask(Knights::available_moves[king_pos]);
 
         checks |= Magic::Rooks::get_avail_moves(board.all(), king_pos)
-                      .mask(board.rooks | board.queens).mask(board.enemies());
+                      .mask(board.rooks | board.queens)
+                      .mask(board.enemies());
 
         checks |= Magic::Bishops::get_avail_moves(board.all(), king_pos)
-                      .mask(board.bishops | board.queens).mask(board.enemies());
+                      .mask(board.bishops | board.queens)
+                      .mask(board.enemies());
 
         bitboard pawns_attackers = // west attackers
             king.pop(0x8080808080808080) << 1;
@@ -240,7 +250,7 @@ namespace Game::Generators::Kings {
             pawns_attackers >>= 8;
         }
 
-        checks |= pawns_attackers.mask(board.enemy(Pieces::PAWNS));
+        checks |= pawns_attackers.mask(board.enemy(Piece::PAWNS));
 
         return checks;
     }

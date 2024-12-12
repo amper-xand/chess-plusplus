@@ -23,27 +23,25 @@ namespace Game {
             take_castling(move, from);
         }
 
-        if (move.piece.captured != Pieces::NONE) {
+        if (!move.piece.captured.isNone()) {
             capture_piece(move.piece.captured, to);
         }
 
         handle_enpassant(move);
 
-        turn = static_cast<Colors::Color>(!turn);
+        turn = !turn;
     }
 
     void Board::update_castling(Move move) {
-        if (move.piece.moved == Pieces::KINGS) {
-            if (turn == Colors::WHITE) {
-                castling.white_east = false;
-                castling.white_west = false;
+        if (move.piece.moved.isKing()) {
+            if (turn.isWhite()) {
+                castling.white = false;
             } else {
-                castling.black_east = false;
-                castling.black_west = false;
+                castling.black = false;
             }
         }
 
-        if (move.piece.moved == Pieces::ROOKS) {
+        if (move.piece.moved.isRook()) {
             if (move.from == 0) {
                 (turn ? castling.white_east : castling.black_east) = false;
             } else if (move.from == 7) {
@@ -57,15 +55,15 @@ namespace Game {
         bitboard rook =
             move.castle.west ? 0x0100000000000001 : 0x8000000000000080;
 
-        rook = rook.mask(allied(Pieces::ROOKS));
+        rook = rook.mask(allied(Piece::ROOKS));
 
         bitboard rook_to = move.castle.west ? (king << 1) : (king >> 1);
 
         switch_bits(colors[turn], rook, rook_to);
-        switch_bits(pieces[Pieces::ROOKS], rook, rook_to);
+        switch_bits(pieces[Piece::ROOKS], rook, rook_to);
     }
 
-    void Board::capture_piece(Pieces::Piece piece, bitboard captured) {
+    void Board::capture_piece(Piece piece, bitboard captured) {
         colors[!turn] &= ~captured;
         colors[piece] &= ~captured;
     }
@@ -76,12 +74,11 @@ namespace Game {
 
         if (move.enpassant.set) {
             enpassant.capturable = move.to;
-            enpassant.tail =
-                (turn == Colors::WHITE) ? move.to.down() : move.to.up();
+            enpassant.tail = turn.isWhite() ? move.to.down() : move.to.up();
         }
 
         if (move.enpassant.take) {
-            capture_piece(Pieces::PAWNS, move.enpassant.captured);
+            capture_piece(Piece::PAWNS, move.enpassant.captured);
         }
     }
 
@@ -89,27 +86,26 @@ namespace Game {
         return static_cast<bitboard>(white | black).is_set_at(index);
     }
 
-    Colors::Color Board::color_at(square index) {
-        return Colors::BothColors[static_cast<bitboard>(white).is_set_at(
-            index)];
+    Color Board::color_at(square index) {
+        return Color::BothColors[static_cast<bitboard>(white).is_set_at(index)];
     }
 
-    Pieces::Piece Board::piece_at(square index) {
-        for (auto piece : Pieces::AllPieces) {
+    Piece Board::piece_at(square index) {
+        for (auto piece : Piece::AllPieces) {
             if (pieces[piece].is_set_at(index))
                 return piece;
         }
 
-        return Pieces::NONE;
+        return Piece::NONE;
     }
 
-    void Board::promote(Pieces::Piece promotion, bitboard to) {
+    void Board::promote(Piece promotion, bitboard to) {
         pieces[promotion] |= to;
         pawns &= ~to;
     }
 
     void Board::unplay(Move move) {
-        turn = static_cast<Colors::Color>(!turn);
+        turn = !turn;
 
         auto from = bitboard::bit_at(move.from);
         auto to = bitboard::bit_at(move.to);
@@ -118,7 +114,7 @@ namespace Game {
         switch_bits(colors[turn], to, from);
         switch_bits(pieces[move.piece.moved], to, from);
 
-        if (move.piece.captured != Pieces::NONE) {
+        if (move.piece.captured != Piece::NONE) {
             pieces[move.piece.captured] |= to;
             colors[!turn] |= to;
         }
@@ -130,16 +126,22 @@ namespace Game {
             uncastle(move);
         }
 
-        if (move.promotion != Pieces::NONE) {
+        if (move.castle.reject) {
+            turn ? castling.white : castling.black = true;
+        }
+
+        if (!move.promotion.isNone()) {
             pieces[move.promotion] &= ~to;
         }
     }
 
     void Board::uncastle(Move move) {
         if (turn) {
+            castling.white = true;
             (move.castle.west ? castling.white_west : castling.white_east) =
                 true;
         } else {
+            castling.black = true;
             (move.castle.west ? castling.black_west : castling.black_east) =
                 true;
         }
@@ -161,9 +163,9 @@ namespace Game {
                                              
             } else {
                 // Fill piece.
-                Colors::Color color = Colors::BothColors[std::isupper(c)];
+                Color color = Color::BothColors[std::isupper(c)];
 
-                Pieces::Piece piece = Pieces::char_to_piece(c);
+                Piece piece = Piece::char_to_piece(c);
 
                 board.colors[color] |= bitboard::bit_at(index);
                 board.pieces[piece] |= bitboard::bit_at(index);
@@ -172,7 +174,7 @@ namespace Game {
         }
         // clang-format on
 
-        board.turn = Colors::WHITE;
+        board.turn = Color::WHITE;
 
         return board;
     }
@@ -187,7 +189,7 @@ namespace Game {
                 square index = square::index_at(rank, file);
 
                 auto square = is_occupied(index)
-                  ? std::format(" {} ", Pieces::piece_to_char(piece_at(index), color_at(index)))
+                  ? std::format(" {} ", Piece::piece_to_char(piece_at(index), color_at(index)))
                   : " - ";
 
                 std::cout << square;

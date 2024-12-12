@@ -1,9 +1,9 @@
 #include "representation.hpp"
 
-namespace Game::Pieces {
+namespace Game {
     // clang-format off
     
-    Piece char_to_piece(char c) {
+    Piece Piece::char_to_piece(char c) {
         switch (c) {
         case 'p': case 'P':
             return PAWNS;
@@ -27,7 +27,7 @@ namespace Game::Pieces {
         return PAWNS;
     }
 
-    char piece_to_char(Piece piece, Colors::Color color) {
+    char Piece::piece_to_char(Piece piece, Color color) {
         switch (piece) {
 
         case PAWNS   : return color ? 'P' : 'p';
@@ -43,4 +43,4 @@ namespace Game::Pieces {
         return 'X';
     }
     // clang-format on
-} // namespace Game::Pieces
+} // namespace Game

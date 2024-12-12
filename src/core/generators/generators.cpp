@@ -7,7 +7,6 @@
 
 #include <climits>
 #include <cstdio>
-#include <iostream>
 #include <stdexcept>
 #include <strings.h>
 #include <vector>
@@ -35,11 +34,14 @@ namespace Game::Generators {
         return move;
     }
 
-    void MoveGenerator::from_bitboard(Pieces::Piece piece, square from,
-                                      bitboard moves, bitboard captures) {
+    void MoveGenerator::from_bitboard(Piece piece, square from,
+                                      bitboard moves, bitboard captures,
+                                      Move base) {
 
         bitboard::scan(moves, [&](square to) {
             auto& move = next();
+
+            move.copy(base);
 
             move.piece.moved = piece;
 
@@ -97,7 +99,7 @@ namespace Game::Generators {
         // if the piece is not a knight or a pawn
         // then try to block it
         if (checkers.mask(board.knights | board.pawns) != 0) {
-            bitboard king = board.allied(Pieces::KINGS);
+            bitboard king = board.allied(Piece::KINGS);
             square king_pos = king.rzeros();
 
             // get the slider to the piece direction
