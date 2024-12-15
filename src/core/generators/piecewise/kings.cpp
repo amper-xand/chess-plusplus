@@ -69,9 +69,9 @@ namespace Game::Generators::Kings {
         square position = king.rzeros();
 
         return pin_xray<Piece::ROOKS>(board, bitboard::Masks::horizontal
-                                                  << position.start_of_row()) |
+                                                 << position.start_of_row()) |
                pin_xray<Piece::ROOKS>(board, bitboard::Masks::vertical
-                                                  << position.column());
+                                                 << position.column());
     }
 
     bitboard pin_bishop_xrays(Board& board) {
@@ -142,11 +142,12 @@ namespace Game::Generators::Kings {
 
         Board& board = generator.board;
 
-        if ((board.turn && !board.castling.white) ||
-            (!board.turn && !board.castling.black))
+        auto castling = board.castling.get(board.turn);
+
+        if (castling & Board::CAST_RIGHT)
             return;
 
-        if (board.west_castle()) {
+        if (castling & Board::CAST_WEST) {
             bitboard cast_squares = 0b11111000;
 
             if (!board.turn) {
@@ -166,7 +167,7 @@ namespace Game::Generators::Kings {
             }
         }
 
-        if (board.east_castle()) {
+        if (castling & Board::CAST_EAST) {
             bitboard cast_squares = 0b00001111;
 
             if (!board.turn) {
@@ -209,7 +210,7 @@ namespace Game::Generators::Kings {
 
         Move base;
         base.castle.reject =
-            board.turn ? board.castling.white : board.castling.black;
+            (board.castling.get(board.turn) & Board::CAST_RIGHT) != 0;
 
         generator.from_bitboard(Piece::KINGS, king_position, moves, captures,
                                 base);

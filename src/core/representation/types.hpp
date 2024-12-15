@@ -70,6 +70,8 @@ namespace Game {
         inline constexpr square up(uint8_t v = 1) { return value_ + 8 * v; }
         inline constexpr square down(uint8_t v = 1) { return value_ - 8 * v; }
 
+        inline constexpr bitboard_t bb() { return 1ul << value_; }
+
         inline constexpr uint8_t start_of_row() { return value_ - column(); }
 
         static inline constexpr square index_at(uint8_t row, uint8_t col) {

@@ -10,8 +10,8 @@ namespace Game {
     };
 
     void Board::play(Move move) {
-        auto from = bitboard::bit_at(move.from);
-        auto to = bitboard::bit_at(move.to);
+        auto from = move.from.bb();
+        auto to = move.to.bb();
 
         switch_bits(colors[turn], from, to);
         switch_bits(pieces[move.piece.moved], from, to);
@@ -34,19 +34,12 @@ namespace Game {
 
     void Board::update_castling(Move move) {
         if (move.piece.moved.isKing()) {
-            if (turn.isWhite()) {
-                castling.white = false;
-            } else {
-                castling.black = false;
-            }
+            castling.off(turn, Board::CAST_RIGHT);
         }
 
         if (move.piece.moved.isRook()) {
-            if (move.from == 0) {
-                (turn ? castling.white_east : castling.black_east) = false;
-            } else if (move.from == 7) {
-                (turn ? castling.white_west : castling.black_west) = false;
-            }
+            castling.off(turn, move.from.column() == 0 ? Board::CAST_EAST
+                                                       : Board::CAST_WEST);
         }
     }
 
@@ -83,11 +76,11 @@ namespace Game {
     }
 
     bool Board::is_occupied(square index) {
-        return static_cast<bitboard>(white | black).is_set_at(index);
+        return bitboard(white | black).is_set_at(index);
     }
 
     Color Board::color_at(square index) {
-        return Color::BothColors[static_cast<bitboard>(white).is_set_at(index)];
+        return Color::BothColors[bitboard(white).is_set_at(index)];
     }
 
     Piece Board::piece_at(square index) {
@@ -107,8 +100,8 @@ namespace Game {
     void Board::unplay(Move move) {
         turn = !turn;
 
-        auto from = bitboard::bit_at(move.from);
-        auto to = bitboard::bit_at(move.to);
+        auto from = move.from.bb();
+        auto to = move.to.bb();
 
         // return the piece to its previous position
         switch_bits(colors[turn], to, from);
@@ -127,7 +120,7 @@ namespace Game {
         }
 
         if (move.castle.reject) {
-            turn ? castling.white : castling.black = true;
+            castling.set(turn, CAST_RIGHT);
         }
 
         if (!move.promotion.isNone()) {
@@ -136,15 +129,7 @@ namespace Game {
     }
 
     void Board::uncastle(Move move) {
-        if (turn) {
-            castling.white = true;
-            (move.castle.west ? castling.white_west : castling.white_east) =
-                true;
-        } else {
-            castling.black = true;
-            (move.castle.west ? castling.black_west : castling.black_east) =
-                true;
-        }
+        castling.set(turn, CAST_RIGHT | (move.castle.west ? CAST_WEST : CAST_EAST));
     }
 
     Board Board::from_fen(std::string fen) {

@@ -2,6 +2,7 @@
 
 #include "types.hpp"
 
+#include <cstdint>
 #include <string>
 
 namespace Game {
@@ -45,9 +46,18 @@ namespace Game {
 
         Color turn;
 
-        struct { bool white: 1 = true, white_west: 1 = true, white_east: 1 = true,
-                      black: 1 = true, black_west: 1 = true, black_east: 1 = true; }
-               castling;
+        static const uint8_t
+            CAST_RIGHT = 0b100,
+            CAST_WEST  = 0b010,
+            CAST_EAST  = 0b001;
+
+        struct { 
+            uint8_t state = 0b111111;
+                             
+            inline void set(Color color, uint8_t state) { this->state |= state << (3 & -color); }
+            inline void off(Color color, uint8_t state) { this->state &= ~(state << (3 & -color)); }
+            inline uint8_t get(Color color) { return (state >> (3 & -color)) & 0b111; }
+        } castling;
 
         struct { bool available : 1 = false; square_t capturable : 6; square_t tail : 6; }
                enpassant;
@@ -82,16 +92,6 @@ namespace Game {
         inline bitboard enemies() { return colors[!turn]; }
         inline bitboard enemy(Piece piece) {
             return pieces[piece] & colors[!turn];
-        }
-
-        // State
-
-        inline bool west_castle() const {
-            return turn ? castling.white_west : castling.black_west;
-        }
-
-        inline bool east_castle() const {
-            return turn ? castling.white_east : castling.black_east;
         }
 
         void play(Move move);

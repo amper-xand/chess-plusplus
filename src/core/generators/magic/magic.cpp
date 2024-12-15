@@ -60,9 +60,9 @@ namespace Game::Generators::Magic {
 
     template <typename Derived, uint8_t Bits> struct MagicTable {
         static constexpr uint8_t bits = Bits;
+        static constexpr bitboard table_size = bitboard::bit_at(Bits);
         static MagicEntry entries[64];
-        static bitboard moves[64]
-                             [static_cast<bitboard_t>(bitboard::bit_at(Bits))];
+        static bitboard moves[64][(bitboard_t)table_size];
 
         static inline bitboard relevant_blockers(square index) {
             return Derived::relevant_blockers(index);
@@ -87,8 +87,7 @@ namespace Game::Generators::Magic {
     MagicEntry MagicTable<Derived, Bits>::entries[64];
 
     template <typename Derived, uint8_t Bits>
-    bitboard MagicTable<Derived, Bits>::moves[64][static_cast<bitboard_t>(
-        bitboard::bit_at(Bits))];
+    bitboard MagicTable<Derived, Bits>::moves[64][(bitboard_t)table_size];
 
     struct Rookst : public MagicTable<Rookst, 12> {
 
