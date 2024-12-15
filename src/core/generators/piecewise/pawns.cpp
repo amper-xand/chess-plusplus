@@ -59,7 +59,7 @@ namespace Game::Generators::Pawns {
 
         for (auto promotion : {Piece::KNIGHTS, Piece::BISHOPS, Piece::ROOKS}) {
 
-            generator.next().copy(move).promotion = promotion;
+            generator.next().same_as(move).promotion = promotion;
         }
     };
 

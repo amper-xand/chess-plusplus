@@ -19,10 +19,10 @@ namespace Game {
         struct { bool set: 1 = false; bool take: 1 = false; square_t captured: 6 = 0; }
                enpassant;
 
-        struct { bool take: 1 = false, west: 1 = true, reject = false;}
+        struct { bool take: 1 = false, reject: 1 = false; direction_t side: 1 = Direction::WEST; }
                castle;
 
-        inline Move& copy(Move other) {
+        inline Move& same_as(Move other) {
             this->from = other.from;
             this->to = other.to;
 
@@ -57,6 +57,8 @@ namespace Game {
             inline void set(Color color, uint8_t state) { this->state |= state << (3 & -color); }
             inline void off(Color color, uint8_t state) { this->state &= ~(state << (3 & -color)); }
             inline uint8_t get(Color color) { return (state >> (3 & -color)) & 0b111; }
+
+            inline uint8_t flag(Direction dir) { return dir.isWest() ? CAST_WEST : CAST_EAST; }
         } castling;
 
         struct { bool available : 1 = false; square_t capturable : 6; square_t tail : 6; }

@@ -38,19 +38,18 @@ namespace Game {
         }
 
         if (move.piece.moved.isRook()) {
-            castling.off(turn, move.from.column() == 0 ? Board::CAST_EAST
-                                                       : Board::CAST_WEST);
+            castling.off(turn, castling.flag(move.from.column() == 7));
         }
     }
 
     void Board::take_castling(Move move, bitboard king) {
         // Move the rook
         bitboard rook =
-            move.castle.west ? 0x0100000000000001 : 0x8000000000000080;
+            move.castle.side ? 0x0100000000000001 : 0x8000000000000080;
 
         rook = rook.mask(allied(Piece::ROOKS));
 
-        bitboard rook_to = move.castle.west ? (king << 1) : (king >> 1);
+        bitboard rook_to = move.castle.side ? (king << 1) : (king >> 1);
 
         switch_bits(colors[turn], rook, rook_to);
         switch_bits(pieces[Piece::ROOKS], rook, rook_to);
@@ -80,11 +79,11 @@ namespace Game {
     }
 
     Color Board::color_at(square index) {
-        return Color::BothColors[bitboard(white).is_set_at(index)];
+        return Color::Both[bitboard(white).is_set_at(index)];
     }
 
     Piece Board::piece_at(square index) {
-        for (auto piece : Piece::AllPieces) {
+        for (auto piece : Piece::All) {
             if (pieces[piece].is_set_at(index))
                 return piece;
         }
@@ -129,7 +128,7 @@ namespace Game {
     }
 
     void Board::uncastle(Move move) {
-        castling.set(turn, CAST_RIGHT | (move.castle.west ? CAST_WEST : CAST_EAST));
+        castling.set(turn, CAST_RIGHT | castling.flag(move.castle.side));
     }
 
     Board Board::from_fen(std::string fen) {
@@ -148,7 +147,7 @@ namespace Game {
                                              
             } else {
                 // Fill piece.
-                Color color = Color::BothColors[std::isupper(c)];
+                Color color = Color::Both[std::isupper(c)];
 
                 Piece piece = Piece::char_to_piece(c);
 

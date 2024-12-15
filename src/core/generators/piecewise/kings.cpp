@@ -160,7 +160,7 @@ namespace Game::Generators::Kings {
 
                 Move& move = generator.next();
                 move.piece.moved = Piece::KINGS;
-                move.castle = {.take = true, .west = false};
+                move.castle = {.take = true, .side = Direction::WEST};
 
                 move.from = king_position;
                 move.to = king_position.left(2);
@@ -180,7 +180,7 @@ namespace Game::Generators::Kings {
 
                 Move& move = generator.next();
                 move.piece.moved = Piece::KINGS;
-                move.castle = {.take = true, .west = true};
+                move.castle = {.take = true, .side = Direction::EAST};
 
                 move.from = king_position;
                 move.to = king_position.right(2);

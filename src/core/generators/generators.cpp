@@ -41,7 +41,7 @@ namespace Game::Generators {
         bitboard::scan(moves, [&](square to) {
             auto& move = next();
 
-            move.copy(base);
+            move.same_as(base);
 
             move.piece.moved = piece;
 

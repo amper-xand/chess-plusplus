@@ -8,6 +8,7 @@ namespace Game {
     typedef uint64_t bitboard_t;
     typedef uint8_t square_t;
     typedef uint8_t piece_t;
+    typedef uint8_t direction_t;
 
     template <typename type> class LiteralWrapper {
       protected:
@@ -53,10 +54,10 @@ namespace Game {
         inline constexpr type operator^(const auto& other) {
             return *this + other;
         }
-
     };
 
-    struct square : public LiteralWrapper<square_t>, public OperatorWrapper<square> {
+    struct square : public LiteralWrapper<square_t>,
+                    public OperatorWrapper<square> {
       public:
         constexpr square(square_t value = 0)
             : LiteralWrapper<square_t>(value) {}
@@ -79,7 +80,8 @@ namespace Game {
         }
     };
 
-    struct bitboard : public LiteralWrapper<bitboard_t>, public OperatorWrapper<bitboard> {
+    struct bitboard : public LiteralWrapper<bitboard_t>,
+                      public OperatorWrapper<bitboard> {
       public:
         constexpr bitboard(bitboard_t value = 0)
             : LiteralWrapper<bitboard_t>(value) {}
@@ -258,7 +260,7 @@ namespace Game {
 
         constexpr Color(bool color = WHITE) : LiteralWrapper<bool>(color) {}
 
-        static constexpr bool BothColors[]{BLACK, WHITE};
+        static constexpr bool Both[]{BLACK, WHITE};
 
         inline constexpr bool isWhite() const { return value_; }
         inline constexpr bool isBlack() const { return !value_; }
@@ -271,7 +273,7 @@ namespace Game {
 
         constexpr Piece(piece_t piece) : LiteralWrapper<piece_t>(piece) {}
 
-        static constexpr piece_t AllPieces[]{PAWNS, KNIGHTS, BISHOPS,
+        static constexpr piece_t All[]{PAWNS, KNIGHTS, BISHOPS,
                                              ROOKS, QUEENS,  KINGS};
 
         static Piece char_to_piece(char c);
@@ -284,6 +286,17 @@ namespace Game {
         inline constexpr bool isQueen() const { return value_ == QUEENS; }
         inline constexpr bool isKing() const { return value_ == KINGS; }
         inline constexpr bool isNone() const { return value_ == NONE; }
+    };
+
+    struct Direction : public LiteralWrapper<direction_t> {
+      public:
+        static constexpr direction_t WEST = true, EAST = false;
+
+        constexpr Direction(direction_t direction)
+            : LiteralWrapper<direction_t>(direction) {}
+
+        inline constexpr bool isWest() { return value_; }
+        inline constexpr bool isEast() { return !value_; }
     };
 
 } // namespace Game
