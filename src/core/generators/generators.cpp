@@ -39,9 +39,7 @@ namespace Game::Generators {
                                       Move base) {
 
         bitboard::scan(moves, [&](square to) {
-            auto& move = next();
-
-            move.same_as(base);
+            auto& move = next().same_as(base);
 
             move.piece.moved = piece;
 

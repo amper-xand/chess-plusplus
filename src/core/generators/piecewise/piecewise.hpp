@@ -4,13 +4,8 @@ namespace Game::Generators::Pawns {
     MoveGenerator& gen_pawns_moves(MoveGenerator& generator);
     MoveGenerator& gen_check_blocks(MoveGenerator& generator, bitboard allowed);
 
-    bitboard get_advances(bitboard pawns, bitboard blockers, bool color);
     bitboard get_advances(bitboard pawns, bitboard blockers, Color color);
-
-    bitboard east_attacks(bitboard pawns, bool color);
     bitboard east_attacks(bitboard pawns, Color color);
-
-    bitboard west_attacks(bitboard pawns, bool color);
     bitboard west_attacks(bitboard pawns, Color color);
 
 } // namespace Game::Generators::Pawns

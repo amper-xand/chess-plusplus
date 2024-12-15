@@ -7,6 +7,7 @@ namespace Game {
 
     typedef uint64_t bitboard_t;
     typedef uint8_t square_t;
+    typedef uint8_t color_t;
     typedef uint8_t piece_t;
     typedef uint8_t direction_t;
 
@@ -120,9 +121,17 @@ namespace Game {
         inline constexpr uint8_t popcount() { return std::popcount(value_); }
         inline constexpr uint8_t rzeros() { return std::countr_zero(value_); }
 
-        inline constexpr bitboard mask(bitboard mask) { return value_ & mask; };
+        inline constexpr bitboard mask(bitboard mask) { return value_ & mask; }
         inline constexpr bitboard pop(bitboard mask) { return value_ & ~mask; }
         inline constexpr bitboard join(bitboard mask) { return value_ | mask; }
+
+        inline constexpr bitboard forward(color_t color, auto shift) {
+            return color ? value_ << shift : value_ >> shift;
+        }
+
+        inline constexpr bitboard backward(color_t color, auto shift) {
+            return color ? value_ >> shift : value_ << shift;
+        }
 
         /*
          * Makes a ray from a bit to the next set blocker
@@ -254,13 +263,14 @@ namespace Game {
         };
     };
 
-    struct Color : public LiteralWrapper<bool> {
+    struct Color : public LiteralWrapper<color_t> {
       public:
-        static constexpr bool BLACK = false, WHITE = true;
+        static constexpr color_t BLACK = false, WHITE = true;
 
-        constexpr Color(bool color = WHITE) : LiteralWrapper<bool>(color) {}
+        constexpr Color(color_t color = WHITE)
+            : LiteralWrapper<color_t>(color) {}
 
-        static constexpr bool Both[]{BLACK, WHITE};
+        static constexpr color_t Both[]{BLACK, WHITE};
 
         inline constexpr bool isWhite() const { return value_; }
         inline constexpr bool isBlack() const { return !value_; }
@@ -274,7 +284,7 @@ namespace Game {
         constexpr Piece(piece_t piece) : LiteralWrapper<piece_t>(piece) {}
 
         static constexpr piece_t All[]{PAWNS, KNIGHTS, BISHOPS,
-                                             ROOKS, QUEENS,  KINGS};
+                                       ROOKS, QUEENS,  KINGS};
 
         static Piece char_to_piece(char c);
         static char piece_to_char(Piece piece, Color color);

@@ -3,53 +3,23 @@
 #include <cstdio>
 
 namespace Game::Generators::Pawns {
-    // clang-format off
-    bitboard get_advances(bitboard pawns, bitboard blockers, bool color) {
-
-        if (color == Color::WHITE) pawns <<= 8;
-        else                       pawns >>= 8;
-
-        return pawns.pop(blockers);
-    }
-
     bitboard get_advances(bitboard pawns, bitboard blockers, Color color) {
-        return get_advances(pawns, blockers, (bool) color);
-    }
-
-    bitboard east_attacks(bitboard pawns, bool color) {
-        // Filter pawns that will wrap around the board
-        bitboard attacks = pawns.pop(0x0101010101010101);
-
-        if (color == Color::WHITE) {
-            attacks <<= 7; // up + right
-        } else {
-            attacks >>= 9; // down + right
-        }
-
-        return attacks;
+        return pawns.forward(color, 8).pop(blockers);
     }
 
     bitboard east_attacks(bitboard pawns, Color color) {
-        return east_attacks(pawns, (bool) color);
-    }
-
-    bitboard west_attacks(bitboard pawns, bool color) {
         // Filter pawns that will wrap around the board
-        bitboard attacks = pawns.pop(0x8080808080808080);
+        bitboard attacks = pawns.pop(0x0101010101010101);
 
-        if (color == Color::WHITE) {
-            attacks <<= 9; // up + left
-        } else {
-            attacks >>= 7; // down + left
-        }
-
-        return attacks;
+        return attacks.forward(color, color.isWhite() ? 7 : 9);
     }
 
     bitboard west_attacks(bitboard pawns, Color color) {
-        return west_attacks(pawns, (bool) color);
+        // Filter pawns that will wrap around the board
+        bitboard attacks = pawns.pop(0x8080808080808080);
+
+        return attacks.forward(color, color.isWhite() ? 9 : 7);
     }
-    // clang-format on
 
     void gen_promotion(MoveGenerator& generator, Move& move) {
         if (!(move.to.row() == 0 || move.to.row() == 7))
@@ -190,14 +160,9 @@ namespace Game::Generators::Pawns {
             Pawns::get_advances(advances.doubles, blockers, board.turn);
 
         // return pawns to their original positions
-        if (board.turn) {
-            advances.singles >>= 8;
-            advances.doubles >>= 16;
-        } else {
-            advances.singles <<= 8;
-            advances.doubles <<= 16;
-        }
-
+        advances.singles = advances.singles.backward(board.turn, 8);
+        advances.doubles = advances.doubles.backward(board.turn, 16);
+        
         struct {
             bitboard east = 0, west = 0;
         } attacks, captures, enpassant;

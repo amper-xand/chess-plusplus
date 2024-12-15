@@ -245,11 +245,7 @@ namespace Game::Generators::Kings {
         pawns_attackers |= // east attackers
             king.pop(0x0101010101010101) >> 1;
 
-        if (board.turn) {
-            pawns_attackers <<= 8;
-        } else {
-            pawns_attackers >>= 8;
-        }
+        pawns_attackers = pawns_attackers.forward(board.turn, 8);
 
         checks |= pawns_attackers.mask(board.enemy(Piece::PAWNS));
 

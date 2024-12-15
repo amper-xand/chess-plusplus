@@ -106,7 +106,7 @@ namespace Game {
         switch_bits(colors[turn], to, from);
         switch_bits(pieces[move.piece.moved], to, from);
 
-        if (move.piece.captured != Piece::NONE) {
+        if (move.piece.captured.isNone()) {
             pieces[move.piece.captured] |= to;
             colors[!turn] |= to;
         }
