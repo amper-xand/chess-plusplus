@@ -11,7 +11,6 @@ add_executable(chessy
     src/main.cpp
 
     src/core/representation/representation.cpp
-    src/core/representation/board.cpp
 
     src/core/generators/generators.cpp
     src/core/generators/magic/magic.cpp
