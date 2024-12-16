@@ -13,6 +13,8 @@ namespace Game {
     typedef uint8_t piece_t;
     typedef uint8_t direction_t;
 
+    template <typename type> struct OperatorWrapper;
+
     template <typename type> class LiteralWrapper {
       protected:
         type value_ = 0;
@@ -31,31 +33,31 @@ namespace Game {
 
     template <typename type> struct OperatorWrapper {
         inline constexpr type operator+(const auto& other) {
-            return *this + other;
+            return reinterpret_cast<const type&>(*this).value_ + other;
         }
 
         inline constexpr type operator-(const auto& other) {
-            return *this + other;
+            return reinterpret_cast<const type&>(*this).value_ - other;
         }
 
         inline constexpr type operator*(const auto& other) {
-            return *this + other;
+            return reinterpret_cast<const type&>(*this).value_ * other;
         }
 
         inline constexpr type operator/(const auto& other) {
-            return *this + other;
+            return reinterpret_cast<const type&>(*this).value_ / other;
         }
 
         inline constexpr type operator&(const auto& other) {
-            return *this + other;
+            return reinterpret_cast<const type&>(*this).value_ & other;
         }
 
         inline constexpr type operator|(const auto& other) {
-            return *this + other;
+            return reinterpret_cast<const type&>(*this).value_ | other;
         }
 
         inline constexpr type operator^(const auto& other) {
-            return *this + other;
+            return reinterpret_cast<const type&>(*this).value_ ^ other;
         }
     };
 
@@ -85,6 +87,9 @@ namespace Game {
 
     struct bitboard : public LiteralWrapper<bitboard_t>,
                       public OperatorWrapper<bitboard> {
+
+        friend class OperatorWrapper<bitboard>;
+
       public:
         constexpr bitboard(bitboard_t value = 0)
             : LiteralWrapper<bitboard_t>(value) {}

@@ -130,9 +130,8 @@ Board Board::from_fen(std::string fen) {
 }
 
 void Board::print() {
-    std::cout << std::endl;
-
     for (int rank = 7; rank >= 0; --rank) {
+        std::cout << std::endl;
         for (int file = 7; file >= 0; --file) {
 
             square index = square::index_at(rank, file);
@@ -140,7 +139,7 @@ void Board::print() {
             auto square =
                 Piece::piece_to_char(piece_at(index), color_at(index));
 
-            std::cout << square;
+            std::cout << ' ' << square << ' ';
         }
         std::cout << std::endl;
     }
