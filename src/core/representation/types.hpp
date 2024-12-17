@@ -13,8 +13,6 @@ namespace Game {
     typedef uint8_t piece_t;
     typedef uint8_t direction_t;
 
-    template <typename type> struct OperatorWrapper;
-
     template <typename type> class LiteralWrapper {
       protected:
         type value_ = 0;
@@ -31,38 +29,7 @@ namespace Game {
         constexpr const type *operator->() const { return &value_; }
     };
 
-    template <typename type> struct OperatorWrapper {
-        inline constexpr type operator+(const auto& other) {
-            return reinterpret_cast<const type&>(*this).value_ + other;
-        }
-
-        inline constexpr type operator-(const auto& other) {
-            return reinterpret_cast<const type&>(*this).value_ - other;
-        }
-
-        inline constexpr type operator*(const auto& other) {
-            return reinterpret_cast<const type&>(*this).value_ * other;
-        }
-
-        inline constexpr type operator/(const auto& other) {
-            return reinterpret_cast<const type&>(*this).value_ / other;
-        }
-
-        inline constexpr type operator&(const auto& other) {
-            return reinterpret_cast<const type&>(*this).value_ & other;
-        }
-
-        inline constexpr type operator|(const auto& other) {
-            return reinterpret_cast<const type&>(*this).value_ | other;
-        }
-
-        inline constexpr type operator^(const auto& other) {
-            return reinterpret_cast<const type&>(*this).value_ ^ other;
-        }
-    };
-
-    struct square : public LiteralWrapper<square_t>,
-                    public OperatorWrapper<square> {
+    struct square : public LiteralWrapper<square_t> {
       public:
         constexpr square(square_t value = 0)
             : LiteralWrapper<square_t>(value) {}
@@ -85,11 +52,7 @@ namespace Game {
         }
     };
 
-    struct bitboard : public LiteralWrapper<bitboard_t>,
-                      public OperatorWrapper<bitboard> {
-
-        friend class OperatorWrapper<bitboard>;
-
+    struct bitboard : public LiteralWrapper<bitboard_t> {
       public:
         constexpr bitboard(bitboard_t value = 0)
             : LiteralWrapper<bitboard_t>(value) {}
