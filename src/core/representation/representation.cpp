@@ -24,6 +24,11 @@ void Board::play(Move move) {
 
     enpassant_handle(move);
 
+    if (!move.promotion.isNone()) {
+        pieces[move.promotion] |= to;
+        pawns &= ~to;
+    }
+
     turn = !turn;
 }
 
@@ -92,7 +97,10 @@ void Board::enpassant_handle(Move move) {
     }
 
     if (move.enpassant.take) {
-        piece_capture(Piece::PAWNS, move.enpassant.captured);
+        auto capture = square(move.enpassant.captured).bb();
+
+        colors[!turn] &= ~capture;
+        colors[move.piece.captured] &= ~capture;
     }
 }
 

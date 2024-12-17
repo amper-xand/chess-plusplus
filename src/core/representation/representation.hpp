@@ -120,14 +120,6 @@ namespace Game {
             colors[color] = colors[color].pop(from).join(to);
         }
 
-        inline void piece_capture(Piece piece, bitboard captured) {
-        }
-
-        inline void piece_promote(Piece promotion, bitboard to) {
-            pieces[promotion] |= to;
-            pawns &= ~to;
-        }
-
         void castle_update(Move move);
         void castle_take(Move move, bitboard king);
         void castle_undo(Move move);
