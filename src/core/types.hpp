@@ -1,11 +1,9 @@
 #pragma once
 
-#include <bit>
 #include <cstdint>
 #include <functional>
-#include <iostream>
 
-namespace Game {
+namespace core {
 
     typedef uint64_t bitboard_t;
     typedef uint8_t square_t;
@@ -152,19 +150,7 @@ namespace Game {
             }
         }
 
-        static void print(bitboard bboard) {
-            for (int rank = 7; rank >= 0; --rank) {
-                for (int file = 7; file >= 0; --file) {
-                    int square_index = rank * 8 + file;
-                    std::cout << ((bboard >> square_index) & 1ULL ? '1' : '0')
-                              << " ";
-                }
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
-        }
-
-        struct Masks {
+        struct masks {
             static constexpr bitboard_t fullboard = 0xFFFFFFFFFFFFFFFF;
             static constexpr bitboard_t border = 0xFF818181818181FF;
 

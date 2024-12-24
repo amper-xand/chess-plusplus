@@ -1,16 +1,16 @@
 #include <cstdio>
 #include <pthread.h>
 
-#include "core/generators/generators.hpp"
+#include <core/generators.hpp>
 
 int main() {
-    Game::Generators::initialize_tables();
+    core::generators::initialize_tables();
 
-    auto board = Game::Board::from_fen(
+    auto board = core::Board::parse_fen(
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     board.print();
-    auto moves = Game::Generators::generate_moves(board);
+    auto moves = core::generators::generate_moves(board);
     board.play(moves.at(17));
     board.print();
 

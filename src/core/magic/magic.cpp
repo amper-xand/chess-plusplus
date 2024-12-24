@@ -1,12 +1,11 @@
 #include "magic.hpp"
 
-#include <bit>
 #include <cstdint>
 #include <stdexcept>
 
-using Masks = Game::bitboard::Masks;
+using masks = core::bitboard::masks;
 
-namespace Game::Generators::Magic {
+namespace core::generators::magic {
     struct MagicEntry {
         bitboard mask;
         uint64_t magic;
@@ -22,9 +21,9 @@ namespace Game::Generators::Magic {
         }
     };
 
-} // namespace Game::Generators::Magic
+} // namespace core::generators::magic
 
-namespace Random {
+namespace rnd {
     uint64_t seed = 3982143279794049853;
 
     inline uint64_t random() {
@@ -54,9 +53,9 @@ namespace Random {
     inline uint64_t rnd_composite_low() {
         return rnd_composite() & rnd_composite() & rnd_composite();
     }
-}; // namespace Random
+}; // namespace rnd
 
-namespace Game::Generators::Magic {
+namespace core::generators::magic {
 
     template <typename Derived, uint8_t Bits> struct MagicTable {
         static constexpr uint8_t bits = Bits;
@@ -94,13 +93,13 @@ namespace Game::Generators::Magic {
 #include "magicsr.data"
 
         static inline bitboard relevant_blockers(square index) {
-            return (Masks::rel_blockers_horizontal << index.start_of_row()) ^
-                   (Masks::rel_blockers_vertical << index.column());
+            return (masks::rel_blockers_horizontal << index.start_of_row()) ^
+                   (masks::rel_blockers_vertical << index.column());
         }
 
         static inline bitboard slider(square index) {
-            return (Masks::horizontal << index.start_of_row()) ^
-                   (Masks::vertical << index.column());
+            return (masks::horizontal << index.start_of_row()) ^
+                   (masks::vertical << index.column());
         }
 
         static bitboard gen_moves(bitboard blockers, square index) {
@@ -109,26 +108,26 @@ namespace Game::Generators::Magic {
             const bitboard rook = bitboard::bit_at(index);
 
             // Masks the blockers with a north ray
-            const bitboard north_mask = Masks::make_n_mask(index);
+            const bitboard north_mask = masks::make_n_mask(index);
             bitboard n_ray = blockers.mask(slider & north_mask);
             n_ray &= ~n_ray + 1;
             // Turn it into a ray from the blocker
             n_ray |= n_ray - 1;
             n_ray &= slider & north_mask;
 
-            const bitboard south_mask = Masks::make_s_mask(index);
+            const bitboard south_mask = masks::make_s_mask(index);
             bitboard s_ray = blockers.mask(slider & south_mask);
             s_ray =
                 bitboard::interval(rook, s_ray.MSB()).mask(slider & south_mask);
 
-            const bitboard west_mask = Masks::make_w_mask(index);
+            const bitboard west_mask = masks::make_w_mask(index);
             bitboard w_ray = blockers.mask(slider & west_mask);
             // Turn it into a ray from the blocker
             w_ray &= ~w_ray + 1;
             w_ray |= w_ray - 1;
             w_ray &= slider & west_mask;
 
-            const bitboard east_mask = Masks::make_e_mask(index);
+            const bitboard east_mask = masks::make_e_mask(index);
             bitboard e_ray = blockers.mask(slider & east_mask);
             e_ray =
                 bitboard::interval(rook, e_ray.MSB()).mask(slider & east_mask);
@@ -142,21 +141,21 @@ namespace Game::Generators::Magic {
 #include "magicsb.data"
 
         static inline bitboard relevant_blockers(square index) {
-            return slider(index).mask(~Masks::border);
+            return slider(index).mask(~masks::border);
         }
 
         static inline bitboard slider(square index) {
-            return Masks::get_diagonal_at(index) ^
-                   Masks::get_rev_diagonal_at(index);
+            return masks::get_diagonal_at(index) ^
+                   masks::get_rev_diagonal_at(index);
         }
 
         static bitboard gen_moves(bitboard blockers, square index) {
             const bitboard slider = Bishopst::slider(index);
 
-            const bitboard n_mask = Masks::make_n_mask(index);
-            const bitboard s_mask = Masks::make_s_mask(index);
-            const bitboard w_mask = Masks::make_w_mask(index);
-            const bitboard e_mask = Masks::make_e_mask(index);
+            const bitboard n_mask = masks::make_n_mask(index);
+            const bitboard s_mask = masks::make_s_mask(index);
+            const bitboard w_mask = masks::make_w_mask(index);
+            const bitboard e_mask = masks::make_e_mask(index);
 
             const bitboard bishop = bitboard::bit_at(index);
 
@@ -186,9 +185,9 @@ namespace Game::Generators::Magic {
         }
     };
 
-} // namespace Game::Generators::Magic
+} // namespace core::generators::magic
 
-namespace Game::Generators::Magic::Rooks {
+namespace core::generators::magic::rooks {
 
     bitboard get_avail_moves(bitboard blockers, square index) {
         return Rookst::get_moves(blockers, index);
@@ -196,9 +195,9 @@ namespace Game::Generators::Magic::Rooks {
 
     bitboard get_slider(square index) { return Rookst::slider(index); }
 
-} // namespace Game::Generators::Magic::Rooks
+} // namespace core::generators::magic::rooks
 
-namespace Game::Generators::Magic::Bishops {
+namespace core::generators::magic::bishops {
 
     bitboard get_avail_moves(bitboard blockers, square index) {
         return Bishopst::get_moves(blockers, index);
@@ -206,9 +205,9 @@ namespace Game::Generators::Magic::Bishops {
 
     bitboard get_slider(square index) { return Bishopst::slider(index); }
 
-} // namespace Game::Generators::Magic::Bishops
+} // namespace core::generators::magic::bishops
 
-namespace Game::Generators::Magic {
+namespace core::generators::magic {
 
     template <typename Table> void search_magic(square index) {
 
@@ -254,7 +253,7 @@ namespace Game::Generators::Magic {
         // Try to find a magic number
         while (true) {
             do { // Find a suitable magic number
-                entry.magic = Random::rnd_composite_low();
+                entry.magic = rnd::rnd_composite_low();
             } while (std::popcount(entry.magic_index(entry.mask)) < 6);
 
             // Clear table and try again
@@ -336,12 +335,12 @@ namespace Game::Generators::Magic {
         }
     }
 
-} // namespace Game::Generators::Magic
+} // namespace core::generators::magic
 
 #ifdef MAGIC_STANDALONE
 int main() {
-    Game::Generators::Magic::search_magics();
-    Game::Generators::Magic::print_magics();
+    core::generators::magic::search_magics();
+    core::generators::magic::print_magics();
 
     return 0;
 }

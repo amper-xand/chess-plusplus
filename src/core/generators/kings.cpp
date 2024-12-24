@@ -2,7 +2,7 @@
 
 #include "../magic/magic.hpp"
 
-namespace Game::Generators::Kings {
+namespace core::generators::kings {
     bitboard available_moves[64];
 
     bitboard get_available_moves(square index) {
@@ -68,9 +68,9 @@ namespace Game::Generators::Kings {
         bitboard king = board.allied(Piece::KINGS);
         square position = king.rzeros();
 
-        return pin_xray<Piece::ROOKS>(board, bitboard::Masks::horizontal
+        return pin_xray<Piece::ROOKS>(board, bitboard::masks::horizontal
                                                  << position.start_of_row()) |
-               pin_xray<Piece::ROOKS>(board, bitboard::Masks::vertical
+               pin_xray<Piece::ROOKS>(board, bitboard::masks::vertical
                                                  << position.column());
     }
 
@@ -79,9 +79,9 @@ namespace Game::Generators::Kings {
         square position = king.rzeros();
 
         return pin_xray<Piece::BISHOPS>(
-                   board, bitboard::Masks::get_diagonal_at(position)) |
+                   board, bitboard::masks::get_diagonal_at(position)) |
                pin_xray<Piece::BISHOPS>(
-                   board, bitboard::Masks::get_rev_diagonal_at(position));
+                   board, bitboard::masks::get_rev_diagonal_at(position));
     }
 
     bool is_enpassant_pinned(MoveGenerator& generator) {
@@ -107,16 +107,16 @@ namespace Game::Generators::Kings {
 
             if (diagonal_sliders.last_bit()) {
                 attacked_squares |=
-                    Magic::Bishops::get_avail_moves(blockers, index);
+                    magic::bishops::get_avail_moves(blockers, index);
             }
 
             if (straight_sliders.last_bit()) {
                 attacked_squares |=
-                    Magic::Rooks::get_avail_moves(blockers, index);
+                    magic::rooks::get_avail_moves(blockers, index);
             }
 
             if (straight_sliders.last_bit()) {
-                attacked_squares |= Knights::available_moves[index];
+                attacked_squares |= knights::available_moves[index];
             }
 
             diagonal_sliders >>= 1;
@@ -125,14 +125,14 @@ namespace Game::Generators::Kings {
         }
 
         attacked_squares |=
-            Pawns::west_attacks(board.enemy(Piece::PAWNS), !board.turn);
+            pawns::west_attacks(board.enemy(Piece::PAWNS), !board.turn);
 
         attacked_squares |=
-            Pawns::west_attacks(board.enemy(Piece::PAWNS), !board.turn);
+            pawns::west_attacks(board.enemy(Piece::PAWNS), !board.turn);
 
         // Add the other kings's attacks
         attacked_squares |=
-            Kings::available_moves[board.enemy(Piece::KINGS).rzeros()];
+            kings::available_moves[board.enemy(Piece::KINGS).rzeros()];
 
         return attacked_squares;
     }
@@ -200,7 +200,7 @@ namespace Game::Generators::Kings {
             handle_castling(generator, king_position, attacked_squares);
 
         // Generate the rest of the moves
-        bitboard moves = Kings::available_moves[king_position];
+        bitboard moves = kings::available_moves[king_position];
 
         // Remove attacked and blocked squares
         moves &= ~attacked_squares;
@@ -229,13 +229,13 @@ namespace Game::Generators::Kings {
         bitboard checks;
 
         checks |= board.enemy(Piece::KNIGHTS)
-                      .mask(Knights::available_moves[king_pos]);
+                      .mask(knights::available_moves[king_pos]);
 
-        checks |= Magic::Rooks::get_avail_moves(board.all(), king_pos)
+        checks |= magic::rooks::get_avail_moves(board.all(), king_pos)
                       .mask(board.rooks | board.queens)
                       .mask(board.enemies());
 
-        checks |= Magic::Bishops::get_avail_moves(board.all(), king_pos)
+        checks |= magic::bishops::get_avail_moves(board.all(), king_pos)
                       .mask(board.bishops | board.queens)
                       .mask(board.enemies());
 
@@ -252,4 +252,4 @@ namespace Game::Generators::Kings {
         return checks;
     }
 
-} // namespace Game::Generators::Kings
+} // namespace core::generators::kings

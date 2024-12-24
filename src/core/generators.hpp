@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../representation/representation.hpp"
+#include <core/representation.hpp>
 
 #include <array>
 #include <vector>
 
-namespace Game::Generators {
+namespace core::generators {
 
     constexpr uint8_t max_moves = 218;
 

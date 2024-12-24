@@ -2,7 +2,7 @@
 
 #include <cstdio>
 
-namespace Game::Generators::Pawns {
+namespace core::generators::pawns {
     bitboard get_advances(bitboard pawns, bitboard blockers, Color color) {
         return pawns.forward(color, 8).pop(blockers);
     }
@@ -28,7 +28,6 @@ namespace Game::Generators::Pawns {
         move.promotion = Piece::QUEENS;
 
         for (auto promotion : {Piece::KNIGHTS, Piece::BISHOPS, Piece::ROOKS}) {
-
             generator.next().same_as(move).promotion = promotion;
         }
     };
@@ -147,7 +146,7 @@ namespace Game::Generators::Pawns {
             bitboard singles, doubles;
         } advances;
 
-        advances.singles = Pawns::get_advances(
+        advances.singles = pawns::get_advances(
             // Partial pins can only capture
             pawns.mask(~generator.pins.partial), blockers, board.turn);
 
@@ -157,29 +156,29 @@ namespace Game::Generators::Pawns {
             (board.turn ? 0x0000000000FF0000 : 0x0000FF0000000000);
 
         advances.doubles =
-            Pawns::get_advances(advances.doubles, blockers, board.turn);
+            pawns::get_advances(advances.doubles, blockers, board.turn);
 
         // return pawns to their original positions
         advances.singles = advances.singles.backward(board.turn, 8);
         advances.doubles = advances.doubles.backward(board.turn, 16);
-        
+
         struct {
             bitboard east = 0, west = 0;
         } attacks, captures, enpassant;
 
         square king_position = board.allied(Piece::KINGS).rzeros();
 
-        bitboard east_partial = bitboard::Masks::make_e_mask(king_position)
+        bitboard east_partial = bitboard::masks::make_e_mask(king_position)
                                     .mask(generator.pins.partial);
 
-        bitboard west_partial = bitboard::Masks::make_w_mask(king_position)
+        bitboard west_partial = bitboard::masks::make_w_mask(king_position)
                                     .mask(generator.pins.partial);
 
-        attacks.east = Pawns::east_attacks(
+        attacks.east = pawns::east_attacks(
             // The west partially pinned pawns cannot make east captures
             pawns.mask(~west_partial), board.turn);
 
-        attacks.west = Pawns::west_attacks(
+        attacks.west = pawns::west_attacks(
             // The east partially pinned pawns cannot make west captures
             pawns.mask(~east_partial), board.turn);
 
@@ -246,4 +245,4 @@ namespace Game::Generators::Pawns {
         return generator;
     }
 
-} // namespace Game::Generators::Pawns
+} // namespace core::generators::pawns

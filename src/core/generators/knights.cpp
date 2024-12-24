@@ -1,6 +1,6 @@
 #include "piecewise.hpp"
 
-namespace Game::Generators::Knights {
+namespace core::generators::knights {
     bitboard available_moves[64];
 
     bitboard gen_knight_moves(square index) {
@@ -51,13 +51,13 @@ namespace Game::Generators::Knights {
     }
 
     MoveGenerator& gen_knights_moves(MoveGenerator& generator) {
-        bitboard knights = generator.board.allied(Piece::KNIGHTS)
-                               .pop(generator.pins.absolute);
+        bitboard knights =
+            generator.board.allied(Piece::KNIGHTS).pop(generator.pins.absolute);
         bitboard capturable = generator.board.enemies();
         bitboard blockers = generator.board.allies();
 
         bitboard::scan(knights, [&](square index) {
-            bitboard moves = Knights::available_moves[index].pop(blockers);
+            bitboard moves = knights::available_moves[index].pop(blockers);
             bitboard captures = moves.mask(capturable);
 
             generator.from_bitboard(Piece::KNIGHTS, index, moves, captures);
@@ -81,7 +81,7 @@ namespace Game::Generators::Knights {
 
         bitboard::scan(knights, [&](square index) {
             bitboard moves =
-                Knights::available_moves[index].mask(allowed).pop(blockers);
+                knights::available_moves[index].mask(allowed).pop(blockers);
             bitboard captures = moves.mask(capturable);
 
             generator.from_bitboard(Piece::KNIGHTS, index, moves, captures);
@@ -89,4 +89,4 @@ namespace Game::Generators::Knights {
 
         return generator;
     }
-} // namespace Game::Generators::Knights
+} // namespace core::generators::knights

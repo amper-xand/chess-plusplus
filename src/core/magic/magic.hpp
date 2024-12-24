@@ -1,17 +1,17 @@
-#include "../../representation/representation.hpp"
+#include <core/types.hpp>
 
-namespace Game::Generators::Magic {
+namespace core::generators::magic {
 
-    namespace Rooks {
+    namespace rooks {
         bitboard get_avail_moves(bitboard blockers, square index);
         bitboard get_slider(square index);
     } // namespace Rooks
 
-    namespace Bishops {
+    namespace bishops {
         bitboard get_avail_moves(bitboard blockers, square index);
         bitboard get_slider(square index);
     } // namespace Bishops
 
     void initialize_magic_tables();
 
-} // namespace Game::Generators::Magic
+} // namespace core::generators::Magic

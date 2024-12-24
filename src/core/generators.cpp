@@ -1,17 +1,13 @@
 #include "generators.hpp"
 
-#include "piecewise/piecewise.hpp"
+#include <core/generators/piecewise.hpp>
+#include <core/representation.hpp>
+#include <core/magic/magic.hpp>
 
-#include "../representation/representation.hpp"
-#include "magic/magic.hpp"
-
-#include <climits>
-#include <cstdio>
 #include <stdexcept>
-#include <strings.h>
 #include <vector>
 
-namespace Game::Generators {
+namespace core::generators {
     MoveGenerator::MoveGenerator(Board board) { this->board = board; }
 
     std::vector<Move> MoveGenerator::get_generated() {
@@ -34,9 +30,8 @@ namespace Game::Generators {
         return move;
     }
 
-    void MoveGenerator::from_bitboard(Piece piece, square from,
-                                      bitboard moves, bitboard captures,
-                                      Move base) {
+    void MoveGenerator::from_bitboard(Piece piece, square from, bitboard moves,
+                                      bitboard captures, Move base) {
 
         bitboard::scan(moves, [&](square to) {
             auto& move = next().same_as(base);
@@ -52,18 +47,18 @@ namespace Game::Generators {
         });
     }
 
-} // namespace Game::Generators
+} // namespace core::generators
 
-namespace Game::Generators {
+namespace core::generators {
     void initialize_tables() {
-        Knights::initialize_table();
-        Kings::initialize_table();
-        Magic::initialize_magic_tables();
+        knights::initialize_table();
+        kings::initialize_table();
+        magic::initialize_magic_tables();
     }
 
     void generate_pins(MoveGenerator& generator) {
-        bitboard str_pins = Kings::pin_rook_xrays(generator.board);
-        bitboard dia_pins = Kings::pin_bishop_xrays(generator.board);
+        bitboard str_pins = kings::pin_rook_xrays(generator.board);
+        bitboard dia_pins = kings::pin_bishop_xrays(generator.board);
 
         Board& board = generator.board;
 
@@ -76,7 +71,7 @@ namespace Game::Generators {
                                       .mask(str_pins | dia_pins)
                                       .pop(generator.pins.partial);
 
-        generator.enpassant.pinned = Kings::is_enpassant_pinned(generator);
+        generator.enpassant.pinned = kings::is_enpassant_pinned(generator);
     }
 
     std::vector<Move> check_generation(MoveGenerator& generator,
@@ -84,7 +79,7 @@ namespace Game::Generators {
 
         Board& board = generator.board;
 
-        Kings::gen_king_moves<false>(generator);
+        kings::gen_king_moves<false>(generator);
 
         // If there is more than one checking piece
         // then just generate the king moves
@@ -101,21 +96,21 @@ namespace Game::Generators {
             square king_pos = king.rzeros();
 
             // get the slider to the piece direction
-            bitboard slider = Magic::Rooks::get_slider(king_pos);
+            bitboard slider = magic::rooks::get_slider(king_pos);
 
             if ((slider & checkers) == 0) {
                 // if the slider did not hit the piece
                 // try the other direction
-                slider = Magic::Bishops::get_slider(king_pos);
+                slider = magic::bishops::get_slider(king_pos);
             }
 
             allowed_squares |=
                 bitboard::interval(king, checkers).mask(slider).pop(king);
         }
 
-        Sliders::gen_check_blocks(generator, allowed_squares);
-        Knights::gen_check_blocks(generator, allowed_squares);
-        Pawns::gen_check_blocks(generator, allowed_squares);
+        sliders::gen_check_blocks(generator, allowed_squares);
+        knights::gen_check_blocks(generator, allowed_squares);
+        pawns::gen_check_blocks(generator, allowed_squares);
 
         return generator.get_generated();
     }
@@ -125,21 +120,21 @@ namespace Game::Generators {
 
         generate_pins(generator);
 
-        bitboard checkers = Kings::checking_pieces(board);
+        bitboard checkers = kings::checking_pieces(board);
 
         if (checkers != 0) {
             return check_generation(generator, checkers);
         }
 
-        Pawns::gen_pawns_moves(generator);
+        pawns::gen_pawns_moves(generator);
 
-        Sliders::gen_slider_moves(generator);
+        sliders::gen_slider_moves(generator);
 
-        Knights::gen_knights_moves(generator);
+        knights::gen_knights_moves(generator);
 
-        Kings::gen_king_moves(generator);
+        kings::gen_king_moves(generator);
 
         return generator.get_generated();
     }
 
-} // namespace Game::Generators
+} // namespace core::generators
