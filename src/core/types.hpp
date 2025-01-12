@@ -242,8 +242,8 @@ namespace core {
         static constexpr piece_t All[]{PAWNS, KNIGHTS, BISHOPS,
                                        ROOKS, QUEENS,  KINGS};
 
-        static Piece char_to_piece(char c);
-        static char piece_to_char(Piece piece, Color color);
+        static Piece from_char(char c);
+        static char to_char(Piece piece, Color color);
 
         inline constexpr bool isPawn() const { return value_ == PAWNS; }
         inline constexpr bool isKnight() const { return value_ == KNIGHTS; }

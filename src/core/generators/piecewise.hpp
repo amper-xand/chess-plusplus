@@ -21,7 +21,7 @@ namespace core::generators::knights {
     void initialize_table();
     MoveGenerator& gen_knights_moves(MoveGenerator& generator);
     MoveGenerator& gen_check_blocks(MoveGenerator& generator, bitboard allowed);
-} // namespace core::generators::Knights
+} // namespace core::generators::knights
 
 namespace core::generators::kings {
     extern bitboard available_moves[64];
@@ -37,4 +37,4 @@ namespace core::generators::kings {
     extern MoveGenerator& gen_king_moves(MoveGenerator& generator);
 
     bitboard checking_pieces(Board& board);
-} // namespace core::generators::Kings
+} // namespace core::generators::kings

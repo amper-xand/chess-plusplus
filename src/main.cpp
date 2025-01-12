@@ -1,6 +1,3 @@
-#include <cstdio>
-#include <pthread.h>
-
 #include <core/generators.hpp>
 
 int main() {

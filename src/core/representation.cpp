@@ -1,31 +1,86 @@
 #include "representation.hpp"
+#include "core/types.hpp"
 
+#include <cstdint>
 #include <iostream>
 #include <strings.h>
 
 namespace core {
-
     void Board::play(Move move) {
-        auto from = move.from.bb();
-        auto to = move.to.bb();
+        auto from = move.from().bb();
+        auto to = move.to().bb();
 
-        piece_move(turn, move.piece.moved, from, to);
+        piece_move(turn, move.moved(), from, to);
 
-        castle_update(move);
+        // handle castling
 
-        if (move.castle.take) {
-            castle_take(move, from);
+        // remove castling right
+        if (move.moved().isKing()) {
+            castling.remove_right(turn, CAST_RIGHT);
         }
 
-        if (!move.piece.captured.isNone()) {
+        // remove castling right
+        if (move.moved().isRook()) {
+            if (move.from().column() == 0) {
+                castling.remove_right(turn, CAST_EAST);
+            } else {
+                castling.remove_right(turn, CAST_WEST);
+            }
+        }
+
+        if (move.cas_tag()) {
+            constexpr bitboard king_castlings =
+                // king side castle
+                square::index_at(0, 1).bb() | square::index_at(7, 1).bb() |
+                // queen side castle
+                square::index_at(0, 5).bb() | square::index_at(7, 5).bb();
+
+            constexpr bitboard rook_castlings =
+                // king side castle
+                square::index_at(0, 2).bb() | square::index_at(7, 2).bb() |
+                // queen side castle
+                square::index_at(0, 4).bb() | square::index_at(7, 4).bb();
+
+            bitboard side = bitboard::interval(from, to);
+
+            bitboard rook_to = rook_castlings & side;
+            bitboard king_to = king_castlings & side;
+
+            piece_move(turn, Piece::ROOKS, to, rook_to);
+            // move the king again to put it in place
+            piece_move(turn, Piece::KINGS, to, king_to);
+        }
+
+        // handle captures
+        if (!move.captured().isNone()) {
             colors[!turn] &= ~to;
-            colors[move.piece.captured] &= ~to;
+            colors[move.captured()] &= ~to;
         }
 
-        enpassant_handle(move);
+        // handle en passant
+        uint8_t ep_tag = move.ep_tag();
+        enpassant.available = false;
 
-        if (!move.promotion.isNone()) {
-            pieces[move.promotion] |= to;
+        // set en passant
+        if (ep_tag && move.captured().isNone()) {
+            enpassant.available = true;
+            enpassant.tail = turn ? move.to().down() : move.to().up();
+            enpassant.pawn = move.to();
+        }
+
+        // take en passant
+        if (ep_tag && move.captured().isPawn()) {
+            auto capture = square(enpassant.pawn).bb();
+
+            colors[!turn] &= ~capture;
+            pawns &= ~capture;
+
+            enpassant.pawn = 0;
+        }
+
+        // handle promotions
+        if (!move.promotion().isNone()) {
+            pieces[move.promotion()] |= to;
             pawns &= ~to;
         }
 
@@ -35,73 +90,56 @@ namespace core {
     void Board::unplay(Move move) {
         turn = !turn;
 
-        auto from = move.from.bb();
-        auto to = move.to.bb();
+        auto from = move.from().bb();
+        auto to = move.to().bb();
 
         // return the piece to its previous position
-        piece_move(turn, move.piece.moved, to, from);
+        piece_move(turn, move.moved(), to, from);
 
-        if (move.piece.captured != Piece::NONE) {
-            pieces[move.piece.captured] |= to;
-            colors[turn] |= to;
+        // return the captured pieces
+        if (move.captured() != Piece::NONE) {
+            pieces[move.captured()] |= to;
+            colors[!turn] |= to;
         }
 
-        // check if move rejected ep
-        enpassant.available = !move.enpassant.take && move.enpassant.captured;
+        // restore castling state
+        castling.set_state(turn, move.castle());
 
-        if (move.castle.take) {
-            castle_undo(move);
+        // undo castle
+        if (move.cas_tag()) {
+            // return king to its place
+            auto king = allied(Piece::KINGS) | from;
+
+            colors[turn] ^= king;
+            kings ^= king;
+
+            // return the rook to its place
+            auto rook = rooks & bitboard::interval(from, to);
+            rook |= to;
+
+            colors[turn] ^= rook;
+            rooks ^= rook;
         }
 
-        if (move.castle.reject) {
-            castling.set(turn, CAST_RIGHT);
+        // get saved state
+        uint8_t ep_tag = move.ep_tag();
+        square ep = move.ep();
+
+        // restore state
+        enpassant.pawn = ep;
+        enpassant.tail = turn ? ep.up() : ep.down();
+        enpassant.available = ep;
+
+        // restore taken en passant pawn
+        if (ep_tag && move.captured().isPawn()) {
+            auto capture = square(enpassant.pawn).bb();
+
+            colors[!turn] |= capture;
+            pawns |= capture;
         }
 
-        if (!move.promotion.isNone()) {
-            pieces[move.promotion] &= ~to;
-        }
-    }
-
-    void Board::castle_update(Move move) {
-        if (move.piece.moved.isKing()) {
-            castling.off(turn, Board::CAST_RIGHT);
-        }
-
-        if (move.piece.moved.isRook()) {
-            castling.off(turn, castling.flag(move.from.column() == 7));
-        }
-    }
-
-    void Board::castle_take(Move move, bitboard king) {
-        // Move the rook
-        bitboard rook =
-            move.castle.side ? 0x0100000000000001 : 0x8000000000000080;
-
-        rook = rook.mask(allied(Piece::ROOKS));
-
-        bitboard rook_to = move.castle.side ? (king << 1) : (king >> 1);
-
-        piece_move(turn, Piece::ROOKS, rook, rook_to);
-    }
-
-    void Board::castle_undo(Move move) {
-        castling.set(turn, CAST_RIGHT | castling.flag(move.castle.side));
-    }
-
-    void Board::enpassant_handle(Move move) {
-        // Set en passant state
-        enpassant.available = move.enpassant.set;
-
-        if (move.enpassant.set) {
-            enpassant.capturable = move.to;
-            enpassant.tail = turn.isWhite() ? move.to.down() : move.to.up();
-        }
-
-        if (move.enpassant.take) {
-            auto capture = square(move.enpassant.captured).bb();
-
-            colors[!turn] &= ~capture;
-            colors[move.piece.captured] &= ~capture;
+        if (!move.promotion().isNone()) {
+            pieces[move.promotion()] &= ~to;
         }
     }
 
@@ -130,7 +168,7 @@ namespace core {
 
             Color color = Color::Both[std::isupper(c)];
 
-            Piece piece = Piece::char_to_piece(c);
+            Piece piece = Piece::from_char(c);
 
             board.colors[color] |= bitboard::bit_at(index);
             board.pieces[piece] |= bitboard::bit_at(index);
@@ -151,16 +189,15 @@ namespace core {
 
                 square index = square::index_at(rank, file);
 
-                auto square =
-                    Piece::piece_to_char(piece_at(index), color_at(index));
+                auto square = Piece::to_char(piece_at(index), color_at(index));
 
                 std::cout << ' ' << square << ' ';
             }
-            std::cout << std::endl;
         }
+        std::cout << std::endl;
     }
 
-    Piece Piece::char_to_piece(char c) {
+    Piece Piece::from_char(char c) {
         // clang-format off
         switch (c) {
         case 'p': case 'P':
@@ -186,7 +223,7 @@ namespace core {
         // clang-format on
     }
 
-    char Piece::piece_to_char(Piece piece, Color color) {
+    char Piece::to_char(Piece piece, Color color) {
         // clang-format off
         switch (piece) {
 

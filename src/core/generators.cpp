@@ -1,15 +1,13 @@
 #include "generators.hpp"
 
 #include <core/generators/piecewise.hpp>
-#include <core/representation.hpp>
 #include <core/magic/magic.hpp>
+#include <core/representation.hpp>
 
 #include <stdexcept>
 #include <vector>
 
 namespace core::generators {
-    MoveGenerator::MoveGenerator(Board board) { this->board = board; }
-
     std::vector<Move> MoveGenerator::get_generated() {
         if (next_move == moves.begin())
             // No moves have been generated
@@ -31,18 +29,18 @@ namespace core::generators {
     }
 
     void MoveGenerator::from_bitboard(Piece piece, square from, bitboard moves,
-                                      bitboard captures, Move base) {
+                                      bitboard captures) {
 
         bitboard::scan(moves, [&](square to) {
-            auto& move = next().same_as(base);
+            auto& move = next();
 
-            move.piece.moved = piece;
+            move.moved(piece);
 
-            move.from = from;
-            move.to = to;
+            move.from(from);
+            move.to(to);
 
             if (captures.is_set_at(to)) {
-                move.piece.captured = board.piece_at(to);
+                move.captured(board.piece_at(to));
             }
         });
     }
@@ -115,8 +113,15 @@ namespace core::generators {
         return generator.get_generated();
     }
 
-    std::vector<Move> generate_moves(Board board) {
+    std::vector<Move> generate_moves(Board& board) {
         MoveGenerator generator(board);
+
+        // save board state to rollback later
+        Move base_state = Move::default_mv;
+        base_state.ep(board.enpassant.pawn);
+        base_state.castle(board.castling.get_state(board.turn));
+
+        generator.moves.fill(base_state);
 
         generate_pins(generator);
 

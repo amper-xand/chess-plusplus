@@ -32,7 +32,8 @@ namespace core::generators::kings {
         }
     }
 
-    template <char piece> bitboard pin_xray(Board& board, bitboard direction) {
+    template <piece_t piece>
+    bitboard pin_xray(Board& board, bitboard direction) {
         bitboard king = board.allied(Piece::KINGS);
 
         bitboard pinnable =
@@ -89,7 +90,7 @@ namespace core::generators::kings {
             return false;
 
         return generator.pins.absolute.is_set_at(
-            generator.board.enpassant.capturable);
+            generator.board.enpassant.pawn);
     }
 
     bitboard get_attacked_squares(Board& board) {
@@ -142,15 +143,15 @@ namespace core::generators::kings {
 
         Board& board = generator.board;
 
-        auto castling = board.castling.get(board.turn);
+        auto castling = board.castling.get_state(board.turn);
 
-        if (castling & Board::CAST_RIGHT)
+        if (!(castling & Board::CAST_RIGHT))
             return;
 
         if (castling & Board::CAST_WEST) {
             bitboard cast_squares = 0b11111000;
 
-            if (!board.turn) {
+            if (board.turn.isBlack()) {
                 cast_squares <<= square::index_at(7, 0);
             }
 
@@ -159,18 +160,18 @@ namespace core::generators::kings {
                 cast_squares.mask(!(board.all() | attacked_squares))) {
 
                 Move& move = generator.next();
-                move.piece.moved = Piece::KINGS;
-                move.castle = {.take = true, .side = Direction::WEST};
+                move.moved(Piece::KINGS);
+                move.cas_tag(true);
 
-                move.from = king_position;
-                move.to = king_position.left(2);
+                move.from(king_position);
+                move.to(king_position.left(2));
             }
         }
 
         if (castling & Board::CAST_EAST) {
             bitboard cast_squares = 0b00001111;
 
-            if (!board.turn) {
+            if (board.turn.isBlack()) {
                 cast_squares <<= square::index_at(7, 0);
             }
 
@@ -179,11 +180,11 @@ namespace core::generators::kings {
                 cast_squares.mask(!(board.all() | attacked_squares))) {
 
                 Move& move = generator.next();
-                move.piece.moved = Piece::KINGS;
-                move.castle = {.take = true, .side = Direction::EAST};
+                move.moved(Piece::KINGS);
+                move.cas_tag(true);
 
-                move.from = king_position;
-                move.to = king_position.right(2);
+                move.from(king_position);
+                move.to(king_position.right(2));
             }
         }
     }
@@ -208,12 +209,23 @@ namespace core::generators::kings {
 
         bitboard captures = board.enemies().mask(moves);
 
-        Move base;
-        base.castle.reject =
-            (board.castling.get(board.turn) & Board::CAST_RIGHT) != 0;
+        auto castle = board.castling.get_state(board.turn);
 
-        generator.from_bitboard(Piece::KINGS, king_position, moves, captures,
-                                base);
+        for (square index = 0; moves != 0;
+             moves <<= 1, captures <<= 1, ++index) {
+
+            if (moves.last_bit()) {
+                auto& move = generator.next();
+
+                move.moved(Piece::KINGS);
+
+                move.from(king_position);
+                move.to(index);
+
+                if (captures.last_bit())
+                    move.captured(board.piece_at(index));
+            }
+        }
 
         return generator;
     }

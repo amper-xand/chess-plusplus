@@ -22,13 +22,13 @@ namespace core::generators::pawns {
     }
 
     void gen_promotion(MoveGenerator& generator, Move& move) {
-        if (!(move.to.row() == 0 || move.to.row() == 7))
+        if (!(move.to().row() == 0 || move.to().row() == 7))
             return;
 
-        move.promotion = Piece::QUEENS;
+        move.promotion(Piece::QUEENS);
 
         for (auto promotion : {Piece::KNIGHTS, Piece::BISHOPS, Piece::ROOKS}) {
-            generator.next().same_as(move).promotion = promotion;
+            generator.next().like(move).promotion(promotion);
         }
     };
 
@@ -37,28 +37,23 @@ namespace core::generators::pawns {
 
         bitboard::scan(singles, [&](square index) {
             Move& move = generator.next();
-            move.piece.moved = Piece::PAWNS;
+            move.moved(Piece::PAWNS);
 
-            move.from = index;
-            move.to = generator.board.turn ? index.up() : index.down();
-
-            // Mark ep as rejected
-            move.enpassant.captured = generator.board.enpassant.available;
+            move.from(index);
+            move.to(generator.board.turn ? index.up() : index.down());
 
             gen_promotion(generator, move);
         });
 
         bitboard::scan(doubles, [&](square index) {
             Move& move = generator.next();
-            move.piece.moved = Piece::PAWNS;
+            move.moved(Piece::PAWNS);
 
-            move.enpassant.set = true;
+            move.ep_tag(true);
 
-            move.from = index;
-            move.to = generator.board.turn ? index.up(2) : index.down(2);
+            move.from(index);
+            move.to(generator.board.turn ? index.up(2) : index.down(2));
 
-            // Mark ep as rejected
-            move.enpassant.captured = generator.board.enpassant.available;
         });
     }
 
@@ -67,32 +62,27 @@ namespace core::generators::pawns {
 
         bitboard::scan(east, [&](square index) {
             Move& move = generator.next();
-            move.piece.moved = Piece::PAWNS;
+            move.moved(Piece::PAWNS);
 
-            move.to = index;
-            move.from =
-                generator.board.turn ? index.down().left() : index.up().left();
+            move.to(index);
+            move.from( //
+                generator.board.turn ? index.down().left() : index.up().left());
 
-            move.piece.captured = generator.board.piece_at(index);
-
-            // Mark ep as rejected
-            move.enpassant.captured = generator.board.enpassant.available;
+            move.captured(generator.board.piece_at(index));
 
             gen_promotion(generator, move);
         });
 
         bitboard::scan(west, [&](square index) {
             Move& move = generator.next();
-            move.piece.moved = Piece::PAWNS;
+            move.moved(Piece::PAWNS);
 
-            move.to = index;
-            move.from = generator.board.turn ? index.down().right()
-                                             : index.down().right();
+            move.to(index);
+            move.from( //
+                generator.board.turn ? index.down().right()
+                                     : index.up().right());
 
-            move.piece.captured = generator.board.piece_at(index);
-
-            // Mark ep as rejected
-            move.enpassant.captured = generator.board.enpassant.available;
+            move.captured(generator.board.piece_at(index));
 
             gen_promotion(generator, move);
         });
@@ -104,32 +94,31 @@ namespace core::generators::pawns {
             square index = east.rzeros();
 
             Move& move = generator.next();
-            move.piece.moved = Piece::PAWNS;
+            move.moved(Piece::PAWNS);
 
-            move.enpassant.take = true;
-            move.enpassant.captured = generator.board.enpassant.capturable;
+            move.ep_tag(true);
 
-            move.to = index;
-            move.from =
-                generator.board.turn ? index.down().left() : index.up().left();
+            move.to(index);
+            move.from( //
+                generator.board.turn ? index.down().left() : index.up().left());
 
-            move.piece.captured = generator.board.piece_at(index);
+            move.captured(generator.board.piece_at(index));
         };
 
         if (west != 0) {
             square index = west.rzeros();
 
             Move& move = generator.next();
-            move.piece.moved = Piece::PAWNS;
+            move.moved(Piece::PAWNS);
 
-            move.enpassant.take = true;
-            move.enpassant.captured = generator.board.enpassant.capturable;
+            move.ep_tag(true);
 
-            move.to = index;
-            move.from = generator.board.turn ? index.down().right()
-                                             : index.up().right();
+            move.to(index);
+            move.from( //
+                generator.board.turn ? index.down().right()
+                                     : index.up().right());
 
-            move.piece.captured = generator.board.piece_at(index);
+            move.captured(generator.board.piece_at(index));
         };
     }
 
