@@ -33,7 +33,7 @@ namespace core {
         #define member(type, name, size, offset) \
         getter(type, name, size, offset)         \
         setter(name, size, offset)               \
-        
+
         /*---------------------------*/
         member(square, from     , 6,  0)
         member(square, to       , 6,  6)
@@ -126,8 +126,11 @@ namespace core {
 
         static Board parse_fen(std::string fen);
 
-        void play(Move move);
-        void unplay(Move move);
+        bool operator==(Board other);
+
+        void play(const Move& move);
+        void unplay(const Move& move);
+
         void print();
 
         inline bitboard all() { return white | black; }
@@ -162,7 +165,11 @@ namespace core {
         }
 
       private:
-        void piece_move(Color color, Piece piece, bitboard from, bitboard to);
+        void update_castling(const Move& move, bitboard from, bitboard to);
+        void restore_castling(const Move& move, bitboard from, bitboard to);
+
+        void update_enpassant(const Move& move, bitboard from, bitboard to);
+        void restore_enpassant(const Move& move, bitboard from, bitboard to);
     };
 
 } // namespace core

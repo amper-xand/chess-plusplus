@@ -6,14 +6,64 @@
 #include <strings.h>
 
 namespace core {
-    void Board::play(Move move) {
+    void Board::play(const Move& move) {
         auto from = move.from().bb();
         auto to = move.to().bb();
 
-        piece_move(turn, move.moved(), from, to);
+        if (!move.captured().isNone()) {
+            // remove captured piece
+            // due to ep there might not be a piece there
+            pieces[move.captured()] &= ~to;
+            colors[!turn] &= ~to;
+        }
 
-        // handle castling
+        // if the piece is moved before the capture
+        // then it might be removed from the bitboard
+        pieces[move.moved()] ^= from | to;
+        colors[turn] ^= from | to;
 
+        update_castling(move, from, to);
+        update_enpassant(move, from, to);
+
+        if (!move.promotion().isNone()) {
+            // remove the promoted pawn
+            pawns &= ~to;
+            // add the promoted piece
+            pieces[move.promotion()] |= to;
+        }
+
+        turn = !turn;
+    }
+
+    void Board::unplay(const Move& move) {
+        // go back to the perspective of the player that made the move
+        turn = !turn;
+
+        auto from = move.from().bb();
+        auto to = move.to().bb();
+
+        // return the piece to its previous position
+        // due to castling
+        // the piece is not guaranteed to be in its target square
+        pieces[move.moved()] = pieces[move.moved()].pop(to) | from;
+        colors[turn] = colors[turn].pop(to) | from;
+
+        // return the captured pieces
+        if (move.captured() != Piece::NONE) {
+            pieces[move.captured()] |= to;
+            colors[!turn] |= to;
+        }
+
+        restore_castling(move, from, to);
+        restore_enpassant(move, from, to);
+
+        if (!move.promotion().isNone()) {
+            pieces[move.promotion()] &= ~to;
+        }
+    }
+
+    inline void Board::update_castling(const Move& move, //
+                                       bitboard from, bitboard to) {
         // remove castling right
         if (move.moved().isKing()) {
             castling.remove_right(turn, CAST_RIGHT);
@@ -28,7 +78,11 @@ namespace core {
             }
         }
 
+        // take castle
         if (move.cas_tag()) {
+
+            // pieces look up tables
+
             constexpr bitboard king_castlings =
                 // king side castle
                 square::index_at(0, 1).bb() | square::index_at(7, 1).bb() |
@@ -41,25 +95,29 @@ namespace core {
                 // queen side castle
                 square::index_at(0, 4).bb() | square::index_at(7, 4).bb();
 
+            // filter to the correct castling side and color
             bitboard side = bitboard::interval(from, to);
 
             bitboard rook_to = rook_castlings & side;
             bitboard king_to = king_castlings & side;
 
-            piece_move(turn, Piece::ROOKS, to, rook_to);
-            // move the king again to put it in place
-            piece_move(turn, Piece::KINGS, to, king_to);
-        }
+            // move the rook to its castle position
+            colors[turn] ^= to | rook_to;
+            rooks ^= to | rook_to;
 
-        // handle captures
-        if (!move.captured().isNone()) {
-            colors[!turn] &= ~to;
-            colors[move.captured()] &= ~to;
+            // correctly re-place the king
+            kings ^= allied(Piece::KINGS) | king_to;
+            colors[turn] ^= allied(Piece::KINGS) | king_to;
         }
+    }
 
-        // handle en passant
+    inline void Board::update_enpassant(const Move& move, //
+                                        bitboard from, bitboard to) {
         uint8_t ep_tag = move.ep_tag();
+
+        // clear ep state
         enpassant.available = false;
+        enpassant.pawn = 0;
 
         // set en passant
         if (ep_tag && move.captured().isNone()) {
@@ -72,81 +130,55 @@ namespace core {
         if (ep_tag && move.captured().isPawn()) {
             auto capture = square(enpassant.pawn).bb();
 
-            colors[!turn] &= ~capture;
-            pawns &= ~capture;
-
+            // remove the captured pawn
+            colors[!turn] ^= capture;
+            pawns ^= capture;
             enpassant.pawn = 0;
         }
-
-        // handle promotions
-        if (!move.promotion().isNone()) {
-            pieces[move.promotion()] |= to;
-            pawns &= ~to;
-        }
-
-        turn = !turn;
     }
 
-    void Board::unplay(Move move) {
-        turn = !turn;
-
-        auto from = move.from().bb();
-        auto to = move.to().bb();
-
-        // return the piece to its previous position
-        piece_move(turn, move.moved(), to, from);
-
-        // return the captured pieces
-        if (move.captured() != Piece::NONE) {
-            pieces[move.captured()] |= to;
-            colors[!turn] |= to;
-        }
-
+    inline void Board::restore_castling(const Move& move, //
+                                        bitboard from, bitboard to) {
         // restore castling state
         castling.set_state(turn, move.castle());
 
         // undo castle
         if (move.cas_tag()) {
-            // return king to its place
-            auto king = allied(Piece::KINGS) | from;
+            // remove the king and place it again
+            colors[turn] ^= allied(Piece::KINGS) | from;
+            kings ^= allied(Piece::KINGS) | from;
 
-            colors[turn] ^= king;
-            kings ^= king;
+            // take the rook on the castle side
+            bitboard rook = rooks & bitboard::interval(from, to);
 
-            // return the rook to its place
-            auto rook = rooks & bitboard::interval(from, to);
-            rook |= to;
-
-            colors[turn] ^= rook;
-            rooks ^= rook;
+            // and move it to its origin
+            colors[turn] ^= rook | to;
+            rooks ^= rook | to;
         }
+    }
 
+    inline void Board::restore_enpassant(const Move& move, //
+                                         bitboard from, bitboard to) {
         // get saved state
         uint8_t ep_tag = move.ep_tag();
         square ep = move.ep();
 
         // restore state
         enpassant.pawn = ep;
+        // restore the tail of the enemy pawn
         enpassant.tail = turn ? ep.up() : ep.down();
+        // reactivate if available
         enpassant.available = ep;
 
-        // restore taken en passant pawn
+        // restore taken ep pawn
         if (ep_tag && move.captured().isPawn()) {
             auto capture = square(enpassant.pawn).bb();
 
-            colors[!turn] |= capture;
-            pawns |= capture;
+            // place the captured pawn
+            // and remove piece that was added when undoing the capture
+            colors[!turn] ^= capture | to;
+            pawns ^= capture | to;
         }
-
-        if (!move.promotion().isNone()) {
-            pieces[move.promotion()] &= ~to;
-        }
-    }
-
-    inline void Board::piece_move(Color color, Piece piece, bitboard from,
-                                  bitboard to) {
-        pieces[piece] = pieces[piece].pop(from).join(to);
-        colors[color] = colors[color].pop(from).join(to);
     }
 
     Board Board::parse_fen(std::string fen) {
