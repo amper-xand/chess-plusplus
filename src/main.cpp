@@ -1,4 +1,5 @@
 #include <core/generators.hpp>
+#include <cstdio>
 
 int main() {
     core::generators::initialize_tables();
@@ -8,7 +9,7 @@ int main() {
 
     board.print();
     auto moves = core::generators::generate_moves(board);
-    board.play(moves.at(17));
+    board.play(moves.at(19));
     board.print();
 
     return 0;

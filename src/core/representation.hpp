@@ -7,7 +7,7 @@
 
 namespace core {
 
-    struct Move : LiteralWrapper<uint32_t> {
+    struct Move : public LiteralWrapper<uint32_t> {
         // clang-format off
 
         // from      6 bits offset 0

@@ -43,13 +43,13 @@ namespace core::generators {
         Move& next() { return moves.at(nxt++); }
 
         std::vector<Move> generated() {
-            return std::vector(moves.begin(), moves.begin() + nxt - 1);
+            return std::vector(moves.begin(), moves.begin() + nxt);
         }
 
         template <piece_t piece>
         void bulk(square from, bitboard moves, bitboard captures) {
             bitboard::scan(moves, [&](square to) {
-                auto move = next();
+                auto& move = next();
 
                 move.moved(piece);
 
