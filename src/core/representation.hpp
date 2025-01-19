@@ -107,10 +107,10 @@ namespace core {
             inline void set_state(Color color, uint8_t state) 
                 { this->state |= state << (3 & -color); }
 
-            inline void remove_right(Color color, uint8_t state) 
+            inline void remove_right(Color color, uint8_t state)
                 { this->state &= ~(state << (3 & -color)); }
 
-            inline uint8_t get_state(Color color) 
+            inline uint8_t get_state(Color color) const
                 { return (state >> (3 & -color)) & 0b111; }
 
         } castling;
@@ -133,31 +133,31 @@ namespace core {
 
         void print();
 
-        inline bitboard all() { return white | black; }
+        inline bitboard all() const { return white | black; }
 
-        inline bitboard allies() { return colors[turn]; }
+        inline bitboard allies() const { return colors[turn]; }
 
-        inline bitboard allied(Piece piece) {
+        inline bitboard allied(Piece piece) const {
             return pieces[piece] & colors[turn];
         }
 
-        inline bitboard enemies() { return colors[!turn]; }
+        inline bitboard enemies() const { return colors[!turn]; }
 
-        inline bitboard enemy(Piece piece) {
+        inline bitboard enemy(Piece piece) const {
             return pieces[piece] & colors[!turn];
         }
 
-        inline bool is_occupied(square index) {
-            return bitboard(white | black).is_set_at(index);
+        inline bool occupied(square index) const {
+            return bitboard(white | black).bit(index);
         }
 
-        inline Color color_at(square index) {
-            return Color::Both[bitboard(white).is_set_at(index)];
+        inline Color color(square index) const {
+            return Color::Both[bitboard(white).bit(index)];
         }
 
-        inline Piece piece_at(square index) {
+        inline Piece piece(square index) const {
             for (auto piece : Piece::All) {
-                if (pieces[piece].is_set_at(index))
+                if (pieces[piece].bit(index))
                     return piece;
             }
 

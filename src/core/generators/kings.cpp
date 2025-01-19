@@ -6,7 +6,7 @@ namespace core::generators::kings {
     bitboard available_moves[64];
 
     bitboard get_available_moves(square index) {
-        bitboard moves = 0, position = bitboard::bit_at(index);
+        bitboard moves = 0, position = bitboard::bitpos(index);
 
         square col = index.column();
 
@@ -33,7 +33,7 @@ namespace core::generators::kings {
     }
 
     template <piece_t piece>
-    bitboard pin_xray(Board& board, bitboard direction) {
+    bitboard pin_xray(const Board& board, bitboard direction) {
         bitboard king = board.allied(Piece::KINGS);
 
         bitboard pinnable =
@@ -65,17 +65,17 @@ namespace core::generators::kings {
         return ((before | after) ^ king) & direction;
     }
 
-    bitboard pin_rook_xrays(Board& board) {
+    bitboard pin_rook_xrays(const Board& board) {
         bitboard king = board.allied(Piece::KINGS);
         square position = king.rzeros();
 
         return pin_xray<Piece::ROOKS>(board, bitboard::masks::horizontal
-                                                 << position.start_of_row()) |
+                                                 << position.row_start()) |
                pin_xray<Piece::ROOKS>(board, bitboard::masks::vertical
                                                  << position.column());
     }
 
-    bitboard pin_bishop_xrays(Board& board) {
+    bitboard pin_bishop_xrays(const Board& board) {
         bitboard king = board.allied(Piece::KINGS);
         square position = king.rzeros();
 
@@ -89,11 +89,10 @@ namespace core::generators::kings {
         if (!generator.board.enpassant.available)
             return false;
 
-        return generator.pins.absolute.is_set_at(
-            generator.board.enpassant.pawn);
+        return generator.pins.absolute.bit(generator.board.enpassant.pawn);
     }
 
-    bitboard get_attacked_squares(Board& board) {
+    bitboard get_attacked_squares(const Board& board) {
         bitboard diagonal_sliders =
                      board.enemies().mask(board.bishops | board.queens),
 
@@ -106,17 +105,17 @@ namespace core::generators::kings {
 
         for (square index = 0; index < 64; ++index) {
 
-            if (diagonal_sliders.last_bit()) {
+            if (diagonal_sliders.bit0()) {
                 attacked_squares |=
                     magic::bishops::get_avail_moves(blockers, index);
             }
 
-            if (straight_sliders.last_bit()) {
+            if (straight_sliders.bit0()) {
                 attacked_squares |=
                     magic::rooks::get_avail_moves(blockers, index);
             }
 
-            if (straight_sliders.last_bit()) {
+            if (straight_sliders.bit0()) {
                 attacked_squares |= knights::available_moves[index];
             }
 
@@ -141,7 +140,7 @@ namespace core::generators::kings {
     void handle_castling(MoveGenerator& generator, square king_position,
                          bitboard attacked_squares) {
 
-        Board& board = generator.board;
+        const Board& board = generator.board;
 
         auto castling = board.castling.get_state(board.turn);
 
@@ -152,7 +151,7 @@ namespace core::generators::kings {
             bitboard cast_squares = 0b11111000;
 
             if (board.turn.isBlack()) {
-                cast_squares <<= square::index_at(7, 0);
+                cast_squares <<= square::at(7, 0);
             }
 
             if (cast_squares ==
@@ -172,7 +171,7 @@ namespace core::generators::kings {
             bitboard cast_squares = 0b00001111;
 
             if (board.turn.isBlack()) {
-                cast_squares <<= square::index_at(7, 0);
+                cast_squares <<= square::at(7, 0);
             }
 
             if (cast_squares ==
@@ -190,7 +189,7 @@ namespace core::generators::kings {
     }
 
     template <bool generate_castle>
-    MoveGenerator& gen_king_moves(MoveGenerator& generator) {
+    void gen_king_moves(MoveGenerator& generator) {
         auto& board = generator.board;
 
         square king_position = board.allied(Piece::KINGS).rzeros();
@@ -214,7 +213,7 @@ namespace core::generators::kings {
         for (square index = 0; moves != 0;
              moves <<= 1, captures <<= 1, ++index) {
 
-            if (moves.last_bit()) {
+            if (moves.bit0()) {
                 auto& move = generator.next();
 
                 move.moved(Piece::KINGS);
@@ -222,18 +221,16 @@ namespace core::generators::kings {
                 move.from(king_position);
                 move.to(index);
 
-                if (captures.last_bit())
-                    move.captured(board.piece_at(index));
+                if (captures.bit0())
+                    move.captured(board.piece(index));
             }
         }
-
-        return generator;
     }
 
-    template MoveGenerator& gen_king_moves<true>(MoveGenerator& generator);
-    template MoveGenerator& gen_king_moves<false>(MoveGenerator& generator);
+    template void gen_king_moves<true>(MoveGenerator& generator);
+    template void gen_king_moves<false>(MoveGenerator& generator);
 
-    bitboard checking_pieces(Board& board) {
+    bitboard checking_pieces(const Board& board) {
         bitboard king = board.allied(Piece::KINGS);
 
         square king_pos = king.rzeros();

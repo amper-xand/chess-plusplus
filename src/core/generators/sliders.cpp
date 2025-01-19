@@ -5,8 +5,8 @@
 namespace core::generators::sliders {
 
     template <const auto& sld_moves, piece_t slider>
-    MoveGenerator& gen_slider(MoveGenerator& generator, bitboard king_slider) {
-        auto& board = generator.board;
+    void gen_slider(MoveGenerator& generator, bitboard king_slider) {
+        const Board& board = generator.board;
 
         bitboard pieces = board.allied(slider), blockers = board.all(),
                  noncaptures = board.allies();
@@ -38,7 +38,7 @@ namespace core::generators::sliders {
             if (generator.pins
                     .partial
                     // Check if piece is partially pinned
-                    .is_set_at(piece_positions[current_piece])) {
+                    .bit(piece_positions[current_piece])) {
 
                 // Only allow the partially pinned piece
                 // to move colinearly to the king and the pinners
@@ -49,15 +49,14 @@ namespace core::generators::sliders {
             bitboard captures =
                 available_per_piece[current_piece].mask(board.enemies());
 
-            generator.from_bitboard(slider, piece_positions[current_piece],
-                                    available_per_piece[current_piece],
-                                    captures);
+            generator.bulk<slider>(                 //
+                piece_positions[current_piece],     //
+                available_per_piece[current_piece], //
+                captures);
         }
-
-        return generator;
     }
 
-    MoveGenerator& gen_slider_moves(MoveGenerator& generator) {
+    void gen_slider_moves(MoveGenerator& generator) {
         square king_position = generator.board.allied(Piece::KINGS).rzeros();
 
         bitboard king_b_sld = magic::bishops::get_slider(king_position);
@@ -74,14 +73,11 @@ namespace core::generators::sliders {
 
         gen_slider<magic::rooks::get_avail_moves, Piece::QUEENS> //
             (generator, king_r_sld);
-
-        return generator;
     }
 
-    MoveGenerator& gen_check_blocks(MoveGenerator& generator,
-                                    bitboard allowed) {
+    void gen_check_blocks(MoveGenerator& generator, bitboard allowed) {
 
-        auto& board = generator.board;
+        const Board& board = generator.board;
 
         bitboard blockers = board.all();
         bitboard capturable = board.enemies();
@@ -95,7 +91,7 @@ namespace core::generators::sliders {
                 magic::bishops::get_avail_moves(blockers, index).mask(allowed);
             bitboard captures = moves.mask(capturable);
 
-            generator.from_bitboard(Piece::BISHOPS, index, moves, captures);
+            generator.bulk<Piece::BISHOPS>(index, moves, captures);
         });
 
         bitboard::scan(board.allied(Piece::ROOKS).pop(pinned), [&](square index) {
@@ -103,7 +99,7 @@ namespace core::generators::sliders {
                 magic::rooks::get_avail_moves(blockers, index).mask(allowed);
             bitboard captures = moves.mask(capturable);
 
-            generator.from_bitboard(Piece::ROOKS, index, moves, captures);
+            generator.bulk<Piece::ROOKS>(index, moves, captures);
         });
 
         bitboard::scan(board.allied(Piece::QUEENS).pop(pinned), [&](square index) {
@@ -114,10 +110,8 @@ namespace core::generators::sliders {
 
             bitboard captures = moves.mask(capturable);
 
-            generator.from_bitboard(Piece::QUEENS, index, moves, captures);
+            generator.bulk<Piece::QUEENS>(index, moves, captures);
         });
         // clang-format on
-
-        return generator;
     }
 } // namespace core::generators::sliders

@@ -59,7 +59,7 @@ namespace core::generators::magic {
 
     template <typename Derived, uint8_t Bits> struct MagicTable {
         static constexpr uint8_t bits = Bits;
-        static constexpr bitboard table_size = bitboard::bit_at(Bits);
+        static constexpr bitboard table_size = bitboard::bitpos(Bits);
         static MagicEntry entries[64];
         static bitboard moves[64][(bitboard_t)table_size];
 
@@ -93,19 +93,19 @@ namespace core::generators::magic {
 #include "magicsr.data"
 
         static inline bitboard relevant_blockers(square index) {
-            return (masks::rel_blockers_horizontal << index.start_of_row()) ^
+            return (masks::rel_blockers_horizontal << index.row_start()) ^
                    (masks::rel_blockers_vertical << index.column());
         }
 
         static inline bitboard slider(square index) {
-            return (masks::horizontal << index.start_of_row()) ^
+            return (masks::horizontal << index.row_start()) ^
                    (masks::vertical << index.column());
         }
 
         static bitboard gen_moves(bitboard blockers, square index) {
             const bitboard slider = Rookst::slider(index);
 
-            const bitboard rook = bitboard::bit_at(index);
+            const bitboard rook = bitboard::bitpos(index);
 
             // Masks the blockers with a north ray
             const bitboard north_mask = masks::make_n_mask(index);
@@ -157,7 +157,7 @@ namespace core::generators::magic {
             const bitboard w_mask = masks::make_w_mask(index);
             const bitboard e_mask = masks::make_e_mask(index);
 
-            const bitboard bishop = bitboard::bit_at(index);
+            const bitboard bishop = bitboard::bitpos(index);
 
             const bitboard nw_mask = n_mask & w_mask;
             bitboard nw_ray = blockers.mask(slider & nw_mask);

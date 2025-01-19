@@ -1,51 +1,13 @@
 #include "generators.hpp"
+#include "core/types.hpp"
 
 #include <core/generators/piecewise.hpp>
 #include <core/magic/magic.hpp>
 #include <core/representation.hpp>
 
-#include <stdexcept>
 #include <vector>
 
-namespace core::generators {
-    std::vector<Move> MoveGenerator::get_generated() {
-        if (next_move == moves.begin())
-            // No moves have been generated
-            return std::vector<Move>(0);
-
-        return std::vector(moves.begin(), next_move);
-    }
-
-    Move& MoveGenerator::next() {
-        if (next_move > moves.end()) {
-            throw std::out_of_range(
-                "The generator execeeded allocated space for moves.");
-        }
-
-        Move& move = *next_move;
-        std::advance(next_move, 1);
-
-        return move;
-    }
-
-    void MoveGenerator::from_bitboard(Piece piece, square from, bitboard moves,
-                                      bitboard captures) {
-
-        bitboard::scan(moves, [&](square to) {
-            auto& move = next();
-
-            move.moved(piece);
-
-            move.from(from);
-            move.to(to);
-
-            if (captures.is_set_at(to)) {
-                move.captured(board.piece_at(to));
-            }
-        });
-    }
-
-} // namespace core::generators
+namespace core::generators {} // namespace core::generators
 
 namespace core::generators {
     void initialize_tables() {
@@ -58,7 +20,7 @@ namespace core::generators {
         bitboard str_pins = kings::pin_rook_xrays(generator.board);
         bitboard dia_pins = kings::pin_bishop_xrays(generator.board);
 
-        Board& board = generator.board;
+        const Board& board = generator.board;
 
         generator.pins.pinners = board.enemies().mask(str_pins | dia_pins);
 
@@ -75,14 +37,14 @@ namespace core::generators {
     std::vector<Move> check_generation(MoveGenerator& generator,
                                        bitboard checkers) {
 
-        Board& board = generator.board;
+        const Board& board = generator.board;
 
         kings::gen_king_moves<false>(generator);
 
         // If there is more than one checking piece
         // then just generate the king moves
         if ((checkers & (checkers - 1)) != 0) {
-            return generator.get_generated();
+            return generator.generated();
         }
 
         bitboard allowed_squares = checkers;
@@ -110,18 +72,13 @@ namespace core::generators {
         knights::gen_check_blocks(generator, allowed_squares);
         pawns::gen_check_blocks(generator, allowed_squares);
 
-        return generator.get_generated();
+        return generator.generated();
     }
 
-    std::vector<Move> generate_moves(Board& board) {
+    std::vector<Move> generate_moves(const Board& board) {
         MoveGenerator generator(board);
 
-        // save board state to rollback later
-        Move base_state = Move::default_mv;
-        base_state.ep(board.enpassant.pawn);
-        base_state.castle(board.castling.get_state(board.turn));
-
-        generator.moves.fill(base_state);
+        generator.populate();
 
         generate_pins(generator);
 
@@ -139,7 +96,7 @@ namespace core::generators {
 
         kings::gen_king_moves(generator);
 
-        return generator.get_generated();
+        return generator.generated();
     }
 
 } // namespace core::generators

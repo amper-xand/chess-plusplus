@@ -43,9 +43,9 @@ namespace core {
 
         inline constexpr bitboard_t bb() { return 1ul << value_; }
 
-        inline constexpr uint8_t start_of_row() { return value_ - column(); }
+        inline constexpr uint8_t row_start() { return value_ - column(); }
 
-        static inline constexpr square index_at(uint8_t row, uint8_t col) {
+        static inline constexpr square at(uint8_t row, uint8_t col) {
             return col + 8 * row;
         }
     };
@@ -55,15 +55,15 @@ namespace core {
         constexpr bitboard(bitboard_t value = 0)
             : LiteralWrapper<bitboard_t>(value) {}
 
-        static inline constexpr bitboard bit_at(square index) {
+        static inline constexpr bitboard bitpos(square index) {
             return 1ul << index;
         }
 
-        inline constexpr bool is_set_at(square index) {
+        inline constexpr bool bit(square index) const {
             return (value_ >> index) & 1ul;
         }
 
-        inline constexpr bitboard last_bit() { return value_ & 1; }
+        inline constexpr bitboard bit0() { return value_ & 1; }
 
         inline constexpr bitboard LSB() {
             bitboard x = value_;
@@ -144,7 +144,7 @@ namespace core {
             for (square index = 0; bitboard != 0 && index < 64;
                  ++index, bitboard >>= 1) {
 
-                if (bitboard.last_bit()) {
+                if (bitboard.bit0()) {
                     processor(index);
                 }
             }
@@ -190,7 +190,7 @@ namespace core {
             }
 
             static inline constexpr bitboard get_rev_diagonal_at(square index) {
-                return get_diagonal_at(index.start_of_row() +
+                return get_diagonal_at(index.row_start() +
                                        (7 - index.column()))
                     .flip_horizontally();
             }
@@ -198,23 +198,23 @@ namespace core {
             static inline constexpr bitboard make_n_mask(square index) {
                 return fullboard
                        // Moves the mask one above the square
-                       << (index.start_of_row() + 8);
+                       << (index.row_start() + 8);
             }
 
             static inline constexpr bitboard make_s_mask(square index) {
                 // Moves one row above the square
                 // and gets the trailing zeros
-                return bitboard::bit_at(index.start_of_row() + 8) - 1;
+                return bitboard::bitpos(index.row_start() + 8) - 1;
             }
 
             static inline constexpr bitboard make_e_mask(square index) {
-                return (bitboard::bit_at(index.column()) - 1) *
+                return (bitboard::bitpos(index.column()) - 1) *
                        0x0101010101010101UL;
             }
 
             static inline constexpr bitboard make_w_mask(square index) {
                 return (~make_e_mask(index)) ^
-                       bitboard::bit_at(index) * 0x0101010101010101UL;
+                       bitboard::bitpos(index) * 0x0101010101010101UL;
             }
         };
     };

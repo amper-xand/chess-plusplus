@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/types.hpp"
 #include <core/representation.hpp>
 
 #include <array>
@@ -10,30 +11,58 @@ namespace core::generators {
     constexpr uint8_t max_moves = 218;
 
     struct MoveGenerator {
-        // clang-format off
-        public: // tmp: change back to private
+      private:
         std::array<Move, max_moves> moves;
-        std::array<Move, max_moves>::iterator next_move = moves.begin();
+        uint8_t nxt = 0;
 
       public:
-        Board& board;
+        // clang-format off
+        
+        // data calculated before generation
+        struct { bitboard absolute, partial, pinners; } 
+            pins;
+        struct { bool pinned = false; }
+            enpassant;
 
-        struct { bitboard absolute, partial, pinners; } pins;
-
-        struct { bool pinned = false; } enpassant;
         // clang-format on
 
-        MoveGenerator(Board& board) : board(board) {}
+        const Board& board;
 
-        Move& next();
+        MoveGenerator(const Board& board) : board(board) {}
 
-        void from_bitboard(Piece piece, square from, bitboard moves,
-                           bitboard captures);
+        void populate() {
+            // save board state to rollback later
+            Move base_state = Move::default_mv;
+            base_state.ep(board.enpassant.pawn);
+            base_state.castle(board.castling.get_state(board.turn));
+            
+           moves.fill(base_state);
 
-        std::vector<Move> get_generated();
+        }
+
+        Move& next() { return moves.at(nxt++); }
+
+        std::vector<Move> generated() {
+            return std::vector(moves.begin(), moves.begin() + nxt - 1);
+        }
+
+        template <piece_t piece>
+        void bulk(square from, bitboard moves, bitboard captures) {
+            bitboard::scan(moves, [&](square to) {
+                auto move = next();
+
+                move.moved(piece);
+
+                move.from(from);
+                move.to(to);
+
+                if (captures.bit0())
+                    move.captured(board.piece(to));
+            });
+        }
     };
 
     void initialize_tables();
 
-    std::vector<Move> generate_moves(Board& board);
+    std::vector<Move> generate_moves(const Board& board);
 } // namespace core::generators

@@ -85,15 +85,15 @@ namespace core {
 
             constexpr bitboard king_castlings =
                 // king side castle
-                square::index_at(0, 1).bb() | square::index_at(7, 1).bb() |
+                square::at(0, 1).bb() | square::at(7, 1).bb() |
                 // queen side castle
-                square::index_at(0, 5).bb() | square::index_at(7, 5).bb();
+                square::at(0, 5).bb() | square::at(7, 5).bb();
 
             constexpr bitboard rook_castlings =
                 // king side castle
-                square::index_at(0, 2).bb() | square::index_at(7, 2).bb() |
+                square::at(0, 2).bb() | square::at(7, 2).bb() |
                 // queen side castle
-                square::index_at(0, 4).bb() | square::index_at(7, 4).bb();
+                square::at(0, 4).bb() | square::at(7, 4).bb();
 
             // filter to the correct castling side and color
             bitboard side = bitboard::interval(from, to);
@@ -202,8 +202,8 @@ namespace core {
 
             Piece piece = Piece::from_char(c);
 
-            board.colors[color] |= bitboard::bit_at(index);
-            board.pieces[piece] |= bitboard::bit_at(index);
+            board.colors[color] |= bitboard::bitpos(index);
+            board.pieces[piece] |= bitboard::bitpos(index);
             index--;
         }
 
@@ -219,9 +219,9 @@ namespace core {
             std::cout << std::endl;
             for (int file = 7; file >= 0; --file) {
 
-                square index = square::index_at(rank, file);
+                square index = square::at(rank, file);
 
-                auto square = Piece::to_char(piece_at(index), color_at(index));
+                auto square = Piece::to_char(piece(index), color(index));
 
                 std::cout << ' ' << square << ' ';
             }

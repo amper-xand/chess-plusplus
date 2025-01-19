@@ -53,7 +53,6 @@ namespace core::generators::pawns {
 
             move.from(index);
             move.to(generator.board.turn ? index.up(2) : index.down(2));
-
         });
     }
 
@@ -68,7 +67,7 @@ namespace core::generators::pawns {
             move.from( //
                 generator.board.turn ? index.down().left() : index.up().left());
 
-            move.captured(generator.board.piece_at(index));
+            move.captured(generator.board.piece(index));
 
             gen_promotion(generator, move);
         });
@@ -82,7 +81,7 @@ namespace core::generators::pawns {
                 generator.board.turn ? index.down().right()
                                      : index.up().right());
 
-            move.captured(generator.board.piece_at(index));
+            move.captured(generator.board.piece(index));
 
             gen_promotion(generator, move);
         });
@@ -102,7 +101,7 @@ namespace core::generators::pawns {
             move.from( //
                 generator.board.turn ? index.down().left() : index.up().left());
 
-            move.captured(generator.board.piece_at(index));
+            move.captured(generator.board.piece(index));
         };
 
         if (west != 0) {
@@ -118,12 +117,12 @@ namespace core::generators::pawns {
                 generator.board.turn ? index.down().right()
                                      : index.up().right());
 
-            move.captured(generator.board.piece_at(index));
+            move.captured(generator.board.piece(index));
         };
     }
 
-    MoveGenerator& gen_pawns_moves(MoveGenerator& generator) {
-        Board& board = generator.board;
+    void gen_pawns_moves(MoveGenerator& generator) {
+        const Board& board = generator.board;
 
         bitboard blockers = board.all();
 
@@ -176,22 +175,19 @@ namespace core::generators::pawns {
 
         if (board.enpassant.available && !generator.enpassant.pinned) {
             enpassant.east =
-                attacks.east.mask(bitboard::bit_at(board.enpassant.tail));
+                attacks.east.mask(bitboard::bitpos(board.enpassant.tail));
             enpassant.west =
-                attacks.west.mask(bitboard::bit_at(board.enpassant.tail));
+                attacks.west.mask(bitboard::bitpos(board.enpassant.tail));
         }
 
         gen_from_advances(generator, advances.singles, advances.doubles);
         gen_from_captures(generator, captures.west, captures.east);
         gen_enpassant(generator, enpassant.west, enpassant.east);
-
-        return generator;
     }
 
-    MoveGenerator& gen_check_blocks(MoveGenerator& generator,
-                                    bitboard allowed) {
+    void gen_check_blocks(MoveGenerator& generator, bitboard allowed) {
 
-        auto& board = generator.board;
+        const Board& board = generator.board;
 
         bitboard pawns =
             board.allied(Piece::PAWNS)
@@ -223,15 +219,13 @@ namespace core::generators::pawns {
         ) {
             // then check if a pawn can stop the check with en passant
             bitboard east_ep =
-                attacks_east.mask(bitboard::bit_at(board.enpassant.tail));
+                attacks_east.mask(bitboard::bitpos(board.enpassant.tail));
 
             bitboard west_ep =
-                attacks_west.mask(bitboard::bit_at(board.enpassant.tail));
+                attacks_west.mask(bitboard::bitpos(board.enpassant.tail));
 
             gen_enpassant(generator, west_ep, east_ep);
         }
-
-        return generator;
     }
 
 } // namespace core::generators::pawns
