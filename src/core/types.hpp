@@ -190,8 +190,7 @@ namespace core {
             }
 
             static inline constexpr bitboard get_rev_diagonal_at(square index) {
-                return get_diagonal_at(index.row_start() +
-                                       (7 - index.column()))
+                return get_diagonal_at(index.row_start() + (7 - index.column()))
                     .flip_horizontally();
             }
 
@@ -214,7 +213,7 @@ namespace core {
 
             static inline constexpr bitboard make_w_mask(square index) {
                 return (~make_e_mask(index)) ^
-                       bitboard::bitpos(index) * 0x0101010101010101UL;
+                       (0x0101010101010101UL << index.column());
             }
         };
     };
@@ -265,4 +264,4 @@ namespace core {
         inline constexpr bool isEast() { return !value_; }
     };
 
-} // namespace Game
+} // namespace core
