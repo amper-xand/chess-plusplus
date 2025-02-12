@@ -58,9 +58,8 @@ namespace core::generators::knights {
 
         bitboard::scan(knights, [&](square index) {
             bitboard moves = knights::available_moves[index].pop(blockers);
-            bitboard captures = moves.mask(capturable);
 
-            generator.bulk<Piece::KNIGHTS>(index, moves, captures);
+            generator.bulk<Piece::KNIGHTS>(index, moves, capturable);
         });
     }
 

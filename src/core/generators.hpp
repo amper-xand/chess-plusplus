@@ -56,7 +56,7 @@ namespace core::generators {
                 move.from(from);
                 move.to(to);
 
-                if (captures.bit0())
+                if (captures.bit(to))
                     move.captured(board.piece(to));
             });
         }
