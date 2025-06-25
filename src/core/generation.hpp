@@ -21,9 +21,11 @@ class MoveGenerator {
    protected:
     MoveGenerator(const Board& board) : board(board) {}
 
-    std::vector<Move> generate_moves();
+    std::vector<Move> full_generation();
 
     void generate_pawn_moves();
+
+    std::vector<Move> get_generated_moves();
 
    private:
     Move& next();

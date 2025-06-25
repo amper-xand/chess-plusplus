@@ -9,12 +9,16 @@ namespace core {
 Move& MoveGenerator::next() { return moves.at(nxt++); }
 
 std::vector<Move> MoveGenerator::generate_moves(const Board& board) {
-    return MoveGenerator(board).generate_moves();
+    return MoveGenerator(board).full_generation();
 }
 
-std::vector<Move> MoveGenerator::generate_moves() {
-    generate_pawn_moves();
+std::vector<Move> MoveGenerator::full_generation() {
+    this->generate_pawn_moves();
 
+    return this->get_generated_moves();
+}
+
+std::vector<Move> MoveGenerator::get_generated_moves() {
     return std::vector(moves.begin(), moves.begin() + nxt);
 }
 

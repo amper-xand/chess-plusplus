@@ -15,3 +15,10 @@ add_executable(cheesy_engine
 )
 
 include_directories(src/)
+
+add_executable(test_core
+    src/core/tests/tests.cpp
+
+    src/core/representation.cpp
+    src/core/generation.cpp
+)
