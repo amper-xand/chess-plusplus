@@ -11,6 +11,7 @@ add_executable(cheesy_engine
     src/main.cpp
 
     src/core/representation.cpp
+    src/core/generation.cpp
 )
 
 include_directories(src/)
