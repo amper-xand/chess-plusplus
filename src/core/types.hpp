@@ -55,6 +55,18 @@ struct bitboard : public LiteralWrapper<bitboard_t> {
         return (value_ >> index) & 1ul;
     }
 
+    inline constexpr bitboard mask(bitboard mask) { return value_ & mask; }
+    inline constexpr bitboard exclude(bitboard mask) { return value_ & ~mask; }
+    inline constexpr bitboard join(bitboard mask) { return value_ | mask; }
+
+    inline constexpr bitboard forward(color_t color, auto shift = 1) {
+        return color ? value_ << shift : value_ >> shift;
+    }
+
+    inline constexpr bitboard backward(color_t color, auto shift = 1) {
+        return color ? value_ >> shift : value_ << shift;
+    }
+
     struct masks {
         static constexpr bitboard_t fullboard = 0xFFFFFFFFFFFFFFFF;
         static constexpr bitboard_t border = 0xFF818181818181FF;
@@ -64,6 +76,10 @@ struct bitboard : public LiteralWrapper<bitboard_t> {
 
         static inline constexpr bitboard at(square index) {
             return 1ul << index;
+        }
+
+        static inline constexpr bitboard file(uint8_t file) {
+            return vertical << file;
         }
     };
 };
@@ -92,7 +108,6 @@ struct Piece : public LiteralWrapper<piece_t> {
 
     static Piece from_character_repr(char c);
     char to_character_repr(Color color);
-
 
     inline constexpr bool isPawn() const { return value_ == PAWNS; }
     inline constexpr bool isKnight() const { return value_ == KNIGHTS; }

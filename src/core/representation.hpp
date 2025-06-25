@@ -6,6 +6,14 @@
 
 namespace core {
 
+struct Move {
+    square from;
+    square to;
+
+    Piece moved = Piece::NONE;
+    Piece target = Piece::NONE;
+};
+
 struct Board {
     // clang-format off
 
