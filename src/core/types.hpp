@@ -81,6 +81,10 @@ struct bitboard : public LiteralWrapper<bitboard_t> {
         static inline constexpr bitboard file(uint8_t file) {
             return vertical << file;
         }
+
+        static inline constexpr bitboard rank(uint8_t rank) {
+            return horizontal << (8 * rank);
+        }
     };
 };
 
@@ -103,8 +107,8 @@ struct Piece : public LiteralWrapper<piece_t> {
 
     constexpr Piece(piece_t piece) : LiteralWrapper<piece_t>(piece) {}
 
-    static constexpr piece_t All[]{PAWNS, KNIGHTS, BISHOPS,
-                                   ROOKS, QUEENS,  KINGS};
+    static constexpr piece_t All[]{
+        PAWNS, KNIGHTS, BISHOPS, ROOKS, QUEENS, KINGS};
 
     static Piece from_character_repr(char c);
     char to_character_repr(Color color);

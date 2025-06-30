@@ -26,28 +26,34 @@ void MoveGenerator::generate_pawn_moves() {
     bitboard pawns = board.allied(Piece::PAWNS);
 
     bitboard capturable = board.enemies();
+    bitboard blockers = board.all();
 
     // Advance the pawns then remove those who were blocked
 
-    bitboard single_advances = pawns.forward(board.turn, 1);
-    single_advances.exclude(board.all());
+    bitboard single_advances = pawns.forward(board.turn, 8);
+    single_advances = single_advances.exclude(blockers);
 
-    bitboard double_advances = single_advances.forward(board.turn, 1);
-    double_advances.exclude(board.all());
+    bitboard double_advances =
+        single_advances
+            // advance pawns that advanced from second row
+            .mask(board.turn.isWhite() ? bitboard::masks::rank(2)
+                                       : bitboard::masks::rank(5))
+            .forward(board.turn, 8);
+    double_advances = double_advances.exclude(blockers);
 
     // Advance the pawns to a capture position,
     bitboard l_captures =
-        pawns.exclude(bitboard::masks::file(7)).forward(board.turn, 1) << 1;
+        pawns.exclude(bitboard::masks::file(7)).forward(board.turn, 8) << 1;
     bitboard r_captures =
-        pawns.exclude(bitboard::masks::file(0)).forward(board.turn, 1) >> 1;
+        pawns.exclude(bitboard::masks::file(0)).forward(board.turn, 8) >> 1;
 
     // keep the pawns that are over an enemy piece
     l_captures = l_captures.mask(capturable);
     r_captures = r_captures.mask(capturable);
 
-    for (square index = 0; index < 64;                  //
-         single_advances >>= 1, double_advances >>= 1,  //
-         l_captures >>= 1, r_captures >>= 1) {
+    for (square index = 0; index < 64;                 //
+        single_advances >>= 1, double_advances >>= 1,  //
+        l_captures >>= 1, r_captures >>= 1, index++) {
         // exit the loop when the bitboards are empty
         if ((single_advances | double_advances | l_captures | r_captures) == 0)
             break;
