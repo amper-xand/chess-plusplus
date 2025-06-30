@@ -6,23 +6,23 @@
 
 namespace core {
 
-Move& MoveGenerator::next() { return moves.at(nxt++); }
+Move& generation::GenerationContext::next() { return moves.at(nxt++); }
 
-std::vector<Move> MoveGenerator::generate_moves(const Board& board) {
-    return MoveGenerator(board).full_generation();
-}
-
-std::vector<Move> MoveGenerator::full_generation() {
-    this->generate_pawn_moves();
-
-    return this->get_generated_moves();
-}
-
-std::vector<Move> MoveGenerator::get_generated_moves() {
+std::vector<Move> generation::GenerationContext::get_generated_moves() {
     return std::vector(moves.begin(), moves.begin() + nxt);
 }
 
-void MoveGenerator::generate_pawn_moves() {
+std::vector<Move> generation::generate_moves(const Board& board) {
+    GenerationContext context(board);
+
+    generation::generate_pawn_moves(context);
+
+    return context.get_generated_moves();
+}
+
+void generation::generate_pawn_moves(GenerationContext& context) {
+    auto& board = context.board;
+
     bitboard pawns = board.allied(Piece::PAWNS);
 
     bitboard capturable = board.enemies();
@@ -59,7 +59,7 @@ void MoveGenerator::generate_pawn_moves() {
             break;
 
         if (single_advances[0]) {
-            Move& m = next();
+            Move& m = context.next();
 
             m.moved = Piece::PAWNS;
             m.from = board.turn.isWhite() ? index.down() : index.up();
@@ -67,7 +67,7 @@ void MoveGenerator::generate_pawn_moves() {
         }
 
         if (double_advances[0]) {
-            Move& m = next();
+            Move& m = context.next();
 
             m.moved = Piece::PAWNS;
             m.from = board.turn.isWhite() ? index.down(2) : index.up(2);
@@ -75,7 +75,7 @@ void MoveGenerator::generate_pawn_moves() {
         }
 
         if (l_captures[0]) {
-            Move& m = next();
+            Move& m = context.next();
 
             m.moved = Piece::PAWNS;
             m.from = (board.turn.isWhite() ? index.down() : index.up()).right();
@@ -84,7 +84,7 @@ void MoveGenerator::generate_pawn_moves() {
         }
 
         if (r_captures[0]) {
-            Move& m = next();
+            Move& m = context.next();
 
             m.moved = Piece::PAWNS;
             m.from = (board.turn.isWhite() ? index.down() : index.up()).left();

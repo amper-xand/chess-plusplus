@@ -5,30 +5,27 @@
 #include <array>
 #include <vector>
 
-namespace core {
+namespace core::generation {
 
 constexpr uint8_t max_moves = 218;
 
-class MoveGenerator {
+class GenerationContext {
    private:
     std::array<Move, max_moves> moves;
     uint8_t nxt = 0;
-    const Board& board;
 
    public:
-    static std::vector<Move> generate_moves(const Board& board);
+    const Board& board;
 
-   protected:
-    MoveGenerator(const Board& board) : board(board) {}
+    GenerationContext(const Board& board) : board(board) {}
 
-    std::vector<Move> full_generation();
-
-    void generate_pawn_moves();
+    Move& next();
 
     std::vector<Move> get_generated_moves();
-
-   private:
-    Move& next();
 };
 
-}  // namespace core
+std::vector<Move> generate_moves(const Board& board);
+
+void generate_pawn_moves(GenerationContext& context);
+
+}  // namespace core::generation

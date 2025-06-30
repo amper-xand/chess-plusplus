@@ -64,7 +64,7 @@ void TestGenerationCount(bool pass_silently) {
     // generate moves for every position
     auto generation_results = boards |
         std::ranges::views::transform(
-            [&](auto board) { return MoveGenerator::generate_moves(board); });
+            [&](auto board) { return generation::generate_moves(board); });
 
     // test generation for each position
     for (auto [moves, position_case] :
