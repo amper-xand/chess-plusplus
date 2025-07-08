@@ -29,6 +29,9 @@ struct Board {
 
     Board() : colors{bitboard(0)}, pieces{bitboard(0)} {}
 
+    void play(const Move move);
+    void unplay(const Move move);
+
     inline bitboard all() const { return white | black; }
 
     inline bitboard allies() const { return colors[turn]; }
@@ -57,6 +60,21 @@ struct Board {
         }
 
         return Piece::NONE;
+    }
+
+    constexpr inline bool operator==(const Board& other) const {
+        for (auto piece : Piece::All) {
+            if (this->pieces[piece] != other.pieces[piece])
+                return false;
+        }
+
+        if (this->white != other.white)
+            return false;
+
+        if (this->black != other.black)
+            return false;
+
+        return true;
     }
 
     static Board parse_fen_repr(std::string fen);

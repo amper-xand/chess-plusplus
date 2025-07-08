@@ -30,16 +30,16 @@ struct square : public LiteralWrapper<square_t> {
    public:
     constexpr square(square_t value = 0) : LiteralWrapper<square_t>(value) {}
 
-    inline constexpr uint8_t column() { return value_ % 8; }
+    inline constexpr uint8_t column() const { return value_ % 8; }
 
-    inline constexpr uint8_t row() { return value_ / 8; }
+    inline constexpr uint8_t row() const { return value_ / 8; }
 
-    inline constexpr square right(uint8_t v = 1) { return value_ - v; }
-    inline constexpr square left(uint8_t v = 1) { return value_ + v; }
-    inline constexpr square up(uint8_t v = 1) { return value_ + 8 * v; }
-    inline constexpr square down(uint8_t v = 1) { return value_ - 8 * v; }
+    inline constexpr square right(uint8_t v = 1) const { return value_ - v; }
+    inline constexpr square left(uint8_t v = 1) const { return value_ + v; }
+    inline constexpr square up(uint8_t v = 1) const { return value_ + 8 * v; }
+    inline constexpr square down(uint8_t v = 1) const { return value_ - 8 * v; }
 
-    inline constexpr bitboard_t bb() { return 1ul << value_; }
+    inline constexpr bitboard_t bb() const { return 1ul << value_; }
 
     static inline constexpr square at(uint8_t row, uint8_t col) {
         return col + 8 * row;
@@ -120,5 +120,6 @@ struct Piece : public LiteralWrapper<piece_t> {
     inline constexpr bool isQueen() const { return value_ == QUEENS; }
     inline constexpr bool isKing() const { return value_ == KINGS; }
     inline constexpr bool isNone() const { return value_ == NONE; }
+    inline constexpr bool isValid() const { return value_ < NONE; }
 };
 }  // namespace core

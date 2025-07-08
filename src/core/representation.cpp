@@ -93,3 +93,31 @@ void core::Board::print() {
     }
     std::print("\n");
 }
+
+void core::Board::play(const Move move) {
+    assert(move.moved.isValid());
+
+    // move the piece bit to its new position
+    pieces[move.moved] ^= move.from.bb() | move.to.bb();
+    colors[turn] ^= move.from.bb() | move.to.bb();
+
+    if (!move.target.isNone()) {
+        // remove the bit of the captured piece
+        pieces[move.target] &= ~move.to.bb();
+        colors[!turn] &= ~move.to.bb();
+    }
+}
+
+void core::Board::unplay(const Move move) {
+    assert(move.moved.isValid());
+
+    // return the piece to its original position
+    pieces[move.moved] ^= move.to.bb() | move.from.bb();
+    colors[turn] ^= move.to.bb() | move.from.bb();
+
+    if (!move.target.isNone()) {
+        // return the captured piece
+        pieces[move.target] |= move.to.bb();
+        colors[!turn] |= move.to.bb();
+    }
+}

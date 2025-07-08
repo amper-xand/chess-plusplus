@@ -49,6 +49,44 @@ TEST_P(PawnGenerationTest, MatchesExpectedPawnMoveCount) {
 INSTANTIATE_TEST_SUITE_P(AllPositions, PawnGenerationTest,
     ::testing::ValuesIn(kPawnGenerationTestCases));
 
+constexpr int kDepth = 3;
+
+void test_reversible_move_sequence(Board& board, int depth) {
+    if (depth == 0) return;
+
+    const Board original = board;
+
+    auto moves = generation::generate_moves(board);
+
+    for (const Move& m : moves) {
+        board.play(m);
+        board.unplay(m);
+
+        ASSERT_EQ(board, original) << std::format(
+            "Board mismatch after unmaking move at depth {}\n", depth
+            // TODO: "Move: {}\nFEN: {}\n",
+            // TODO: , move.to_string(), Board::to_fen_repr(original)
+        );
+    }
+
+    // if the position can be reversed properly
+    // check its branches
+
+    for (const Move& m : moves) {
+        board.play(m);
+        test_reversible_move_sequence(board, depth - 1);
+        board.unplay(m);
+    }
+}
+
+TEST(FENMoveUnmoveTest, PlaysAndUnplaysWithoutCorruption) {
+    std::string fen =
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    Board board = Board::parse_fen_repr(fen);
+
+    EXPECT_NO_FATAL_FAILURE({ test_reversible_move_sequence(board, kDepth); });
+}
+
 }  // namespace core::test
 
 int main(int argc, char** argv) {
