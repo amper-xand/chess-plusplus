@@ -21,11 +21,15 @@ class GenerationContext {
 
     Move& next();
 
+    void bulk(Piece moved, square from, bitboard moves, bitboard capturable);
+
     std::vector<Move> get_generated_moves();
 };
 
 std::vector<Move> generate_moves(const Board& board);
 
 void generate_pawn_moves(GenerationContext& context);
+
+void generate_knight_moves(GenerationContext& context);
 
 }  // namespace core::generation

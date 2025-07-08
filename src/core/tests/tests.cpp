@@ -11,6 +11,7 @@ namespace core::test {
 
 struct MoveCounts {
     uint8_t pawns = 0;
+    uint8_t knights = 0;
 };
 
 struct PositionTestCase {

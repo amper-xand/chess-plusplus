@@ -55,15 +55,15 @@ struct bitboard : public LiteralWrapper<bitboard_t> {
         return (value_ >> index) & 1ul;
     }
 
-    inline constexpr bitboard mask(bitboard mask) { return value_ & mask; }
-    inline constexpr bitboard exclude(bitboard mask) { return value_ & ~mask; }
-    inline constexpr bitboard join(bitboard mask) { return value_ | mask; }
+    inline constexpr bitboard mask(bitboard mask) const { return value_ & mask; }
+    inline constexpr bitboard exclude(bitboard mask) const{ return value_ & ~mask; }
+    inline constexpr bitboard join(bitboard mask) const { return value_ | mask; }
 
-    inline constexpr bitboard forward(color_t color, auto shift = 1) {
+    inline constexpr bitboard forward(color_t color, auto shift = 1) const {
         return color ? value_ << shift : value_ >> shift;
     }
 
-    inline constexpr bitboard backward(color_t color, auto shift = 1) {
+    inline constexpr bitboard backward(color_t color, auto shift = 1) const {
         return color ? value_ >> shift : value_ << shift;
     }
 

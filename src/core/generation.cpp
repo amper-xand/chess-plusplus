@@ -8,6 +8,24 @@ namespace core {
 
 Move& generation::GenerationContext::next() { return moves.at(nxt++); }
 
+void generation::GenerationContext::bulk(
+    Piece moved, square from, bitboard moves, bitboard captures) {
+    for (square index = 0; moves != 0; moves >>= 1, captures >>= 1, ++index) {
+        if (moves[0]) {
+            Move& move = this->next();
+
+            move.moved = moved;
+
+            move.from = from;
+            move.to = index;
+
+            if (captures[0]) {
+                move.target = board.piece(move.to);
+            }
+        }
+    }
+}
+
 std::vector<Move> generation::GenerationContext::get_generated_moves() {
     return std::vector(moves.begin(), moves.begin() + nxt);
 }
@@ -16,6 +34,7 @@ std::vector<Move> generation::generate_moves(const Board& board) {
     GenerationContext context(board);
 
     generation::generate_pawn_moves(context);
+    generation::generate_knight_moves(context);
 
     return context.get_generated_moves();
 }
@@ -90,6 +109,49 @@ void generation::generate_pawn_moves(GenerationContext& context) {
             m.from = (board.turn.isWhite() ? index.down() : index.up()).left();
             m.to = index;
             m.target = board.piece(m.to);
+        }
+    }
+}
+
+consteval std::array<bitboard, 64> intialize_knight_table() {
+    std::array<bitboard, 64> moves = {0};
+
+    for (square index = 0; index < 64; ++index) {
+        uint8_t row = index.row();
+        uint8_t column = index.column();
+
+        auto set_move = [&](int row, int col) {
+            if (row >= 0 && row < 8 && col >= 0 && col < 8)
+                moves[index] |= square::at(row, col).bb();
+        };
+
+        set_move(row + 2, column + 1);
+        set_move(row + 1, column + 2);
+        set_move(row - 1, column + 2);
+        set_move(row - 2, column + 1);
+        set_move(row - 2, column - 1);
+        set_move(row - 1, column - 2);
+        set_move(row + 1, column - 2);
+        set_move(row + 2, column - 1);
+    }
+
+    return moves;
+};
+
+constexpr auto knights_moves = intialize_knight_table();
+
+void generation::generate_knight_moves(GenerationContext& context) {
+    auto& board = context.board;
+
+    bitboard knights = board.allied(Piece::KNIGHTS);
+
+    bitboard capturable = board.enemies();
+    bitboard blockers = board.allies();
+
+    for (square index = 0; knights != 0; ++index, knights >>= 1) {
+        if (knights[0]) {
+            context.bulk(Piece::KNIGHTS, index,
+                knights_moves[index].exclude(blockers), capturable);
         }
     }
 }
