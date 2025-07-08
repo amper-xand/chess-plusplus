@@ -19,22 +19,31 @@ struct PositionTestCase {
     MoveCounts moves;
 };
 
-static const PositionTestCase kPawnGenerationTestCases[] = {
-    {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", {.pawns = 16}},
-    {"8/8/8/3pP3/8/8/8/8 w", {.pawns = 1}},
-    {"8/2p5/8/8/8/8/2P5/8 w", {.pawns = 2}},
-    {"8/8/3p4/2pPp3/8/8/8/8 w", {.pawns = 0}},
-    {"8/8/8/3P4/3p4/8/8/8 w", {.pawns = 1}},
-    {"8/8/8/8/2P1P1P1/8/2P1P1P1/8 w", {.pawns = 6}},
-    {"8/8/8/2p1p1p1/2P1P1P1/8/8/8 w", {.pawns = 0}},
-    {"8/8/8/3P4/3P4/3P4/3P4/8 w", {.pawns = 1}},
-    {"8/8/8/8/8/8/PPPPPPPP/8 w", {.pawns = 16}},
-    {"8/2p1p1p1/8/8/8/8/2P1P1P1/8 w", {.pawns = 6}},
+static const PositionTestCase kMoveGenerationTestCases[] = {
+    {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+        {.pawns = 16, .knights = 4}},
+
+    // Pawn-only or pawn-heavy positions
+    {"8/8/8/3pP3/8/8/8/8 w", {.pawns = 1, .knights = 0}},
+    {"8/2p5/8/8/8/8/2P5/8 w", {.pawns = 2, .knights = 0}},
+    {"8/8/3p4/2pPp3/8/8/8/8 w", {.pawns = 0, .knights = 0}},
+    {"8/8/8/3P4/3p4/8/8/8 w", {.pawns = 1, .knights = 0}},
+    {"8/8/8/8/2P1P1P1/8/2P1P1P1/8 w", {.pawns = 6, .knights = 0}},
+    {"8/8/8/2p1p1p1/2P1P1P1/8/8/8 w", {.pawns = 0, .knights = 0}},
+    {"8/8/8/3P4/3P4/3P4/3P4/8 w", {.pawns = 1, .knights = 0}},
+    {"8/8/8/8/8/8/PPPPPPPP/8 w", {.pawns = 16, .knights = 0}},
+    {"8/2p1p1p1/8/8/8/8/2P1P1P1/8 w", {.pawns = 6, .knights = 0}},
+
+    // Knight-only or knight-heavy positions
+    {"8/8/8/8/8/8/8/N7 w", {.pawns = 0, .knights = 2}},
+    {"8/8/8/8/8/8/8/NN6 w", {.pawns = 0, .knights = 5}},
+    {"8/8/8/3N4/8/8/8/8 w", {.pawns = 0, .knights = 8}},
+    {"8/8/3n4/8/3N4/8/8/8 w", {.pawns = 0, .knights = 8}},
 };
 
-class PawnGenerationTest : public ::testing::TestWithParam<PositionTestCase> {};
+class MoveGenerationTest : public ::testing::TestWithParam<PositionTestCase> {};
 
-TEST_P(PawnGenerationTest, MatchesExpectedPawnMoveCount) {
+TEST_P(MoveGenerationTest, MatchesExpectedMoveCounts) {
     const auto& test_case = GetParam();
 
     auto board = Board::parse_fen_repr(test_case.fen);
@@ -43,12 +52,20 @@ TEST_P(PawnGenerationTest, MatchesExpectedPawnMoveCount) {
     int actual_pawn_moves = std::ranges::count_if(
         moves, [](Move move) { return move.moved == Piece::PAWNS; });
 
+    int actual_knight_moves = std::ranges::count_if(
+        moves, [](Move move) { return move.moved == Piece::KNIGHTS; });
+
     EXPECT_EQ(actual_pawn_moves, test_case.moves.pawns)
-        << std::format("FEN: {}", test_case.fen);
+        << std::format("FEN: {}\nExpected pawn moves: {}, got: {}",
+               test_case.fen, test_case.moves.pawns, actual_pawn_moves);
+
+    EXPECT_EQ(actual_knight_moves, test_case.moves.knights)
+        << std::format("FEN: {}\nExpected knight moves: {}, got: {}",
+               test_case.fen, test_case.moves.knights, actual_knight_moves);
 }
 
-INSTANTIATE_TEST_SUITE_P(AllPositions, PawnGenerationTest,
-    ::testing::ValuesIn(kPawnGenerationTestCases));
+INSTANTIATE_TEST_SUITE_P(AllPositions, MoveGenerationTest,
+    ::testing::ValuesIn(kMoveGenerationTestCases));
 
 constexpr int kDepth = 3;
 
