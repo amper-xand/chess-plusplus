@@ -55,9 +55,15 @@ struct bitboard : public LiteralWrapper<bitboard_t> {
         return (value_ >> index) & 1ul;
     }
 
-    inline constexpr bitboard mask(bitboard mask) const { return value_ & mask; }
-    inline constexpr bitboard exclude(bitboard mask) const{ return value_ & ~mask; }
-    inline constexpr bitboard join(bitboard mask) const { return value_ | mask; }
+    inline constexpr bitboard mask(bitboard mask) const {
+        return value_ & mask;
+    }
+    inline constexpr bitboard exclude(bitboard mask) const {
+        return value_ & ~mask;
+    }
+    inline constexpr bitboard join(bitboard mask) const {
+        return value_ | mask;
+    }
 
     inline constexpr bitboard forward(color_t color, auto shift = 1) const {
         return color ? value_ << shift : value_ >> shift;
@@ -65,6 +71,27 @@ struct bitboard : public LiteralWrapper<bitboard_t> {
 
     inline constexpr bitboard backward(color_t color, auto shift = 1) const {
         return color ? value_ >> shift : value_ << shift;
+    }
+
+    inline constexpr bitboard LSB() {
+        bitboard x = value_;
+
+        return x & (-x);
+    }
+
+    inline constexpr bitboard MSB() {
+        bitboard x = value_;
+
+        x |= (x >> 1);
+        x |= (x >> 2);
+        x |= (x >> 4);
+        x |= (x >> 8);
+        x |= (x >> 16);
+        x |= (x >> 32);
+        x++;
+        x >>= 1;
+
+        return x;
     }
 
     struct masks {
@@ -84,6 +111,14 @@ struct bitboard : public LiteralWrapper<bitboard_t> {
 
         static inline constexpr bitboard rank(uint8_t rank) {
             return horizontal << (8 * rank);
+        }
+
+        /*
+         * Takes two bits and returns the set of bits between them (inclusive)
+         * */
+        static inline constexpr bitboard interval(
+            bitboard first, bitboard second) {
+            return ((first - 1) ^ (second - 1)) | first | second;
         }
     };
 };

@@ -18,12 +18,19 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
+# main binary, the engine
 add_executable(cheesy_engine
     src/main.cpp
 
     src/core/representation.cpp
     src/core/generation.cpp
 )
+
+# generates magic numbers for sliders LUTs
+add_executable(maggen src/core/magic.cpp)
+target_compile_definitions(maggen PRIVATE MAGIC_STANDALONE)
+
+# testing binaries
 
 enable_testing()
 
