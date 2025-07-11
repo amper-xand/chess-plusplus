@@ -1,4 +1,4 @@
-#include <core/representation.hpp>
+#include "core/magic.hpp"
 
 #include <array>
 #include <cstring>
@@ -243,6 +243,12 @@ struct Rookst : public MagicTable<Rookst, 12> {
 
 // force initialization
 template struct MagicTable<Rookst, 12>;
+
+bitboard rooks::get_avail_moves(bitboard blockers, square index) {
+    return Rookst::get_moves(blockers, index);
+}
+
+bitboard rooks::get_slider(square index) { return Rookst::slider(index); }
 
 template <typename Rookst, uint8_t Bits>
 // Generated using maggen binary

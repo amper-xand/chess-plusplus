@@ -18,12 +18,17 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
+set(CHESSY_CORE_FILES
+    src/core/representation.cpp
+    src/core/generation.cpp
+    src/core/magic.cpp
+)
+
 # main binary, the engine
 add_executable(cheesy_engine
     src/main.cpp
 
-    src/core/representation.cpp
-    src/core/generation.cpp
+    ${CHESSY_CORE_FILES}
 )
 
 # generates magic numbers for sliders LUTs
@@ -37,8 +42,7 @@ enable_testing()
 add_executable(test_core
     src/core/tests/tests.cpp
 
-    src/core/representation.cpp
-    src/core/generation.cpp
+    ${CHESSY_CORE_FILES}
 )
 
 target_link_libraries(

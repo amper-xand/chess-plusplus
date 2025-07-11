@@ -32,4 +32,6 @@ void generate_pawn_moves(GenerationContext& context);
 
 void generate_knight_moves(GenerationContext& context);
 
+void generate_rook_moves(generation::GenerationContext& context);
+
 }  // namespace core::generation

@@ -1,8 +1,8 @@
 #include "generation.hpp"
 
-#include <array>
+#include <core/magic.hpp>
 
-#include "core/types.hpp"
+#include <array>
 
 namespace core {
 
@@ -35,6 +35,7 @@ std::vector<Move> generation::generate_moves(const Board& board) {
 
     generation::generate_pawn_moves(context);
     generation::generate_knight_moves(context);
+    generation::generate_rook_moves(context);
 
     return context.get_generated_moves();
 }
@@ -152,6 +153,26 @@ void generation::generate_knight_moves(GenerationContext& context) {
         if (knights[0]) {
             context.bulk(Piece::KNIGHTS, index,
                 knights_moves[index].exclude(blockers), capturable);
+        }
+    }
+}
+
+void generation::generate_rook_moves(generation::GenerationContext& context) {
+    auto& board = context.board;
+
+    bitboard rooks = board.allied(Piece::KINGS);
+
+    bitboard capturable = board.enemies();
+    bitboard blockers = board.all();
+
+    for (square index = 0; rooks != 0; ++index, rooks >>= 1) {
+        if (rooks[0]) {
+            bitboard moves = magic::rooks::get_avail_moves(blockers, index);
+            moves = moves.exclude(blockers ^ capturable);
+
+            bitboard captures = moves.mask(capturable);
+
+            context.bulk(Piece::ROOKS, index, moves, captures);
         }
     }
 }
