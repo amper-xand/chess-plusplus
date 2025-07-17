@@ -1,6 +1,7 @@
 #include "core/magic.hpp"
 
 #include <array>
+#include <cassert>
 #include <cstring>
 #include <print>
 
@@ -153,6 +154,7 @@ struct MagicTable {
         return precalc_magics;
     }
 
+#ifndef MAGIC_STANDALONE
     static void initialize() {
         for (square index = 0; index < 64; ++index) {
             MagicEntry& entry = MagicTable::entries[index];
@@ -162,6 +164,7 @@ struct MagicTable {
             entry.mask = MagicTable::relevant_blockers(index);
 
             constexpr bitboard last_blo_com = 0;
+            constexpr uint64_t cleared_value = 0;
 
             for (bitboard curr_blocker_mask = entry.mask;;
                 curr_blocker_mask = (curr_blocker_mask - 1) & entry.mask) {
@@ -169,6 +172,9 @@ struct MagicTable {
 
                 bitboard moves =
                     MagicTable::gen_moves(curr_blocker_mask, index);
+
+                assert(MagicTable::moves[index][magic_index] == cleared_value ||
+                    MagicTable::moves[index][magic_index] == moves);
 
                 MagicTable::moves[index][magic_index] = moves;
 
@@ -183,6 +189,7 @@ struct MagicTable {
     inline static struct Initializer {
         Initializer() { MagicTable::initialize(); }
     } initializer;
+#endif
 };
 
 // Define the static members outside the class template
@@ -217,25 +224,39 @@ struct Rookst : public MagicTable<Rookst, 12> {
 
         const bitboard rook = masks::at(index);
 
+        const bitboard vertical = masks::file(index.column());
+
         // get the blockers that are over the rook
-        bitboard n_ray = blockers.exclude((rook << 8) - 1);
+        bitboard n_ray = blockers.mask(vertical).exclude(rook - 1);
         // set the bits between the first blocker and the rook, without the rook
-        n_ray = masks::interval(rook << 8, n_ray.LSB()).mask(slider);
+        n_ray = masks::interval(rook, n_ray.LSB()).mask(vertical) ^ rook;
 
         // get the blockers that are under the rook
-        bitboard s_ray = blockers.mask((rook >> 7) - 1);
-        // set the bits between the first blocker and the rook, without the rook
-        s_ray = masks::interval(rook >> 8, s_ray.MSB()).mask(slider);
+        bitboard s_ray =
+            // {masks::rank(0)} extra blocker to keep the
+            // interval on the right side
+            blockers.join(masks::rank(0))
+                .mask(vertical)
+                .mask(rook | (rook - 1));
+        // set the bits between the first blocker and the rook
+        s_ray = masks::interval(rook, s_ray.MSB()).mask(vertical) ^ rook;
+
+        const bitboard horizontal = masks::rank(index.row());
 
         // get the blockers left to the rook
-        bitboard w_ray = blockers.mask(masks::interval(rook, rook << 7));
+        bitboard w_ray = blockers.mask(horizontal).exclude(rook - 1);
         // set the bits between the first blocker and the rook, without the rook
-        w_ray = masks::interval(rook, w_ray.LSB()).mask(slider) ^ rook;
+        w_ray = masks::interval(rook, w_ray.LSB()).mask(horizontal) ^ rook;
 
         // get the blockers left to the rook
-        bitboard e_ray = blockers.mask(masks::interval(rook, rook >> 7));
+        bitboard e_ray =
+            // {masks::file(0)} extra blocker to keep the
+            // interval on the right side
+            blockers.join(masks::file(0))
+                .mask(horizontal)
+                .mask(rook | (rook - 1));
         // set the bits between the first blocker and the rook, without the rook
-        e_ray = masks::interval(rook, e_ray.MSB()).mask(slider) ^ rook;
+        e_ray = masks::interval(rook, e_ray.MSB()).mask(horizontal) ^ rook;
 
         return n_ray | s_ray | w_ray | e_ray;
     }

@@ -160,7 +160,7 @@ void generation::generate_knight_moves(GenerationContext& context) {
 void generation::generate_rook_moves(generation::GenerationContext& context) {
     auto& board = context.board;
 
-    bitboard rooks = board.allied(Piece::KINGS);
+    bitboard rooks = board.allied(Piece::ROOKS);
 
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();
