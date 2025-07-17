@@ -10,8 +10,12 @@
 namespace core::test {
 
 struct MoveCounts {
-    uint8_t pawns = 0;
-    uint8_t knights = 0;
+    union {
+        uint16_t pieces[6];
+        struct {
+            uint16_t pawns, knights, bishops, rooks, queens, kings;
+        };
+    };
 };
 
 struct PositionTestCase {
@@ -21,24 +25,51 @@ struct PositionTestCase {
 
 static const PositionTestCase kMoveGenerationTestCases[] = {
     {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
-        {.pawns = 16, .knights = 4}},
+        {.pawns = 16, .knights = 4, .rooks = 0}},
 
     // Pawn-only or pawn-heavy positions
-    {"8/8/8/3pP3/8/8/8/8 w", {.pawns = 1, .knights = 0}},
-    {"8/2p5/8/8/8/8/2P5/8 w", {.pawns = 2, .knights = 0}},
-    {"8/8/3p4/2pPp3/8/8/8/8 w", {.pawns = 0, .knights = 0}},
-    {"8/8/8/3P4/3p4/8/8/8 w", {.pawns = 1, .knights = 0}},
-    {"8/8/8/8/2P1P1P1/8/2P1P1P1/8 w", {.pawns = 6, .knights = 0}},
-    {"8/8/8/2p1p1p1/2P1P1P1/8/8/8 w", {.pawns = 0, .knights = 0}},
-    {"8/8/8/3P4/3P4/3P4/3P4/8 w", {.pawns = 1, .knights = 0}},
-    {"8/8/8/8/8/8/PPPPPPPP/8 w", {.pawns = 16, .knights = 0}},
-    {"8/2p1p1p1/8/8/8/8/2P1P1P1/8 w", {.pawns = 6, .knights = 0}},
+    {"8/8/8/3pP3/8/8/8/8 w", {.pawns = 1, .knights = 0, .rooks = 0}},
+    {"8/2p5/8/8/8/8/2P5/8 w", {.pawns = 2, .knights = 0, .rooks = 0}},
+    {"8/8/3p4/2pPp3/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 0}},
+    {"8/8/8/3P4/3p4/8/8/8 w", {.pawns = 1, .knights = 0, .rooks = 0}},
+    {"8/8/8/8/2P1P1P1/8/2P1P1P1/8 w", {.pawns = 6, .knights = 0, .rooks = 0}},
+    {"8/8/8/2p1p1p1/2P1P1P1/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 0}},
+    {"8/8/8/3P4/3P4/3P4/3P4/8 w", {.pawns = 1, .knights = 0, .rooks = 0}},
+    {"8/8/8/8/8/8/PPPPPPPP/8 w", {.pawns = 16, .knights = 0, .rooks = 0}},
+    {"8/2p1p1p1/8/8/8/8/2P1P1P1/8 w", {.pawns = 6, .knights = 0, .rooks = 0}},
 
     // Knight-only or knight-heavy positions
-    {"8/8/8/8/8/8/8/N7 w", {.pawns = 0, .knights = 2}},
-    {"8/8/8/8/8/8/8/NN6 w", {.pawns = 0, .knights = 5}},
-    {"8/8/8/3N4/8/8/8/8 w", {.pawns = 0, .knights = 8}},
-    {"8/8/3n4/8/3N4/8/8/8 w", {.pawns = 0, .knights = 8}},
+    {"8/8/8/8/8/8/8/N7 w", {.pawns = 0, .knights = 2, .rooks = 0}},
+    {"8/8/8/8/8/8/8/NN6 w", {.pawns = 0, .knights = 5, .rooks = 0}},
+    {"8/8/8/3N4/8/8/8/8 w", {.pawns = 0, .knights = 8, .rooks = 0}},
+    {"8/8/3n4/8/3N4/8/8/8 w", {.pawns = 0, .knights = 8, .rooks = 0}},
+
+    // Rook-only or rook-heavy positions
+    {"8/8/8/8/8/8/8/R7 w", {.pawns = 0, .knights = 0, .rooks = 14}},
+    {"8/8/8/8/8/8/8/RR6 w", {.pawns = 0, .knights = 0, .rooks = 20}},
+    {"8/8/8/3R4/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 14}},
+    {"8/8/3r4/8/3R4/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 12}},
+
+    // Blocked rooks
+    {"8/8/8/8/8/8/p7/R7 w", {.pawns = 0, .knights = 0, .rooks = 8}},
+    {"8/8/8/8/8/8/7p/7R w", {.pawns = 0, .knights = 0, .rooks = 8}},
+    {"R7/p7/8/8/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 8}},
+    {"7R/7p/8/8/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 8}},
+    {"8/8/8/8/8/8/8/Rp6 w", {.pawns = 0, .knights = 0, .rooks = 8}},
+    {"8/8/8/8/8/8/8/6pR w", {.pawns = 0, .knights = 0, .rooks = 8}},
+    {"Rp6/8/8/8/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 8}},
+    {"6pR/8/8/8/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 8}},
+
+    {"8/8/8/8/8/8/8/Rp1p4 w", {.pawns = 0, .knights = 0, .rooks = 8}},
+    {"8/8/8/8/8/8/8/1pR5 w", {.pawns = 0, .knights = 0, .rooks = 13}},
+    {"8/8/8/8/8/8/8/2R1p3 w", {.pawns = 0, .knights = 0, .rooks = 11}},
+
+    {"8/8/3p4/2pRp3/3p4/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 4}},
+    {"8/8/3p4/2pRp3/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 7}},
+    {"8/8/3p4/2pR4/3p4/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 7}},
+    {"8/8/3p4/3Rp3/3p4/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 6}},
+    {"8/8/8/2pRp3/3p4/8/8/8 w ", {.pawns = 0, .knights = 0, .rooks = 6}},
+
 };
 
 class MoveGenerationTest : public ::testing::TestWithParam<PositionTestCase> {};
@@ -49,19 +80,23 @@ TEST_P(MoveGenerationTest, MatchesExpectedMoveCounts) {
     auto board = Board::parse_fen_repr(test_case.fen);
     auto moves = generation::generate_moves(board);
 
-    int actual_pawn_moves = std::ranges::count_if(
-        moves, [](Move move) { return move.moved == Piece::PAWNS; });
+    for (Piece piece : {Piece::PAWNS, Piece::KNIGHTS, Piece::ROOKS}) {
+        int produced_count = std::ranges::count_if(
+            moves, [&](Move move) { return move.moved == piece; });
 
-    int actual_knight_moves = std::ranges::count_if(
-        moves, [](Move move) { return move.moved == Piece::KNIGHTS; });
+        std::string piece_name = [&]() {
+            if (piece == Piece::PAWNS) return "pawn";
+            if (piece == Piece::KNIGHTS) return "knight";
+            if (piece == Piece::ROOKS) return "rook";
 
-    EXPECT_EQ(actual_pawn_moves, test_case.moves.pawns)
-        << std::format("FEN: {}\nExpected pawn moves: {}, got: {}",
-               test_case.fen, test_case.moves.pawns, actual_pawn_moves);
+            return "[[INVALID]]";
+        }();
 
-    EXPECT_EQ(actual_knight_moves, test_case.moves.knights)
-        << std::format("FEN: {}\nExpected knight moves: {}, got: {}",
-               test_case.fen, test_case.moves.knights, actual_knight_moves);
+        EXPECT_EQ(produced_count, test_case.moves.pieces[piece])
+            << std::format("FEN: {}\n", test_case.fen)
+            << std::format("Expected {} moves: {}, got: {}", piece_name,
+                   test_case.moves.pieces[piece], produced_count);
+    }
 }
 
 INSTANTIATE_TEST_SUITE_P(AllPositions, MoveGenerationTest,
