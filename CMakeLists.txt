@@ -18,6 +18,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
+include(FetchContent)
+FetchContent_Declare(
+    tomlplusplus
+    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+    GIT_TAG        v3.4.0
+)
+FetchContent_MakeAvailable(tomlplusplus)
+
 set(CHESSY_CORE_FILES
     src/core/representation.cpp
     src/core/generation.cpp
@@ -48,6 +56,14 @@ add_executable(test_core
 target_link_libraries(
   test_core
   GTest::gtest_main
+  tomlplusplus::tomlplusplus
+)
+
+add_custom_command(
+    TARGET test_core POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/src/core/tests/cases.toml
+            $<TARGET_FILE_DIR:test_core>/cases.toml
 )
 
 include(GoogleTest)

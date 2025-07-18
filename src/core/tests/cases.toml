@@ -1,0 +1,137 @@
+[generationcount]
+
+[[generationcount.general]]
+fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+pawns = 16
+knights = 4
+
+[[generationcount.pawns]]
+fen = "8/8/8/3pP3/8/8/8/8 w"
+pawns = 1
+
+[[generationcount.pawns]]
+fen = "8/2p5/8/8/8/8/2P5/8 w"
+pawns = 2
+
+[[generationcount.pawns]]
+fen = "8/8/3p4/2pPp3/8/8/8/8 w"
+pawns = 0
+
+[[generationcount.pawns]]
+fen = "8/8/8/3P4/3p4/8/8/8 w"
+pawns = 1
+
+[[generationcount.pawns]]
+fen = "8/8/8/8/2P1P1P1/8/2P1P1P1/8 w"
+pawns = 6
+
+[[generationcount.pawns]]
+fen = "8/8/8/2p1p1p1/2P1P1P1/8/8/8 w"
+
+[[generationcount.pawns]]
+fen = "8/8/8/3P4/3P4/3P4/3P4/8 w"
+pawns = 1
+
+[[generationcount.pawns]]
+fen = "8/8/8/8/8/8/PPPPPPPP/8 w"
+pawns = 16
+
+[[generationcount.pawns]]
+fen = "8/2p1p1p1/8/8/8/8/2P1P1P1/8 w"
+pawns = 6
+
+[[generationcount.knight]]
+fen = "8/8/8/8/8/8/8/N7 w"
+knights = 2
+
+[[generationcount.knight]]
+fen = "8/8/8/8/8/8/8/NN6 w"
+knights = 5
+
+[[generationcount.knight]]
+fen = "8/8/8/3N4/8/8/8/8 w"
+knights = 8
+
+[[generationcount.knight]]
+fen = "8/8/3n4/8/3N4/8/8/8 w"
+knights = 8
+
+[[generationcount.rooks]]
+fen = "8/8/8/8/8/8/8/R7 w"
+rooks = 14
+
+[[generationcount.rooks]]
+fen = "8/8/8/8/8/8/8/RR6 w"
+rooks = 20
+
+[[generationcount.rooks]]
+fen = "8/8/8/3R4/8/8/8/8 w"
+rooks = 14
+
+[[generationcount.rooks]]
+fen = "8/8/3r4/8/3R4/8/8/8 w"
+rooks = 12
+
+[[generationcount.rooks]]
+fen = "8/8/8/8/8/8/p7/R7 w"
+rooks = 8
+
+[[generationcount.rooks]]
+fen = "8/8/8/8/8/8/7p/7R w"
+rooks = 8
+
+[[generationcount.rooks]]
+fen = "R7/p7/8/8/8/8/8/8 w"
+rooks = 8
+
+[[generationcount.rooks]]
+fen = "7R/7p/8/8/8/8/8/8 w"
+rooks = 8
+
+[[generationcount.rooks]]
+fen = "8/8/8/8/8/8/8/Rp6 w"
+rooks = 8
+
+[[generationcount.rooks]]
+fen = "8/8/8/8/8/8/8/6pR w"
+rooks = 8
+
+[[generationcount.rooks]]
+fen = "Rp6/8/8/8/8/8/8/8 w"
+rooks = 8
+
+[[generationcount.rooks]]
+fen = "6pR/8/8/8/8/8/8/8 w"
+rooks = 8
+
+[[generationcount.rooks]]
+fen = "8/8/8/8/8/8/8/Rp1p4 w"
+rooks = 8
+
+[[generationcount.rooks]]
+fen = "8/8/8/8/8/8/8/1pR5 w"
+rooks = 13
+
+[[generationcount.rooks]]
+fen = "8/8/8/8/8/8/8/2R1p3 w"
+rooks = 11
+
+[[generationcount.rooks]]
+fen = "8/8/3p4/2pRp3/3p4/8/8/8 w"
+rooks = 4
+
+[[generationcount.rooks]]
+fen = "8/8/3p4/2pRp3/8/8/8/8 w"
+rooks = 7
+
+[[generationcount.rooks]]
+fen = "8/8/3p4/2pR4/3p4/8/8/8 w"
+rooks = 7
+
+[[generationcount.rooks]]
+fen = "8/8/3p4/3Rp3/3p4/8/8/8 w"
+rooks = 6
+
+[[generationcount.rooks]]
+fen = "8/8/8/2pRp3/3p4/8/8/8 w"
+rooks = 6

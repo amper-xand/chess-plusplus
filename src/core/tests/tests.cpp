@@ -2,10 +2,15 @@
 #include <core/representation.hpp>
 
 #include <gtest/gtest.h>
+#define TOML_EXCEPTIONS 0
+#include <toml++/toml.hpp>
 
 #include <algorithm>
+#include <filesystem>
 #include <format>
+#include <print>
 #include <string>
+#include <vector>
 
 namespace core::test {
 
@@ -23,54 +28,7 @@ struct PositionTestCase {
     MoveCounts moves;
 };
 
-static const PositionTestCase kMoveGenerationTestCases[] = {
-    {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
-        {.pawns = 16, .knights = 4, .rooks = 0}},
-
-    // Pawn-only or pawn-heavy positions
-    {"8/8/8/3pP3/8/8/8/8 w", {.pawns = 1, .knights = 0, .rooks = 0}},
-    {"8/2p5/8/8/8/8/2P5/8 w", {.pawns = 2, .knights = 0, .rooks = 0}},
-    {"8/8/3p4/2pPp3/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 0}},
-    {"8/8/8/3P4/3p4/8/8/8 w", {.pawns = 1, .knights = 0, .rooks = 0}},
-    {"8/8/8/8/2P1P1P1/8/2P1P1P1/8 w", {.pawns = 6, .knights = 0, .rooks = 0}},
-    {"8/8/8/2p1p1p1/2P1P1P1/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 0}},
-    {"8/8/8/3P4/3P4/3P4/3P4/8 w", {.pawns = 1, .knights = 0, .rooks = 0}},
-    {"8/8/8/8/8/8/PPPPPPPP/8 w", {.pawns = 16, .knights = 0, .rooks = 0}},
-    {"8/2p1p1p1/8/8/8/8/2P1P1P1/8 w", {.pawns = 6, .knights = 0, .rooks = 0}},
-
-    // Knight-only or knight-heavy positions
-    {"8/8/8/8/8/8/8/N7 w", {.pawns = 0, .knights = 2, .rooks = 0}},
-    {"8/8/8/8/8/8/8/NN6 w", {.pawns = 0, .knights = 5, .rooks = 0}},
-    {"8/8/8/3N4/8/8/8/8 w", {.pawns = 0, .knights = 8, .rooks = 0}},
-    {"8/8/3n4/8/3N4/8/8/8 w", {.pawns = 0, .knights = 8, .rooks = 0}},
-
-    // Rook-only or rook-heavy positions
-    {"8/8/8/8/8/8/8/R7 w", {.pawns = 0, .knights = 0, .rooks = 14}},
-    {"8/8/8/8/8/8/8/RR6 w", {.pawns = 0, .knights = 0, .rooks = 20}},
-    {"8/8/8/3R4/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 14}},
-    {"8/8/3r4/8/3R4/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 12}},
-
-    // Blocked rooks
-    {"8/8/8/8/8/8/p7/R7 w", {.pawns = 0, .knights = 0, .rooks = 8}},
-    {"8/8/8/8/8/8/7p/7R w", {.pawns = 0, .knights = 0, .rooks = 8}},
-    {"R7/p7/8/8/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 8}},
-    {"7R/7p/8/8/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 8}},
-    {"8/8/8/8/8/8/8/Rp6 w", {.pawns = 0, .knights = 0, .rooks = 8}},
-    {"8/8/8/8/8/8/8/6pR w", {.pawns = 0, .knights = 0, .rooks = 8}},
-    {"Rp6/8/8/8/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 8}},
-    {"6pR/8/8/8/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 8}},
-
-    {"8/8/8/8/8/8/8/Rp1p4 w", {.pawns = 0, .knights = 0, .rooks = 8}},
-    {"8/8/8/8/8/8/8/1pR5 w", {.pawns = 0, .knights = 0, .rooks = 13}},
-    {"8/8/8/8/8/8/8/2R1p3 w", {.pawns = 0, .knights = 0, .rooks = 11}},
-
-    {"8/8/3p4/2pRp3/3p4/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 4}},
-    {"8/8/3p4/2pRp3/8/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 7}},
-    {"8/8/3p4/2pR4/3p4/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 7}},
-    {"8/8/3p4/3Rp3/3p4/8/8/8 w", {.pawns = 0, .knights = 0, .rooks = 6}},
-    {"8/8/8/2pRp3/3p4/8/8/8 w ", {.pawns = 0, .knights = 0, .rooks = 6}},
-
-};
+std::vector<PositionTestCase> MoveGenerationTestCases;
 
 class MoveGenerationTest : public ::testing::TestWithParam<PositionTestCase> {};
 
@@ -100,7 +58,7 @@ TEST_P(MoveGenerationTest, MatchesExpectedMoveCounts) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AllPositions, MoveGenerationTest,
-    ::testing::ValuesIn(kMoveGenerationTestCases));
+    ::testing::ValuesIn(MoveGenerationTestCases));
 
 constexpr int kDepth = 3;
 
@@ -140,9 +98,51 @@ TEST(FENMoveUnmoveTest, PlaysAndUnplaysWithoutCorruption) {
     EXPECT_NO_FATAL_FAILURE({ test_reversible_move_sequence(board, kDepth); });
 }
 
+void parse_test_cases_from_file(std::string cases_file) {
+    toml::parse_result result = toml::parse_file(cases_file);
+
+    if (!result) {
+        std::println(stderr, "ERROR:: Could not parse file {}, {}", cases_file,
+            result.error().description());
+    }
+
+    toml::table tbl = std::move(result.table());
+
+    for (const auto& [category, cases] : *tbl["generationcount"].as_table()) {
+
+        for (const auto& item : *cases.as_array()) {
+            const auto& tcase = *item.as_table();
+
+            core::test::MoveCounts move_count{
+                .pawns = tcase["pawns"].value_or<uint16_t>(0),
+                .knights = tcase["knights"].value_or<uint16_t>(0),
+                .bishops = tcase["bishops"].value_or<uint16_t>(0),
+                .rooks = tcase["rooks"].value_or<uint16_t>(0),
+                .queens = tcase["queens"].value_or<uint16_t>(0),
+                .kings = tcase["kings"].value_or<uint16_t>(0),
+            };
+
+            auto fen = tcase["fen"].value<std::string>();
+
+            if (!fen) {
+                std::println(stderr,
+                    "ERROR:: Could not parse test case, FEN is missing");
+                continue;
+            }
+
+            core::test::MoveGenerationTestCases.emplace_back(
+                fen.value(), move_count);
+        }
+    }
+}
+
 }  // namespace core::test
 
 int main(int argc, char** argv) {
+    core::test::parse_test_cases_from_file(
+        (std::filesystem::canonical(argv[0]).parent_path() / "cases.toml")
+            .string());
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
