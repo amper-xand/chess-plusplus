@@ -59,12 +59,14 @@ target_link_libraries(
   tomlplusplus::tomlplusplus
 )
 
-add_custom_command(
-    TARGET test_core POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
+add_custom_target(copy_tests_cases
+    COMMENT "Updating cases..."
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/src/core/tests/cases.toml
             $<TARGET_FILE_DIR:test_core>/cases.toml
 )
+
+add_dependencies(test_core copy_tests_cases)
 
 include(GoogleTest)
 gtest_discover_tests(test_core)
