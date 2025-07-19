@@ -36,6 +36,7 @@ std::vector<Move> generation::generate_moves(const Board& board) {
     generation::generate_pawn_moves(context);
     generation::generate_knight_moves(context);
     generation::generate_rook_moves(context);
+    generation::generate_bishop_moves(context);
 
     return context.get_generated_moves();
 }
@@ -173,6 +174,26 @@ void generation::generate_rook_moves(generation::GenerationContext& context) {
             bitboard captures = moves.mask(capturable);
 
             context.bulk(Piece::ROOKS, index, moves, captures);
+        }
+    }
+}
+
+void generation::generate_bishop_moves(generation::GenerationContext& context) {
+    auto& board = context.board;
+
+    bitboard bishops = board.allied(Piece::BISHOPS);
+
+    bitboard capturable = board.enemies();
+    bitboard blockers = board.all();
+
+    for (square index = 0; bishops != 0; ++index, bishops >>= 1) {
+        if (bishops[0]) {
+            bitboard moves = magic::bishops::get_avail_moves(blockers, index);
+            moves = moves.exclude(blockers ^ capturable);
+
+            bitboard captures = moves.mask(capturable);
+
+            context.bulk(Piece::BISHOPS, index, moves, captures);
         }
     }
 }

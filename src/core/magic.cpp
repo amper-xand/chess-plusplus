@@ -262,8 +262,62 @@ struct Rookst : public MagicTable<Rookst, 12> {
     }
 };
 
-// force initialization
-template struct MagicTable<Rookst, 12>;
+struct Bishopst : public MagicTable<Bishopst, 9> {
+    static inline bitboard relevant_blockers(square index) {
+        return slider(index).exclude(masks::border);
+    }
+
+    static inline bitboard slider(square index) {
+        return masks::diagonal_at(index) ^ masks::rev_diagonal_at(index);
+    }
+
+    static bitboard gen_moves(bitboard blockers, square index) {
+        const bitboard slider = Bishopst::slider(index);
+        blockers = blockers.mask(slider);
+
+        const bitboard bishop = masks::at(index);
+
+        const bitboard diagonal = masks::diagonal_at(index);
+
+        // get the blockers over and to the right of the bishop
+        bitboard ne_ray = blockers.mask(diagonal).exclude(bishop - 1);
+        // set the bits between the bishop and the first blocker,
+        // without the bishop
+        ne_ray = masks::interval(bishop, ne_ray.LSB()).mask(diagonal) ^ bishop;
+
+        // get the blockers under and to the left of the bishop
+        bitboard sw_ray =
+            // {masks::file(7) | masks::rank(0)} extra blocker to keep the
+            // interval on the right side
+            blockers.join(masks::file(7) | masks::rank(0))
+                .mask(diagonal)
+                .mask(bishop | (bishop - 1));
+        // set the bits between the bishop and the first blocker,
+        // without the bishop
+        sw_ray = masks::interval(bishop, sw_ray.MSB()).mask(diagonal) ^ bishop;
+
+        const bitboard rdiagonal = masks::rev_diagonal_at(index);
+
+        // get the blockers over and to the left of the bishop
+        bitboard nw_ray = blockers.mask(rdiagonal).exclude(bishop - 1);
+        // set the bits between the bishop and the first blocker,
+        // without the bishop
+        nw_ray = masks::interval(bishop, nw_ray.LSB()).mask(rdiagonal) ^ bishop;
+
+        // get the blockers under and to the right of the bishop
+        bitboard se_ray =
+            // {masks::file(0) | masks::rank(7)} extra blocker to keep the
+            // interval on the right side
+            blockers.join(masks::file(0) | masks::rank(0))
+                .mask(rdiagonal)
+                .mask(bishop | (bishop - 1));
+        // set the bits between the bishop and the first blocker,
+        // without the bishop
+        se_ray = masks::interval(bishop, se_ray.MSB()).mask(rdiagonal) ^ bishop;
+
+        return ne_ray | sw_ray | nw_ray | se_ray;
+    }
+};
 
 bitboard rooks::get_avail_moves(bitboard blockers, square index) {
     return Rookst::get_moves(blockers, index);
@@ -271,9 +325,15 @@ bitboard rooks::get_avail_moves(bitboard blockers, square index) {
 
 bitboard rooks::get_slider(square index) { return Rookst::slider(index); }
 
-template <typename Rookst, uint8_t Bits>
+bitboard bishops::get_avail_moves(bitboard blockers, square index) {
+    return Bishopst::gen_moves(blockers, index);
+}
+
+bitboard bishops::get_slider(square index) { return Bishopst::slider(index); }
+
+template <>
 // Generated using maggen binary
-const std::array<uint64_t, 64> MagicTable<Rookst, Bits>::precalc_magics = {
+const std::array<uint64_t, 64> MagicTable<Rookst, 12>::precalc_magics = {
     0x2080028220400012UL,
     0xD40009000600048UL,
     0xA280081000A00006UL,
@@ -340,15 +400,97 @@ const std::array<uint64_t, 64> MagicTable<Rookst, Bits>::precalc_magics = {
     0x80040B0348840022UL,
 };
 
+template <>
+// Generated using maggen binary
+const std::array<uint64_t, 64> MagicTable<Bishopst, 9>::precalc_magics = {
+    0x4144050014004009UL,
+    0x89A0082208404080UL,
+    0x4080E84100221010UL,
+    0x8C40080008000UL,
+    0x40403001200000UL,
+    0x400100225020A80UL,
+    0x1000802281420008UL,
+    0x4021090008401UL,
+    0x942000420180UL,
+    0x44220490414050UL,
+    0x1044020404000E00UL,
+    0x420005010086A802UL,
+    0x400080842008800UL,
+    0x1A412010088120UL,
+    0x88B0508885002UL,
+    0x42040400240C80UL,
+    0xC20A00063040018UL,
+    0x4004C0080888080UL,
+    0x8400804A00200420UL,
+    0x2820400200810002UL,
+    0x8010040200820000UL,
+    0x100A000040202200UL,
+    0x2002088004108UL,
+    0x2002092104210010UL,
+    0x40A40102020420UL,
+    0x1188020000344040UL,
+    0xC30100078004841UL,
+    0x90800020A0040UL,
+    0xD010010104010UL,
+    0x511406200440041UL,
+    0x2302500680801800UL,
+    0x9000840291840011UL,
+    0x1180410062044UL,
+    0x20010500A040100UL,
+    0x1106000C0214UL,
+    0x80020180280280UL,
+    0x10088200042200UL,
+    0x114040040100920UL,
+    0x480C22E02208012UL,
+    0x42F01802026516UL,
+    0x8000101601445090UL,
+    0x91010011000184UL,
+    0x14806440200102UL,
+    0xD20400240400UL,
+    0x402010104020600UL,
+    0x4820002142014010UL,
+    0x542604644000040UL,
+    0x8400402890200200UL,
+    0x30801005A2080UL,
+    0x86001100892408UL,
+    0x805902C04006040UL,
+    0x2624021410UL,
+    0x224000040903818UL,
+    0x1008303820800UL,
+    0x8042040410800418UL,
+    0xA00020C84200C008UL,
+    0x8002108044004140UL,
+    0x2020010400800C0UL,
+    0x800020A11120200UL,
+    0x202020200C12040UL,
+    0x4000201540030E00UL,
+    0x80140A10030008UL,
+    0x160400200141010UL,
+    0x801010AA02802002UL,
+};
+
+// force initialization
+template struct MagicTable<Rookst, 12>;
+template struct MagicTable<Bishopst, 9>;
+
 }  // namespace core::generation::magic
 
 #ifdef MAGIC_STANDALONE
 
 int main() {
-    std::printf("Starting rook magic number search\n");
+    std::println("Starting rook magic number search");
     auto magics = core::generation::magic::Rookst::precalculate_magic();
 
     std::println("static constexpr uint64_t precalc_rook_magics[64]{{");
+    for (auto magic : magics) {
+        std::println("0x{:X}UL,", magic);
+    }
+    std::println("}};");
+
+    std::println("Starting bishop magic number search\n");
+    magics = core::generation::magic::Bishopst::precalculate_magic();
+
+    std::println("static constexpr uint64_t precalc_bishop_magics[64]{{");
     for (auto magic : magics) {
         std::println("0x{:X}UL,", magic);
     }
