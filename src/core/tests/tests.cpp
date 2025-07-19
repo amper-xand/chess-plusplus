@@ -38,7 +38,7 @@ TEST_P(MoveGenerationTest, MatchesExpectedMoveCounts) {
     auto board = Board::parse_fen_repr(test_case.fen);
     auto moves = generation::generate_moves(board);
 
-    for (Piece piece : {Piece::PAWNS, Piece::KNIGHTS, Piece::ROOKS, Piece::BISHOPS}) {
+    for (Piece piece : {Piece::PAWNS, Piece::KNIGHTS, Piece::ROOKS, Piece::BISHOPS, Piece::QUEENS}) {
         int produced_count = std::ranges::count_if(
             moves, [&](Move move) { return move.moved == piece; });
 
@@ -47,6 +47,7 @@ TEST_P(MoveGenerationTest, MatchesExpectedMoveCounts) {
             if (piece == Piece::KNIGHTS) return "knight";
             if (piece == Piece::ROOKS) return "rook";
             if (piece == Piece::BISHOPS) return "bishop";
+            if (piece == Piece::QUEENS) return "queen";
 
             return "[[INVALID]]";
         }();
