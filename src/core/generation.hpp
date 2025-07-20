@@ -38,4 +38,6 @@ void generate_bishop_moves(generation::GenerationContext& context);
 
 void generate_queen_moves(generation::GenerationContext& context);
 
+void generate_king_moves(generation::GenerationContext& context);
+
 }  // namespace core::generation

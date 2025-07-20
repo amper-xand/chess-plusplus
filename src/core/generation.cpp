@@ -3,6 +3,7 @@
 #include <core/magic.hpp>
 
 #include <array>
+#include <bit>
 
 namespace core {
 
@@ -38,6 +39,7 @@ std::vector<Move> generation::generate_moves(const Board& board) {
     generation::generate_rook_moves(context);
     generation::generate_bishop_moves(context);
     generation::generate_queen_moves(context);
+    generation::generate_king_moves(context);
 
     return context.get_generated_moves();
 }
@@ -220,6 +222,54 @@ void generation::generate_queen_moves(generation::GenerationContext& context) {
             context.bulk(Piece::QUEENS, index, moves, captures);
         }
     }
+}
+
+consteval std::array<bitboard, 64> intialize_king_table() {
+    std::array<bitboard, 64> moves = {0};
+
+    for (square index = 0; index < 64; ++index) {
+        uint8_t row = index.row();
+        uint8_t column = index.column();
+
+        auto set_move = [&](int row, int col) {
+            if (row >= 0 && row < 8 && col >= 0 && col < 8)
+                moves[index] |= square::at(row, col).bb();
+        };
+
+        set_move(row + 1, column + 1);
+        set_move(row + 1, column);
+        set_move(row + 1, column - 1);
+
+        set_move(row, column + 1);
+        set_move(row, column - 1);
+
+        set_move(row - 1, column + 1);
+        set_move(row - 1, column);
+        set_move(row - 1, column - 1);
+    }
+
+    return moves;
+}
+
+constexpr auto king_moves = intialize_king_table();
+
+void generation::generate_king_moves(generation::GenerationContext& context) {
+    auto& board = context.board;
+
+    bitboard king = board.allied(Piece::KINGS);
+
+    // some test positions don't have a king
+    if (!king) return;
+
+    bitboard capturable = board.enemies();
+    bitboard blockers = board.allies();
+
+    square index = std::countr_zero((bitboard_t)king);
+
+    bitboard moves = king_moves[index].exclude(blockers);
+    bitboard captures = moves.mask(capturable);
+
+    context.bulk(Piece::KINGS, index, moves, captures);
 }
 
 }  // namespace core
