@@ -306,7 +306,7 @@ struct Bishopst : public MagicTable<Bishopst, 9> {
 
         // get the blockers under and to the right of the bishop
         bitboard se_ray =
-            // {masks::file(0) | masks::rank(7)} extra blocker to keep the
+            // {masks::file(0) | masks::rank(0)} extra blocker to keep the
             // interval on the right side
             blockers.join(masks::file(0) | masks::rank(0))
                 .mask(rdiagonal)
