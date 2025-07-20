@@ -34,6 +34,8 @@ std::vector<Move> generation::GenerationContext::get_generated_moves() {
 std::vector<Move> generation::generate_moves(const Board& board) {
     GenerationContext context(board);
 
+    context.attacked_squares = generation::get_attacked_squares(context);
+
     generation::generate_pawn_moves(context);
     generation::generate_knight_moves(context);
     generation::generate_rook_moves(context);
@@ -266,10 +268,68 @@ void generation::generate_king_moves(generation::GenerationContext& context) {
 
     square index = std::countr_zero((bitboard_t)king);
 
-    bitboard moves = king_moves[index].exclude(blockers);
+    bitboard moves =
+        king_moves[index].exclude(blockers | context.attacked_squares);
     bitboard captures = moves.mask(capturable);
 
     context.bulk(Piece::KINGS, index, moves, captures);
+}
+
+bitboard generation::get_attacked_squares(GenerationContext& context) {
+    auto board = context.board;
+
+    bitboard attacked_squares = 0;
+
+    struct {
+        bitboard diagonal_sliders;
+        bitboard straight_sliders;
+        bitboard knights;
+    } attackers;
+
+    attackers.diagonal_sliders =
+        board.enemies().mask(board.bishops | board.queens);
+
+    attackers.straight_sliders =
+        board.enemies().mask(board.rooks | board.queens);
+
+    attackers.knights = board.enemy(Piece::KNIGHTS);
+
+    bitboard blockers = board.all().exclude(board.allied(Piece::KINGS));
+
+    for (square index = 0; index < 64 &&
+        (attackers.diagonal_sliders | attackers.straight_sliders |
+            attackers.knights) != 0;
+        attackers.diagonal_sliders >>= 1, attackers.straight_sliders >>= 1,
+                attackers.knights >>= 1, ++index) {
+        if (attackers.diagonal_sliders[0]) {
+            attacked_squares |=
+                magic::bishops::get_avail_moves(blockers, index);
+        }
+
+        if (attackers.straight_sliders[0]) {
+            attacked_squares |= magic::rooks::get_avail_moves(blockers, index);
+        }
+
+        if (attackers.knights[0]) {
+            attacked_squares |= knights_moves[index];
+        }
+    }
+
+    bitboard pawns = board.enemy(Piece::PAWNS);
+
+    // left pawn attacks
+    attacked_squares |=
+        pawns.exclude(bitboard::masks::file(7)).forward(!board.turn, 8) << 1;
+
+    // right pawn attacks
+    attacked_squares |=
+        pawns.exclude(bitboard::masks::file(0)).forward(!board.turn, 8) >> 1;
+
+    if (board.enemy(Piece::KINGS))
+        attacked_squares |=
+            king_moves[std::countr_zero((bitboard_t)board.enemy(Piece::KINGS))];
+
+    return attacked_squares;
 }
 
 }  // namespace core

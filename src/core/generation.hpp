@@ -17,6 +17,8 @@ class GenerationContext {
    public:
     const Board& board;
 
+    bitboard attacked_squares = 0;
+
     GenerationContext(const Board& board) : board(board) {}
 
     Move& next();
@@ -39,5 +41,7 @@ void generate_bishop_moves(generation::GenerationContext& context);
 void generate_queen_moves(generation::GenerationContext& context);
 
 void generate_king_moves(generation::GenerationContext& context);
+
+bitboard get_attacked_squares(GenerationContext& context);
 
 }  // namespace core::generation
