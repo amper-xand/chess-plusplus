@@ -136,6 +136,10 @@ rooks = 6
 fen = "8/8/8/2pRp3/3p4/8/8/8 w"
 rooks = 6
 
+[[generationcount.rooks]]
+fen = "8/8/8/8/2R5/8/8/8 w"
+rooks = 14
+
 [[generationcount.bishops]]
 fen = "8/8/8/8/8/8/8/B7 w"
 bishops = 7
@@ -187,3 +191,59 @@ bishops = 7
 [[generationcount.bishops]]
 fen = "8/8/2p5/3B4/2p1p3/8/8/8 w"
 bishops = 6
+
+[[generationcount.kings]]
+fen = "8/8/8/8/2rK4/8/8/8 w"
+kings = 5
+
+[[generationcount.kings]]
+fen = "8/8/8/3r4/3K4/8/8/8 w "
+kings = 5
+
+[[generationcount.kings]]
+fen = "8/8/8/8/2Kr4/8/8/8 w"
+kings = 5
+
+[[generationcount.kings]]
+fen = "8/8/8/3K4/3r4/8/8/8 w "
+kings = 5
+
+[[generationcount.kings]]
+fen = "8/8/2b5/3K4/8/8/8/8 w"
+kings = 7
+
+[[generationcount.kings]]
+fen = "8/8/4b3/3K4/8/8/8/8 w"
+kings = 7
+
+[[generationcount.kings]]
+fen = "8/8/3K4/4b3/8/8/8/8 w"
+kings = 7
+
+[[generationcount.kings]]
+fen = "8/8/3K4/2b5/8/8/8/8 w"
+kings = 7
+
+[[generationcount.kings]]
+fen = "8/8/8/8/3K4/8/8/8 w"
+kings = 8
+
+[[generationcount.kings]]
+fen = "8/8/8/8/8/8/8/7K w"
+kings = 3
+
+[[generationcount.kings]]
+fen = "8/8/8/8/8/8/8/K7 w"
+kings = 3
+
+[[generationcount.kings]]
+fen = "K7/8/8/8/8/8/8/8 w"
+kings = 3
+
+[[generationcount.kings]]
+fen = "7K/8/8/8/8/8/8/8 w"
+kings = 3
+
+[[generationcount.kings]]
+fen = "2rrr3/8/8/8/8/3K4/8/8 w "
+kings = 0

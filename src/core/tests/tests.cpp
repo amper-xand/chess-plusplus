@@ -38,16 +38,17 @@ TEST_P(MoveGenerationTest, MatchesExpectedMoveCounts) {
     auto board = Board::parse_fen_repr(test_case.fen);
     auto moves = generation::generate_moves(board);
 
-    for (Piece piece : {Piece::PAWNS, Piece::KNIGHTS, Piece::ROOKS, Piece::BISHOPS, Piece::QUEENS}) {
+    for (Piece piece : Piece::All) {
         int produced_count = std::ranges::count_if(
             moves, [&](Move move) { return move.moved == piece; });
 
         std::string piece_name = [&]() {
             if (piece == Piece::PAWNS) return "pawn";
             if (piece == Piece::KNIGHTS) return "knight";
-            if (piece == Piece::ROOKS) return "rook";
             if (piece == Piece::BISHOPS) return "bishop";
+            if (piece == Piece::ROOKS) return "rook";
             if (piece == Piece::QUEENS) return "queen";
+            if (piece == Piece::KINGS) return "kings";
 
             return "[[INVALID]]";
         }();
