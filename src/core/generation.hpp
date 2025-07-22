@@ -17,6 +17,10 @@ class GenerationContext {
    public:
     const Board& board;
 
+    struct {
+        bitboard absolute = 0, partial = 0;
+    } pinned;
+
     bitboard attacked_squares = 0;
 
     GenerationContext(const Board& board) : board(board) {}
@@ -43,5 +47,8 @@ void generate_queen_moves(generation::GenerationContext& context);
 void generate_king_moves(generation::GenerationContext& context);
 
 bitboard get_attacked_squares(GenerationContext& context);
+
+void get_pinned_pieces(
+    GenerationContext& context, bitboard& absolute, bitboard& partial);
 
 }  // namespace core::generation

@@ -36,6 +36,9 @@ std::vector<Move> generation::generate_moves(const Board& board) {
 
     context.attacked_squares = generation::get_attacked_squares(context);
 
+    generation::get_pinned_pieces(
+        context, context.pinned.absolute, context.pinned.partial);
+
     generation::generate_pawn_moves(context);
     generation::generate_knight_moves(context);
     generation::generate_rook_moves(context);
@@ -330,6 +333,95 @@ bitboard generation::get_attacked_squares(GenerationContext& context) {
             king_moves[std::countr_zero((bitboard_t)board.enemy(Piece::KINGS))];
 
     return attacked_squares;
+}
+
+void generation::get_pinned_pieces(
+    GenerationContext& context, bitboard& absolute, bitboard& partial) {
+    auto& board = context.board;
+
+    if (!board.allied(Piece::KINGS)) return;
+
+    bitboard pinned = 0;
+
+    bitboard king = board.allied(Piece::KINGS);
+
+    bitboard blockers = board.all();
+
+    bitboard candidates;
+    bitboard pinners;
+
+    square iking = std::countr_zero((bitboard_t)king);
+
+    // get the pieces that are block the king
+
+    candidates =
+        magic::bishops::get_avail_moves(blockers, iking).mask(board.allies());
+    candidates |=
+        magic::rooks::get_avail_moves(blockers, iking).mask(board.allies());
+
+    bitboard discovered = blockers.exclude(candidates);
+
+    // get the sliders that were discovered
+
+    pinners = magic::bishops::get_avail_moves(discovered, iking)
+                  .mask(board.enemies())
+                  .mask(board.bishops | board.queens);
+
+    pinners |= magic::rooks::get_avail_moves(discovered, iking)
+                   .mask(board.enemies())
+                   .mask(board.rooks | board.queens);
+
+    struct {
+        bitboard before;
+        bitboard after;
+    } side;
+
+    side.before = king - 1;
+    side.after = ~side.before;
+
+    union {
+        struct {
+            bitboard_t vertical;
+            bitboard_t horizontal;
+            bitboard_t diagonal;
+            bitboard_t rdiagonal;
+        };
+        bitboard all[4] = {0};
+    } sliders;
+
+    sliders.diagonal = bitboard::masks::diagonal_at(iking);
+    sliders.rdiagonal = bitboard::masks::rev_diagonal_at(iking);
+    sliders.vertical = bitboard::masks::file(iking.column());
+    sliders.horizontal = bitboard::masks::rank(iking.row());
+
+    for (const bitboard& slider : sliders.all) {
+        bitboard curr_mask;
+
+        curr_mask = slider.mask(side.before);
+
+        pinned |= candidates
+                      .mask(curr_mask)  //
+                      .mask(-(!!pinners.mask(curr_mask)));
+
+        curr_mask = slider.mask(side.after);
+
+        pinned |= candidates
+                      .mask(curr_mask)  //
+                      .mask(-(!!pinners.mask(curr_mask)));
+    }
+
+    bitboard partial_pin = 0;
+
+    partial = pinned.mask(board.queens);
+
+    partial |=
+        pinned.mask(board.rooks).mask(sliders.vertical | sliders.horizontal);
+
+    partial |=
+        pinned.mask(board.bishops).mask(sliders.diagonal | sliders.rdiagonal);
+
+    absolute = pinned.exclude(partial);
+    partial = partial;
 }
 
 }  // namespace core
