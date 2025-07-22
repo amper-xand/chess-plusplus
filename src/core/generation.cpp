@@ -169,7 +169,9 @@ void generation::generate_knight_moves(GenerationContext& context) {
 void generation::generate_rook_moves(generation::GenerationContext& context) {
     auto& board = context.board;
 
-    bitboard rooks = board.allied(Piece::ROOKS);
+    bitboard rooks =
+        board.allied(Piece::ROOKS)
+            .exclude(context.pinned.absolute | context.pinned.absolute);
 
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();
@@ -184,12 +186,33 @@ void generation::generate_rook_moves(generation::GenerationContext& context) {
             context.bulk(Piece::ROOKS, index, moves, captures);
         }
     }
+
+    if (board.allied(Piece::KINGS) == 0) return;
+
+    bitboard partially_pinned = context.pinned.partial.mask(board.rooks);
+
+    square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
+
+    for (square index = 0; partially_pinned != 0;
+        ++index, partially_pinned >>= 1) {
+        if (partially_pinned[0]) {
+            bitboard moves = magic::rooks::get_avail_moves(blockers, index);
+            moves = moves.exclude(blockers ^ capturable);
+            moves = moves.mask(magic::rooks::get_slider(iking));
+
+            bitboard captures = moves.mask(capturable);
+
+            context.bulk(Piece::ROOKS, index, moves, captures);
+        }
+    }
 }
 
 void generation::generate_bishop_moves(generation::GenerationContext& context) {
     auto& board = context.board;
 
-    bitboard bishops = board.allied(Piece::BISHOPS);
+    bitboard bishops =
+        board.allied(Piece::BISHOPS)
+            .exclude(context.pinned.absolute | context.pinned.partial);
 
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();
@@ -204,12 +227,33 @@ void generation::generate_bishop_moves(generation::GenerationContext& context) {
             context.bulk(Piece::BISHOPS, index, moves, captures);
         }
     }
+
+    if (board.allied(Piece::KINGS) == 0) return;
+
+    bitboard partially_pinned = context.pinned.partial.mask(board.bishops);
+
+    square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
+
+    for (square index = 0; partially_pinned != 0;
+        ++index, partially_pinned >>= 1) {
+        if (partially_pinned[0]) {
+            bitboard moves = magic::bishops::get_avail_moves(blockers, index);
+            moves = moves.exclude(blockers ^ capturable);
+            moves = moves.mask(magic::bishops::get_slider(iking));
+
+            bitboard captures = moves.mask(capturable);
+
+            context.bulk(Piece::BISHOPS, index, moves, captures);
+        }
+    }
 }
 
 void generation::generate_queen_moves(generation::GenerationContext& context) {
     auto& board = context.board;
 
-    bitboard queens = board.allied(Piece::QUEENS);
+    bitboard queens =
+        board.allied(Piece::QUEENS)
+            .exclude(context.pinned.absolute | context.pinned.partial);
 
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();
@@ -222,6 +266,37 @@ void generation::generate_queen_moves(generation::GenerationContext& context) {
 
             moves = moves.exclude(blockers ^ capturable);
 
+            bitboard captures = moves.mask(capturable);
+
+            context.bulk(Piece::QUEENS, index, moves, captures);
+        }
+    }
+
+    if (board.allied(Piece::KINGS) == 0) return;
+
+    square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
+
+    bitboard diagonal_pins = context.pinned.partial.mask(board.queens)
+                                 .mask(magic::bishops::get_slider(iking));
+
+    bitboard straight_pins = context.pinned.partial.mask(board.queens)
+                                 .mask(magic::rooks::get_slider(iking));
+
+    for (square index = 0; (diagonal_pins | straight_pins) != 0;
+        ++index, diagonal_pins >>= 1, straight_pins >>= 1) {
+        bitboard moves = 0;
+
+        if (diagonal_pins[0]) {
+            moves = magic::bishops::get_avail_moves(blockers, index)
+                        .mask(magic::bishops::get_slider(iking));
+        }
+
+        if (straight_pins[0]) {
+            moves = magic::rooks::get_avail_moves(blockers, index)
+                        .mask(magic::rooks::get_slider(iking));
+        }
+
+        if (moves != 0) {
             bitboard captures = moves.mask(capturable);
 
             context.bulk(Piece::QUEENS, index, moves, captures);
