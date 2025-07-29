@@ -1,5 +1,5 @@
 #include <core/generation.hpp>
-#include <core/representation.hpp>
+#include <core/types.hpp>
 
 #include <gtest/gtest.h>
 #define TOML_EXCEPTIONS 0
@@ -112,7 +112,6 @@ void parse_test_cases_from_file(std::string cases_file) {
     toml::table tbl = std::move(result.table());
 
     for (const auto& [category, cases] : *tbl["generationcount"].as_table()) {
-
         for (const auto& item : *cases.as_array()) {
             const auto& tcase = *item.as_table();
 

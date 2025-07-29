@@ -27,9 +27,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(tomlplusplus)
 
 set(CHESSY_CORE_FILES
-    src/core/representation.cpp
     src/core/generation.cpp
     src/core/magic.cpp
+    src/core/types.cpp
 )
 
 # main binary, the engine

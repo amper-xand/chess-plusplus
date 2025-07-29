@@ -1,9 +1,8 @@
-#include "core/magic.hpp"
+#include <core/magic.hpp>
 
 #include <array>
 #include <cassert>
 #include <cstring>
-#include <print>
 
 namespace core::generation::magic {
 
@@ -476,6 +475,7 @@ template struct MagicTable<Bishopst, 9>;
 }  // namespace core::generation::magic
 
 #ifdef MAGIC_STANDALONE
+#include <print>
 
 int main() {
     std::println("Starting rook magic number search");

@@ -1,4 +1,4 @@
-#include "representation.hpp"
+#include <core/types.hpp>
 
 #include <cassert>
 #include <print>
@@ -46,6 +46,7 @@ char core::Piece::to_character_repr(Color color) {
     // clang-format on
 }
 
+// FIX ME: rows are being parsed in reverse
 core::Board core::Board::parse_fen_repr(std::string fen) {
     Board board;
 

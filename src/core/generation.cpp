@@ -1,4 +1,4 @@
-#include "generation.hpp"
+#include <core/generation.hpp>
 
 #include <core/magic.hpp>
 
@@ -34,7 +34,8 @@ std::vector<Move> generation::GenerationContext::get_generated_moves() {
 std::vector<Move> generation::generate_moves(const Board& board) {
     GenerationContext context(board);
 
-    context.attacked_squares = generation::generate_bitboard_squares_attacked(context);
+    context.attacked_squares =
+        generation::generate_bitboard_squares_attacked(context);
 
     generation::generate_bitboard_pieces_pinned(
         context, context.pinned.absolute, context.pinned.partial);
@@ -354,7 +355,8 @@ void generation::generate_moves_king(generation::GenerationContext& context) {
     context.bulk(Piece::KINGS, index, moves, captures);
 }
 
-bitboard generation::generate_bitboard_squares_attacked(GenerationContext& context) {
+bitboard generation::generate_bitboard_squares_attacked(
+    GenerationContext& context) {
     auto board = context.board;
 
     bitboard attacked_squares = 0;

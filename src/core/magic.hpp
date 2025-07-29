@@ -1,5 +1,6 @@
 #pragma once
 
+#define CORE_PRIMITIVES_ONLY
 #include <core/types.hpp>
 
 namespace core::generation::magic::rooks {

@@ -2,7 +2,12 @@
 
 #include <stdint.h>
 
+#ifndef CORE_PRIMITIVES_ONLY
+#include <string>
+#endif
+
 namespace core {
+
 typedef uint8_t square_t;
 typedef uint64_t bitboard_t;
 
@@ -171,6 +176,8 @@ struct bitboard : public LiteralWrapper<bitboard_t> {
     };
 };
 
+#ifndef CORE_PRIMITIVES_ONLY
+
 struct Color : public LiteralWrapper<color_t> {
    public:
     static constexpr color_t BLACK = false, WHITE = true;
@@ -205,4 +212,82 @@ struct Piece : public LiteralWrapper<piece_t> {
     inline constexpr bool isNone() const { return value_ == NONE; }
     inline constexpr bool isValid() const { return value_ < NONE; }
 };
+
+struct Move {
+    square from;
+    square to;
+
+    Piece moved = Piece::NONE;
+    Piece target = Piece::NONE;
+};
+
+struct Board {
+    // clang-format off
+
+        union  { bitboard colors[2]; 
+        struct { bitboard_t black, white; }; };
+
+        union  { bitboard pieces[6];
+        struct { bitboard_t pawns, knights, bishops, rooks, queens, kings; }; };
+
+        Color turn;
+
+    // clang-format on
+
+    Board() : colors{bitboard(0)}, pieces{bitboard(0)} {}
+
+    void play(const Move move);
+    void unplay(const Move move);
+
+    inline bitboard all() const { return white | black; }
+
+    inline bitboard allies() const { return colors[turn]; }
+
+    inline bitboard allied(Piece piece) const {
+        return pieces[piece] & colors[turn];
+    }
+
+    inline bitboard enemies() const { return colors[!turn]; }
+
+    inline bitboard enemy(Piece piece) const {
+        return pieces[piece] & colors[!turn];
+    }
+
+    inline bool occupied(square index) const {
+        return bitboard(white | black)[index];
+    }
+
+    inline Color color(square index) const {
+        return Color::Both[bitboard(white)[index]];
+    }
+
+    inline Piece piece(square index) const {
+        for (auto piece : Piece::All) {
+            if (pieces[piece][index]) return piece;
+        }
+
+        return Piece::NONE;
+    }
+
+    constexpr inline bool operator==(const Board &other) const {
+        for (auto piece : Piece::All) {
+            if (this->pieces[piece] != other.pieces[piece]) return false;
+        }
+
+        if (this->white != other.white) return false;
+
+        if (this->black != other.black) return false;
+
+        return true;
+    }
+
+    static Board parse_fen_repr(std::string fen);
+
+    void print();
+};
+
+#else
+#undef CCORE_PRIMITIVES_ONLY
+#endif
+
 }  // namespace core

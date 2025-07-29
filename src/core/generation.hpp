@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core/representation.hpp>
+#include <core/types.hpp>
 
 #include <array>
 #include <vector>
