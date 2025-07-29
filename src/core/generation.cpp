@@ -165,7 +165,7 @@ void generation::generate_moves_knight(GenerationContext& context) {
     }
 }
 
-void generation::generate_moves_rook(generation::GenerationContext& context) {
+void generation::generate_moves_rook(GenerationContext& context) {
     auto& board = context.board;
 
     bitboard rooks =
@@ -205,7 +205,7 @@ void generation::generate_moves_rook(generation::GenerationContext& context) {
     }
 }
 
-void generation::generate_moves_bishop(generation::GenerationContext& context) {
+void generation::generate_moves_bishop(GenerationContext& context) {
     auto& board = context.board;
 
     bitboard bishops =
@@ -245,7 +245,7 @@ void generation::generate_moves_bishop(generation::GenerationContext& context) {
     }
 }
 
-void generation::generate_moves_queen(generation::GenerationContext& context) {
+void generation::generate_moves_queen(GenerationContext& context) {
     auto& board = context.board;
 
     bitboard queens =
@@ -335,7 +335,7 @@ consteval std::array<bitboard, 64> intialize_king_table() {
 
 constexpr auto king_moves = intialize_king_table();
 
-void generation::generate_moves_king(generation::GenerationContext& context) {
+void generation::generate_moves_king(GenerationContext& context) {
     auto& board = context.board;
 
     bitboard king = board.allied(Piece::KINGS);

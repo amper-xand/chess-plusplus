@@ -38,13 +38,13 @@ void generate_moves_pawn(GenerationContext& context);
 
 void generate_moves_knight(GenerationContext& context);
 
-void generate_moves_rook(generation::GenerationContext& context);
+void generate_moves_rook(GenerationContext& context);
 
-void generate_moves_bishop(generation::GenerationContext& context);
+void generate_moves_bishop(GenerationContext& context);
 
-void generate_moves_queen(generation::GenerationContext& context);
+void generate_moves_queen(GenerationContext& context);
 
-void generate_moves_king(generation::GenerationContext& context);
+void generate_moves_king(GenerationContext& context);
 
 bitboard generate_bitboard_squares_attacked(GenerationContext& context);
 
