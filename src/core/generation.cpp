@@ -171,7 +171,7 @@ void generation::generate_rook_moves(generation::GenerationContext& context) {
 
     bitboard rooks =
         board.allied(Piece::ROOKS)
-            .exclude(context.pinned.absolute | context.pinned.absolute);
+            .exclude(context.pinned.absolute | context.pinned.partial);
 
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();

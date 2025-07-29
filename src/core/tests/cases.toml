@@ -247,3 +247,43 @@ kings = 3
 [[generationcount.kings]]
 fen = "2rrr3/8/8/8/8/3K4/8/8 w "
 kings = 0
+
+[[generationcount.rookpins]]
+fen = "3r4/8/3n4/3R4/8/3K4/8/8 w - - 0 1"
+rooks = 9
+kings = 6
+
+[[generationcount.rookpins]]
+fen = "3r4/8/8/3R4/8/3K4/8/8 w - - 0 1"
+rooks = 4
+kings = 8
+
+[[generationcount.rookpins]]
+fen = "3b4/8/8/8/8/8/3R4/3K4 w - - 0 1"
+rooks = 13
+kings = 4
+
+[[generationcount.rookpins]]
+fen = "8/8/8/8/r5RK/8/8/8 w - - 0 1"
+rooks = 6
+kings = 4
+
+[[generationcount.rookpins]]
+fen = "8/b7/8/8/8/4R3/5K2/8 w - - 0 1"
+rooks = 0
+kings = 7
+
+[[generationcount.bishoppins]]
+fen = "8/b7/8/8/8/8/5B2/6K1 w - - 0 1"
+bishops = 5
+kings = 4
+
+[[generationcount.queenpins]]
+fen = "8/b7/8/8/8/6r1/5Q2/6K1 w - - 0 1"
+queens = 5
+kings = 3
+
+[[generationcount.queenpins]]
+fen = "6r1/b7/8/8/8/8/6Q1/6K1 w - - 0 1"
+queens = 6
+kings = 3
