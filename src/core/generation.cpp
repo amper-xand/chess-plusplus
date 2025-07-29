@@ -34,22 +34,22 @@ std::vector<Move> generation::GenerationContext::get_generated_moves() {
 std::vector<Move> generation::generate_moves(const Board& board) {
     GenerationContext context(board);
 
-    context.attacked_squares = generation::get_attacked_squares(context);
+    context.attacked_squares = generation::generate_bitboard_squares_attacked(context);
 
-    generation::get_pinned_pieces(
+    generation::generate_bitboard_pieces_pinned(
         context, context.pinned.absolute, context.pinned.partial);
 
-    generation::generate_pawn_moves(context);
-    generation::generate_knight_moves(context);
-    generation::generate_rook_moves(context);
-    generation::generate_bishop_moves(context);
-    generation::generate_queen_moves(context);
-    generation::generate_king_moves(context);
+    generation::generate_moves_pawn(context);
+    generation::generate_moves_knight(context);
+    generation::generate_moves_rook(context);
+    generation::generate_moves_bishop(context);
+    generation::generate_moves_queen(context);
+    generation::generate_moves_king(context);
 
     return context.get_generated_moves();
 }
 
-void generation::generate_pawn_moves(GenerationContext& context) {
+void generation::generate_moves_pawn(GenerationContext& context) {
     auto& board = context.board;
 
     bitboard pawns = board.allied(Piece::PAWNS);
@@ -148,7 +148,7 @@ consteval std::array<bitboard, 64> intialize_knight_table() {
 
 constexpr auto knights_moves = intialize_knight_table();
 
-void generation::generate_knight_moves(GenerationContext& context) {
+void generation::generate_moves_knight(GenerationContext& context) {
     auto& board = context.board;
 
     bitboard knights = board.allied(Piece::KNIGHTS);
@@ -164,7 +164,7 @@ void generation::generate_knight_moves(GenerationContext& context) {
     }
 }
 
-void generation::generate_rook_moves(generation::GenerationContext& context) {
+void generation::generate_moves_rook(generation::GenerationContext& context) {
     auto& board = context.board;
 
     bitboard rooks =
@@ -204,7 +204,7 @@ void generation::generate_rook_moves(generation::GenerationContext& context) {
     }
 }
 
-void generation::generate_bishop_moves(generation::GenerationContext& context) {
+void generation::generate_moves_bishop(generation::GenerationContext& context) {
     auto& board = context.board;
 
     bitboard bishops =
@@ -244,7 +244,7 @@ void generation::generate_bishop_moves(generation::GenerationContext& context) {
     }
 }
 
-void generation::generate_queen_moves(generation::GenerationContext& context) {
+void generation::generate_moves_queen(generation::GenerationContext& context) {
     auto& board = context.board;
 
     bitboard queens =
@@ -334,7 +334,7 @@ consteval std::array<bitboard, 64> intialize_king_table() {
 
 constexpr auto king_moves = intialize_king_table();
 
-void generation::generate_king_moves(generation::GenerationContext& context) {
+void generation::generate_moves_king(generation::GenerationContext& context) {
     auto& board = context.board;
 
     bitboard king = board.allied(Piece::KINGS);
@@ -354,7 +354,7 @@ void generation::generate_king_moves(generation::GenerationContext& context) {
     context.bulk(Piece::KINGS, index, moves, captures);
 }
 
-bitboard generation::get_attacked_squares(GenerationContext& context) {
+bitboard generation::generate_bitboard_squares_attacked(GenerationContext& context) {
     auto board = context.board;
 
     bitboard attacked_squares = 0;
@@ -413,7 +413,7 @@ bitboard generation::get_attacked_squares(GenerationContext& context) {
     return attacked_squares;
 }
 
-void generation::get_pinned_pieces(
+void generation::generate_bitboard_pieces_pinned(
     GenerationContext& context, bitboard& absolute, bitboard& partial) {
     auto& board = context.board;
 

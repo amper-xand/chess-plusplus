@@ -34,21 +34,21 @@ class GenerationContext {
 
 std::vector<Move> generate_moves(const Board& board);
 
-void generate_pawn_moves(GenerationContext& context);
+void generate_moves_pawn(GenerationContext& context);
 
-void generate_knight_moves(GenerationContext& context);
+void generate_moves_knight(GenerationContext& context);
 
-void generate_rook_moves(generation::GenerationContext& context);
+void generate_moves_rook(generation::GenerationContext& context);
 
-void generate_bishop_moves(generation::GenerationContext& context);
+void generate_moves_bishop(generation::GenerationContext& context);
 
-void generate_queen_moves(generation::GenerationContext& context);
+void generate_moves_queen(generation::GenerationContext& context);
 
-void generate_king_moves(generation::GenerationContext& context);
+void generate_moves_king(generation::GenerationContext& context);
 
-bitboard get_attacked_squares(GenerationContext& context);
+bitboard generate_bitboard_squares_attacked(GenerationContext& context);
 
-void get_pinned_pieces(
+void generate_bitboard_pieces_pinned(
     GenerationContext& context, bitboard& absolute, bitboard& partial);
 
 }  // namespace core::generation
