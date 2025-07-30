@@ -14,6 +14,19 @@ typedef uint64_t bitboard_t;
 typedef uint8_t color_t;
 typedef uint8_t piece_t;
 
+/**
+ * @brief Wraps a literal or primitive type
+ * to allow extended behavior
+ * while retaining implicit conversions.
+ *
+ * @tparam type The underlying type to wrap.
+ *
+ * This class allows derived classes to behave like the wrapped type while
+ * adding utility methods.
+ * Implicit conversions and pointer access operators
+ * are forwarded to the underlying value.
+ * Gets optimized out as wrapped type.
+ * */
 template <typename type>
 class LiteralWrapper {
    protected:
@@ -22,11 +35,9 @@ class LiteralWrapper {
    public:
     constexpr LiteralWrapper(type value) : value_(value) {}
 
-    // Overload operators to forward to the wrapped type
     constexpr operator type &() { return value_; }
     constexpr operator const type &() const { return value_; }
 
-    // Forward other operations to the underlying type as needed
     constexpr type *operator->() { return &value_; }
     constexpr const type *operator->() const { return &value_; }
 };
@@ -51,6 +62,21 @@ struct square : public LiteralWrapper<square_t> {
     }
 };
 
+/*
+ * @brief Represents the board as a set of bits.
+ *
+ * Bit mapping is as follows
+ *
+ *  v- 63              index
+ * A8 0 0 0 0 0 0 H8 <- 56
+ *  0 0 0 0 0 0 0 0  <- 48
+ *  0 0 0 0 0 0 0 0  <- 40
+ *  0 0 0 0 0 0 0 0  <- 32
+ *  0 0 0 0 0 0 0 0  <- 24
+ *  0 0 0 0 0 0 0 0  <- 16
+ *  0 0 0 0 0 0 0 0  <- 8
+ * A1 0 0 0 0 0 0 H1 <- 0
+ * */
 struct bitboard : public LiteralWrapper<bitboard_t> {
    public:
     constexpr bitboard(bitboard_t value = 0)
@@ -167,7 +193,8 @@ struct bitboard : public LiteralWrapper<bitboard_t> {
         }
 
         /*
-         * Takes two bits and returns the set of bits between them (inclusive)
+         * Takes two bits and returns the set of bits between them (inclusive).
+         * 0 is interpreted as the 65th bit
          * */
         static inline constexpr bitboard interval(
             bitboard first, bitboard second) {
@@ -221,6 +248,9 @@ struct Move {
     Piece target = Piece::NONE;
 };
 
+/*
+ * Represents game state
+ * */
 struct Board {
     // clang-format off
 
