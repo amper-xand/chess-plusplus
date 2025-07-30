@@ -7,6 +7,9 @@
 
 namespace core {
 
+/***************************# Main Generation Path #***************************/
+
+//
 Move& generation::GenerationContext::next() { return moves.at(nxt++); }
 
 void generation::GenerationContext::bulk(
@@ -50,6 +53,9 @@ std::vector<Move> generation::generate_moves(const Board& board) {
     return context.get_generated_moves();
 }
 
+/***************************# Pawn Move Generation #***************************/
+
+//
 void generation::generate_moves_pawn(GenerationContext& context) {
     auto& board = context.board;
 
@@ -122,6 +128,9 @@ void generation::generate_moves_pawn(GenerationContext& context) {
     }
 }
 
+/**************************# Knight Move Generation #**************************/
+
+//
 consteval std::array<bitboard, 64> intialize_knight_table() {
     std::array<bitboard, 64> moves = {0};
 
@@ -165,6 +174,9 @@ void generation::generate_moves_knight(GenerationContext& context) {
     }
 }
 
+/**************************# Slider Move Generation #**************************/
+
+//
 void generation::generate_moves_rook(GenerationContext& context) {
     auto& board = context.board;
 
@@ -306,6 +318,9 @@ void generation::generate_moves_queen(GenerationContext& context) {
     }
 }
 
+/***************************# King Move Generation #***************************/
+
+//
 consteval std::array<bitboard, 64> intialize_king_table() {
     std::array<bitboard, 64> moves = {0};
 
@@ -355,6 +370,9 @@ void generation::generate_moves_king(GenerationContext& context) {
     context.bulk(Piece::KINGS, index, moves, captures);
 }
 
+/***********************# Context Bitboards Generation #***********************/
+
+//
 bitboard generation::generate_bitboard_squares_attacked(
     GenerationContext& context) {
     auto board = context.board;
