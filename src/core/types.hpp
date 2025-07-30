@@ -317,7 +317,7 @@ struct Board {
 };
 
 #else
-#undef CCORE_PRIMITIVES_ONLY
+#undef CORE_PRIMITIVES_ONLY
 #endif
 
 }  // namespace core
