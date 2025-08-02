@@ -48,7 +48,7 @@ TEST_P(MoveGenerationTest, MatchesExpectedMoveCounts) {
             if (piece == Piece::BISHOPS) return "bishop";
             if (piece == Piece::ROOKS) return "rook";
             if (piece == Piece::QUEENS) return "queen";
-            if (piece == Piece::KINGS) return "kings";
+            if (piece == Piece::KINGS) return "king";
 
             return "[[INVALID]]";
         }();
