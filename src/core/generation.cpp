@@ -61,44 +61,70 @@ void generation::generate_moves_pawn(GenerationContext& context) {
 
     bitboard pawns = board.allied(Piece::PAWNS);
 
+    bitboard pawns_pinned = pawns.mask(context.pinned.absolute);
+
+    pawns = pawns ^ pawns_pinned;
+
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();
 
     // Advance the pawns then remove those who were blocked
+    bitboard advances_single = pawns;
+    advances_single = advances_single.forward(board.turn, 8);
+    advances_single = advances_single.exclude(blockers);
 
-    bitboard single_advances = pawns.forward(board.turn, 8);
-    single_advances = single_advances.exclude(blockers);
+    bitboard pawns_can_advance_again = board.turn.isWhite()
+        ? bitboard::masks::rank(2)
+        : bitboard::masks::rank(5);
 
-    bitboard double_advances =
-        single_advances
-            // advance pawns that advanced from second row
-            .mask(board.turn.isWhite() ? bitboard::masks::rank(2)
-                                       : bitboard::masks::rank(5))
-            .forward(board.turn, 8);
-    double_advances = double_advances.exclude(blockers);
+    // Advance the pawns that were not blocked
+    bitboard advances_double = advances_single.mask(pawns_can_advance_again);
+    advances_double = advances_double.forward(board.turn, 8);
+    advances_double = advances_double.exclude(blockers);
 
-    // Advance the pawns to a capture position,
-    bitboard l_captures =
-        pawns.exclude(bitboard::masks::file(7)).forward(board.turn, 8) << 1;
-    bitboard r_captures =
-        pawns.exclude(bitboard::masks::file(0)).forward(board.turn, 8) >> 1;
+    // Advance the pawns to a capture position
+
+    // Add pinned pawns that can capture
+    // FIXME: pawns can capture along the diagonal not just in front of the king
+    bitboard king_front = board.allied(Piece::KINGS).forward(board.turn, 8);
+
+    square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
+
+    bitboard side_right =
+        bitboard::masks::file(iking.column()) - bitboard::masks::file(0);
+    bitboard side_left = ~side_right;
+
+    bitboard slider = magic::bishops::get_slider(iking);
+    side_right &= slider;
+    side_left &= slider;
+
+    bitboard capture_direction = board.allied(Piece::KINGS) - 1;
+
+    if (board.turn.isWhite()) capture_direction = ~capture_direction;
+
+    side_left &= capture_direction;
+    side_right &= capture_direction;
+
+    bitboard pinned_left = pawns_pinned.mask(side_left);
+    bitboard pinned_right = pawns_pinned.mask(side_right);
+
+    bitboard captures_left = pawns | pinned_left;
+    bitboard captures_right = pawns | pinned_right;
+
+    // Remove pawns that will overflow
+    captures_left = captures_left.exclude(bitboard::masks::file(7));
+    captures_right = captures_right.exclude(bitboard::masks::file(0));
+
+    // Move pawns to capture
+    captures_left = captures_left.forward(board.turn, 8) << 1;
+    captures_right = captures_right.forward(board.turn, 8) >> 1;
 
     // keep the pawns that are over an enemy piece
-    l_captures = l_captures.mask(capturable);
-    r_captures = r_captures.mask(capturable);
+    captures_left = captures_left.mask(capturable);
+    captures_right = captures_right.mask(capturable);
 
-    for (; single_advances != 0; single_advances ^= single_advances.LSB()) {
-        square index = std::countr_zero((bitboard_t)single_advances);
-
-        Move& m = context.next();
-
-        m.moved = Piece::PAWNS;
-        m.from = board.turn.isWhite() ? index.down() : index.up();
-        m.to = index;
-    }
-
-    for (; double_advances != 0; double_advances ^= double_advances.LSB()) {
-        square index = std::countr_zero((bitboard_t)double_advances);
+    for (; advances_single != 0; advances_single ^= advances_single.LSB()) {
+        square index = std::countr_zero((bitboard_t)advances_single);
 
         Move& m = context.next();
 
@@ -107,8 +133,19 @@ void generation::generate_moves_pawn(GenerationContext& context) {
         m.to = index;
     }
 
-    for (; l_captures != 0; l_captures ^= l_captures.LSB()) {
-        square index = std::countr_zero((bitboard_t)l_captures);
+    for (; advances_double != 0; advances_double ^= advances_double.LSB()) {
+        square index = std::countr_zero((bitboard_t)advances_double);
+
+        Move& m = context.next();
+
+        m.moved = Piece::PAWNS;
+        m.from = board.turn.isWhite() ? index.down() : index.up();
+        m.to = index;
+    }
+
+    for (; captures_left != 0; captures_left ^= captures_left.LSB()) {
+        square index = std::countr_zero((bitboard_t)captures_left);
+
         Move& m = context.next();
 
         m.moved = Piece::PAWNS;
@@ -117,8 +154,9 @@ void generation::generate_moves_pawn(GenerationContext& context) {
         m.target = board.piece(m.to);
     }
 
-    for (; r_captures != 0; r_captures ^= r_captures.LSB()) {
-        square index = std::countr_zero((bitboard_t)r_captures);
+    for (; captures_right != 0; captures_right ^= captures_right.LSB()) {
+        square index = std::countr_zero((bitboard_t)captures_right);
+
         Move& m = context.next();
 
         m.moved = Piece::PAWNS;
