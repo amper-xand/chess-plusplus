@@ -85,7 +85,6 @@ void generation::generate_moves_pawn(GenerationContext& context) {
     // Advance the pawns to a capture position
 
     // Add pinned pawns that can capture
-    // FIXME: pawns can capture along the diagonal not just in front of the king
     bitboard king_front = board.allied(Piece::KINGS).forward(board.turn, 8);
 
     square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
@@ -176,19 +175,19 @@ consteval std::array<bitboard, 64> intialize_knight_table() {
         uint8_t row = index.row();
         uint8_t column = index.column();
 
-        auto set_move = [&](int row, int col) {
+        auto move_set = [&](int row, int col) {
             if (row >= 0 && row < 8 && col >= 0 && col < 8)
                 moves[index] |= square::at(row, col).bb();
         };
 
-        set_move(row + 2, column + 1);
-        set_move(row + 1, column + 2);
-        set_move(row - 1, column + 2);
-        set_move(row - 2, column + 1);
-        set_move(row - 2, column - 1);
-        set_move(row - 1, column - 2);
-        set_move(row + 1, column - 2);
-        set_move(row + 2, column - 1);
+        move_set(row + 2, column + 1);
+        move_set(row + 1, column + 2);
+        move_set(row - 1, column + 2);
+        move_set(row - 2, column + 1);
+        move_set(row - 2, column - 1);
+        move_set(row - 1, column - 2);
+        move_set(row + 1, column - 2);
+        move_set(row + 2, column - 1);
     }
 
     return moves;
@@ -218,9 +217,8 @@ void generation::generate_moves_knight(GenerationContext& context) {
 void generation::generate_moves_rook(GenerationContext& context) {
     auto& board = context.board;
 
-    bitboard rooks =
-        board.allied(Piece::ROOKS)
-            .exclude(context.pinned.absolute | context.pinned.partial);
+    bitboard rooks = board.allied(Piece::ROOKS);
+    rooks = rooks.exclude(context.pinned.absolute | context.pinned.partial);
 
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();
@@ -238,13 +236,13 @@ void generation::generate_moves_rook(GenerationContext& context) {
 
     if (board.allied(Piece::KINGS) == 0) return;
 
-    bitboard partially_pinned = context.pinned.partial.mask(board.rooks);
+    bitboard pinned_partially = context.pinned.partial.mask(board.rooks);
 
     square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
     bitboard king_slider = magic::rooks::get_slider(iking);
 
-    for (; partially_pinned != 0; partially_pinned ^= partially_pinned.LSB()) {
-        square index = std::countr_zero((bitboard_t)partially_pinned);
+    for (; pinned_partially != 0; pinned_partially ^= pinned_partially.LSB()) {
+        square index = std::countr_zero((bitboard_t)pinned_partially);
 
         bitboard moves = magic::rooks::get_avail_moves(blockers, index);
         moves = moves.mask(king_slider);
@@ -258,9 +256,8 @@ void generation::generate_moves_rook(GenerationContext& context) {
 void generation::generate_moves_bishop(GenerationContext& context) {
     auto& board = context.board;
 
-    bitboard bishops =
-        board.allied(Piece::BISHOPS)
-            .exclude(context.pinned.absolute | context.pinned.partial);
+    bitboard bishops = board.allied(Piece::BISHOPS);
+    bishops = bishops.exclude(context.pinned.absolute | context.pinned.partial);
 
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();
@@ -278,13 +275,13 @@ void generation::generate_moves_bishop(GenerationContext& context) {
 
     if (board.allied(Piece::KINGS) == 0) return;
 
-    bitboard partially_pinned = context.pinned.partial.mask(board.bishops);
+    bitboard pinned_partially = context.pinned.partial.mask(board.bishops);
 
     square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
     bitboard king_slider = magic::bishops::get_slider(iking);
 
-    for (; partially_pinned != 0; partially_pinned ^= partially_pinned.LSB()) {
-        square index = std::countr_zero((bitboard_t)partially_pinned);
+    for (; pinned_partially != 0; pinned_partially ^= pinned_partially.LSB()) {
+        square index = std::countr_zero((bitboard_t)pinned_partially);
 
         bitboard moves = magic::bishops::get_avail_moves(blockers, index);
         moves = moves.mask(king_slider);
@@ -298,9 +295,8 @@ void generation::generate_moves_bishop(GenerationContext& context) {
 void generation::generate_moves_queen(GenerationContext& context) {
     auto& board = context.board;
 
-    bitboard queens =
-        board.allied(Piece::QUEENS)
-            .exclude(context.pinned.absolute | context.pinned.partial);
+    bitboard queens = board.allied(Piece::QUEENS);
+    queens = queens.exclude(context.pinned.absolute | context.pinned.partial);
 
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();
@@ -323,13 +319,13 @@ void generation::generate_moves_queen(GenerationContext& context) {
 
     square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
 
-    bitboard diagonal_pins = context.pinned.partial.mask(board.queens)
-                                 .mask(magic::bishops::get_slider(iking));
+    bitboard pins_diagonal = context.pinned.partial.mask(board.queens);
+    pins_diagonal = pins_diagonal.mask(magic::bishops::get_slider(iking));
 
     bitboard king_slider = magic::bishops::get_slider(iking);
 
-    for (; diagonal_pins != 0; diagonal_pins ^= diagonal_pins.LSB()) {
-        square index = std::countr_zero((bitboard_t)diagonal_pins);
+    for (; pins_diagonal != 0; pins_diagonal ^= pins_diagonal.LSB()) {
+        square index = std::countr_zero((bitboard_t)pins_diagonal);
 
         bitboard moves =
             magic::bishops::get_avail_moves(blockers, index).mask(king_slider);
@@ -339,13 +335,13 @@ void generation::generate_moves_queen(GenerationContext& context) {
         context.bulk(Piece::QUEENS, index, moves, captures);
     }
 
-    bitboard straight_pins = context.pinned.partial.mask(board.queens)
-                                 .mask(magic::rooks::get_slider(iking));
+    bitboard pins_straight = context.pinned.partial.mask(board.queens);
+    pins_straight = pins_straight.mask(magic::rooks::get_slider(iking));
 
     king_slider = magic::rooks::get_slider(iking);
 
-    for (; straight_pins != 0; straight_pins ^= straight_pins.LSB()) {
-        square index = std::countr_zero((bitboard_t)straight_pins);
+    for (; pins_straight != 0; pins_straight ^= pins_straight.LSB()) {
+        square index = std::countr_zero((bitboard_t)pins_straight);
 
         bitboard moves =
             magic::rooks::get_avail_moves(blockers, index).mask(king_slider);
@@ -366,21 +362,21 @@ consteval std::array<bitboard, 64> intialize_king_table() {
         uint8_t row = index.row();
         uint8_t column = index.column();
 
-        auto set_move = [&](int row, int col) {
+        auto move_set = [&](int row, int col) {
             if (row >= 0 && row < 8 && col >= 0 && col < 8)
                 moves[index] |= square::at(row, col).bb();
         };
 
-        set_move(row + 1, column + 1);
-        set_move(row + 1, column);
-        set_move(row + 1, column - 1);
+        move_set(row + 1, column + 1);
+        move_set(row + 1, column);
+        move_set(row + 1, column - 1);
 
-        set_move(row, column + 1);
-        set_move(row, column - 1);
+        move_set(row, column + 1);
+        move_set(row, column - 1);
 
-        set_move(row - 1, column + 1);
-        set_move(row - 1, column);
-        set_move(row - 1, column - 1);
+        move_set(row - 1, column + 1);
+        move_set(row - 1, column);
+        move_set(row - 1, column - 1);
     }
 
     return moves;
