@@ -347,3 +347,13 @@ kings = 5
 fen = "8/8/7b/8/5P2/8/8/2K5 w - - 0 1"
 pawns = 0
 kings = 5
+
+[[generationcount.knightpins]]
+fen = "b7/8/2N5/8/4K3/8/8/8 w - - 0 1"
+knights = 0
+kings = 8
+
+[[generationcount.knightpins]]
+fen = "8/8/8/8/r1N1K3/8/8/8 w - - 0 1"
+knights = 0
+kings = 8
