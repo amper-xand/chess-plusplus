@@ -199,6 +199,7 @@ void generation::generate_moves_knight(GenerationContext& context) {
     auto& board = context.board;
 
     bitboard knights = board.allied(Piece::KNIGHTS);
+    knights = knights.exclude(context.pinned.absolute);
 
     bitboard capturable = board.enemies();
     bitboard blockers = board.allies();
