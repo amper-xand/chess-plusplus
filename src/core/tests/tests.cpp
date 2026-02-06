@@ -73,8 +73,8 @@ void test_reversible_move_sequence(Board& board, int depth) {
     auto moves = generation::generate_moves(board);
 
     for (const Move& m : moves) {
-        board.play(m);
-        board.unplay(m);
+        auto s = board.play(m);
+        board.unplay(m, s);
 
         ASSERT_EQ(board, original) << std::format(
             "Board mismatch after unmaking move at depth {}\n", depth
@@ -87,9 +87,9 @@ void test_reversible_move_sequence(Board& board, int depth) {
     // check its branches
 
     for (const Move& m : moves) {
-        board.play(m);
+        auto s = board.play(m);
         test_reversible_move_sequence(board, depth - 1);
-        board.unplay(m);
+        board.unplay(m, s);
     }
 }
 
