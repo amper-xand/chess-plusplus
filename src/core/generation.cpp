@@ -343,6 +343,7 @@ void generation::generate_moves_queen(GenerationContext& context) {
             magic::rooks::get_avail_moves(blockers, index);
 
         moves = moves.exclude(blockers ^ capturable);
+        moves = moves.mask(context.allowed_squares);
 
         bitboard captures = moves.mask(capturable);
 
@@ -350,6 +351,8 @@ void generation::generate_moves_queen(GenerationContext& context) {
     }
 
     if (board.allied(Piece::KINGS) == 0) return;
+
+    if (context.in_check) return;
 
     square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
 
