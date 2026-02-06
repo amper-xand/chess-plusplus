@@ -298,6 +298,7 @@ void generation::generate_moves_bishop(GenerationContext& context) {
 
         bitboard moves = magic::bishops::get_avail_moves(blockers, index);
         moves = moves.exclude(blockers ^ capturable);
+        moves = moves.mask(context.allowed_squares);
 
         bitboard captures = moves.mask(capturable);
 
@@ -305,6 +306,8 @@ void generation::generate_moves_bishop(GenerationContext& context) {
     }
 
     if (board.allied(Piece::KINGS) == 0) return;
+
+    if (context.in_check) return;
 
     bitboard pinned_partially = context.pinned.partial.mask(board.bishops);
 
