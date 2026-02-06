@@ -557,4 +557,95 @@ void generation::generate_bitboard_pieces_pinned(
     partial = partial;
 }
 
+/*
+ * Sets a bitboard of squares that allow a piece to block a check.
+ * King moves are considered evasions not blocks.
+ *
+ * Returns `true` if the check can be blocked.
+ * Returns `false` if only the king can evade the block.
+ */
+bool generation::get_bitboard_check_blocks(
+    GenerationContext& context, bitboard& check_blocks) {
+    auto& board = context.board;
+
+    // HANDLE EN PASSANT
+
+    bitboard king = board.allied(Piece::KINGS);
+    square iking = std::countr_zero((bitboard_t)king);
+
+    struct {
+        bitboard knight;
+        bitboard diagonal;
+        bitboard straight;
+        bitboard pawn;
+    } check_pattern, checking_piece;
+
+    check_pattern.knight = knights_moves[iking];
+    checking_piece.knight = check_pattern.knight & board.enemy(Piece::KNIGHTS);
+
+    if (checking_piece.knight != 0) {
+        // Cannot block check
+        check_blocks = checking_piece.knight;
+        return true;  // NOTE: Can optimize the generation by detecting which
+                      // pieces can capture the knight directly.
+    }
+
+    // GET ATTACKING SLIDER
+    check_pattern.diagonal =
+        magic::bishops::get_avail_moves(board.all(), iking);
+    checking_piece.diagonal =
+        board.enemies().mask(board.bishops | board.queens);
+
+    check_pattern.straight =
+        magic::bishops::get_avail_moves(board.all(), iking);
+    checking_piece.straight = board.enemies().mask(board.rooks | board.queens);
+
+    check_pattern.pawn =
+        king.exclude(bitboard::masks::file(0)).forward(board.turn, 7);
+    check_pattern.pawn |=
+        king.exclude(bitboard::masks::file(7)).forward(board.turn, 9);
+
+    checking_piece.pawn = board.enemy(Piece::PAWNS).mask(check_pattern.pawn);
+
+    bitboard all_attackers =
+        checking_piece.diagonal | checking_piece.straight | checking_piece.pawn;
+
+    if (std::popcount((bitboard_t)all_attackers) != 1) {
+        // Cannot block check
+        check_blocks = 0;
+        return false;
+    }
+
+    if (0 != checking_piece.pawn) {
+        check_blocks = checking_piece.pawn;
+        return true;
+    }
+
+    // GET RAY TO CHECKING PIECE
+
+    bitboard checking_ray;
+
+    if (0 != checking_piece.diagonal) {
+        square attacker = std::countr_zero((bitboard_t)checking_piece.diagonal);
+
+        checking_ray = check_pattern.diagonal.mask(
+            magic::bishops::get_avail_moves(board.all(), attacker));
+
+        checking_ray |= checking_piece.diagonal;
+    }
+
+    if (0 != checking_piece.straight) {
+        square attacker = std::countr_zero((bitboard_t)checking_piece.straight);
+
+        checking_ray = check_pattern.straight.mask(
+            magic::rooks::get_avail_moves(board.all(), attacker));
+
+        checking_ray |= checking_piece.straight;
+    }
+
+    return true;
+
+    // TODO: GENERATE MOVES ONLY ON THE CHECKING RAY (DONE I THINK)
+}
+
 }  // namespace core
