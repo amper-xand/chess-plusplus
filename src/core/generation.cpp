@@ -469,7 +469,14 @@ void generation::get_bitboard_squares_attacked(
 
 }
 
-void generation::generate_bitboard_pieces_pinned(
+/*
+ * Sets bitboards of pieces of pieces that
+ * are between a the king and an enemy slider.
+ *
+ * `absolute` contains pieces that cannot move at all.
+ * `partial`  contains pieces that can move along the pin.
+ */
+void generation::get_bitboard_pieces_pinned(
     GenerationContext& context, bitboard& absolute, bitboard& partial) {
     auto& board = context.board;
 
