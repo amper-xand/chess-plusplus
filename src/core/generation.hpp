@@ -46,9 +46,11 @@ void generate_moves_queen(GenerationContext& context);
 
 void generate_moves_king(GenerationContext& context);
 
-bitboard generate_bitboard_squares_attacked(GenerationContext& context);
+void get_bitboard_squares_attacked(GenerationContext& context, bitboard& attacked);
 
-void generate_bitboard_pieces_pinned(
+void get_bitboard_pieces_pinned(
     GenerationContext& context, bitboard& absolute, bitboard& partial);
+
+bool get_bitboard_check_blocks(GenerationContext& context, bitboard& check_blocks);
 
 }  // namespace core::generation
