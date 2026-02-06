@@ -143,6 +143,11 @@ void generation::generate_moves_pawn(GenerationContext& context) {
     captures_left = captures_left.mask(capturable);
     captures_right = captures_right.mask(capturable);
 
+    for (auto moves :
+        {&advances_single, &advances_double, &captures_left, &captures_right}) {
+        *moves = moves->mask(context.allowed_squares);
+    }
+
     for (; advances_single != 0; advances_single ^= advances_single.LSB()) {
         square index = std::countr_zero((bitboard_t)advances_single);
 
