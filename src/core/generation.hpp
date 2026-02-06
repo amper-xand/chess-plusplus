@@ -22,6 +22,9 @@ class GenerationContext {
     } pinned;
 
     bitboard attacked_squares = 0;
+    bitboard allowed_squares = bitboard::masks::fullboard;
+
+    bool in_check = false;
 
     GenerationContext(const Board& board) : board(board) {}
 
