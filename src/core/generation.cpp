@@ -34,14 +34,35 @@ std::vector<Move> generation::GenerationContext::get_generated_moves() {
     return std::vector(moves.begin(), moves.begin() + nxt);
 }
 
+/*
+ * Generates all legal moves for the side to move.
+ *
+ * Initializes a GenerationContext for the given board
+ * to store auxiliary calculation
+ */
 std::vector<Move> generation::generate_moves(const Board& board) {
     GenerationContext context(board);
 
-    context.attacked_squares =
-        generation::generate_bitboard_squares_attacked(context);
+    generation::get_bitboard_squares_attacked(
+        context, context.attacked_squares);
 
-    generation::generate_bitboard_pieces_pinned(
+    generation::get_bitboard_pieces_pinned(
         context, context.pinned.absolute, context.pinned.partial);
+
+    context.in_check =
+        0 != context.board.allied(Piece::KINGS).mask(context.attacked_squares);
+
+    if (context.in_check) {
+        // TODO: check generation path (WORKING 0N THIS)
+        // TEST: MAKE TESTS FOR THIS
+        bool can_block_check = generation::get_bitboard_check_blocks(
+            context, context.allowed_squares);
+
+        if (!can_block_check) {
+            generate_moves_king(context);
+            return context.get_generated_moves();
+        }
+    }
 
     generation::generate_moves_pawn(context);
     generation::generate_moves_knight(context);
