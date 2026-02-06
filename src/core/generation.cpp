@@ -9,11 +9,23 @@ namespace core {
 
 /***************************# Main Generation Path #***************************/
 
-//
+/*
+ * Returns a reference to the next available Move slot
+ * and advances the internal insertion index.
+ */
 Move& generation::GenerationContext::next() { return moves.at(nxt++); }
 
+/*
+ * Generates individual Move objects from precomputed bitboards.
+ *
+ * Iterates over all set bits in `moves`, treating each bit as a destination
+ * square reachable by `moved` from `origin`.
+ *
+ * If the destination square is also set in `captures`, the move is marked
+ * as a capture and the captured piece is read from the board at that square.
+ */
 void generation::GenerationContext::bulk(
-    Piece moved, square from, bitboard moves, bitboard captures) {
+    Piece moved, square origin, bitboard moves, bitboard captures) {
     for (; moves != 0; moves ^= moves.LSB()) {
         square index = std::countr_zero((bitboard_t)moves);
 
@@ -21,7 +33,7 @@ void generation::GenerationContext::bulk(
 
         move.moved = moved;
 
-        move.from = from;
+        move.from = origin;
         move.to = index;
 
         if (captures[index]) {
@@ -30,6 +42,12 @@ void generation::GenerationContext::bulk(
     }
 }
 
+/*
+ * Returns a copy of all moves generated so far.
+ *
+ * Copies the range `[moves.begin(), moves.begin() + nxt)` into a new vector,
+ * containing only the moves that were written via the generation context.
+ */
 std::vector<Move> generation::GenerationContext::get_generated_moves() {
     return std::vector(moves.begin(), moves.begin() + nxt);
 }
