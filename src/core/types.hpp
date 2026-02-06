@@ -246,6 +246,18 @@ struct Move {
 
     Piece moved = Piece::NONE;
     Piece target = Piece::NONE;
+
+    Piece promotion = Piece::NONE;
+
+    // clang-format off
+
+    //
+    bool en_passant : 1 = 0; // set when (enabling ep) or (taking ep)
+    bool castle     : 1 = 0; // set when castling
+    bool check      : 1 = 0; // set when moving piece causes check
+    bool mate       : 1 = 0; // set when check causes mate
+
+    // clang-format on
 };
 
 /*
