@@ -89,6 +89,9 @@ void generation::generate_moves_pawn(GenerationContext& context) {
     bitboard capturable = board.enemies();
     bitboard blockers = board.all();
 
+    // set bit for en passant capture
+    capturable |= board.state.en_passant.bb();
+
     // Advance the pawns then remove those who were blocked
     bitboard advances_single = pawns;
     advances_single = advances_single.forward(board.turn, 8);
@@ -164,8 +167,10 @@ void generation::generate_moves_pawn(GenerationContext& context) {
         Move& m = context.next();
 
         m.moved = Piece::PAWNS;
-        m.from = board.turn.isWhite() ? index.down() : index.up();
+        m.from = board.turn.isWhite() ? index.down(2) : index.up(2);
         m.to = index;
+
+        m.en_passant = true;
     }
 
     for (; captures_left != 0; captures_left ^= captures_left.LSB()) {
@@ -177,6 +182,11 @@ void generation::generate_moves_pawn(GenerationContext& context) {
         m.from = (board.turn.isWhite() ? index.down() : index.up()).right();
         m.to = index;
         m.target = board.piece(m.to);
+
+        if (index == board.en_passant) {
+            m.en_passant = true;
+            m.target = Piece::PAWNS;
+        }
     }
 
     for (; captures_right != 0; captures_right ^= captures_right.LSB()) {
@@ -188,6 +198,11 @@ void generation::generate_moves_pawn(GenerationContext& context) {
         m.from = (board.turn.isWhite() ? index.down() : index.up()).left();
         m.to = index;
         m.target = board.piece(m.to);
+
+        if (index == board.en_passant) {
+            m.en_passant = true;
+            m.target = Piece::PAWNS;
+        }
     }
 }
 
