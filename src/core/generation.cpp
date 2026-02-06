@@ -455,6 +455,39 @@ void generation::generate_moves_king(GenerationContext& context) {
 
     context.bulk(Piece::KINGS, index, moves, captures);
 
+    if (context.in_check) return;
+
+    bitboard left_blockers;
+    left_blockers = bitboard::masks::file(1) | bitboard::masks::file(2);
+    left_blockers &=
+        board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+    left_blockers &= blockers | context.attacked_squares;
+
+    if (board.get_castling_left() && left_blockers == 0) {
+        Move& m = context.next();
+
+        m.moved = Piece::KINGS;
+        m.from = index;
+        m.to = index + 2;
+
+        m.castle = true;
+    }
+
+    bitboard right_blockers;
+    right_blockers = bitboard::masks::file(6) | bitboard::masks::file(5) |
+        bitboard::masks::file(4);
+    right_blockers &=
+        board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+
+    if (board.get_castling_right() && right_blockers == 0) {
+        Move& m = context.next();
+
+        m.moved = Piece::KINGS;
+        m.from = index;
+        m.to = index - 2;
+
+        m.castle = true;
+    }
 }
 
 /***********************# Context Bitboards Generation #***********************/
