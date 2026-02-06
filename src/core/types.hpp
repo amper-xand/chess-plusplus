@@ -254,20 +254,58 @@ struct Move {
 struct Board {
     // clang-format off
 
-        union  { bitboard colors[2]; 
-        struct { bitboard_t black, white; }; };
+    union  { bitboard colors[2]; 
+    struct { bitboard_t black, white; }; };
 
-        union  { bitboard pieces[6];
-        struct { bitboard_t pawns, knights, bishops, rooks, queens, kings; }; };
+    union  { bitboard pieces[6];
+    struct { bitboard_t pawns, knights, bishops, rooks, queens, kings; }; };
 
-        Color turn;
+    Color turn;
+
+    struct State {
+        struct Castling {
+            bool white_left;
+            bool white_right;
+            bool black_left;
+            bool black_right;
+        };
+
+        State::Castling castling{false, false, false, false};
+        square en_passant = 65;
+        uint8_t fifty_move_rule_counter = 0;
+    };
+
+    union {
+        State state;
+        struct {
+            State::Castling castling{false, false, false, false};
+            square_t en_passant = 65;
+            uint8_t fifty_move_rule_counter = 0;
+        };
+    };
 
     // clang-format on
 
+    inline bool get_castling_left() const {
+        return turn ? castling.white_left : castling.black_left;
+    }
+
+    inline bool get_castling_right() const {
+        return turn ? castling.white_right : castling.black_right;
+    }
+
+    inline void set_castling_left(bool value) {
+        (turn ? castling.white_left : castling.black_left) = value;
+    }
+
+    inline void set_castling_right(bool value) {
+        (turn ? castling.white_right : castling.black_right) = value;
+    }
+
     Board() : colors{bitboard(0)}, pieces{bitboard(0)} {}
 
-    void play(const Move move);
-    void unplay(const Move move);
+    const State play(const Move move);
+    void unplay(const Move move, const State prev);
 
     inline bitboard all() const { return white | black; }
 
