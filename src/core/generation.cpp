@@ -233,8 +233,9 @@ void generation::generate_moves_knight(GenerationContext& context) {
     for (; knights != 0; knights ^= knights.LSB()) {
         square index = std::countr_zero((bitboard_t)knights);
 
-        context.bulk(Piece::KNIGHTS, index,
-            knights_moves[index].exclude(blockers), capturable);
+        bitboard moves = knights_moves[index].exclude(blockers);
+        moves = moves.mask(context.allowed_squares);
+        context.bulk(Piece::KNIGHTS, index, moves, capturable);
     }
 }
 
