@@ -403,16 +403,18 @@ void generation::generate_moves_king(GenerationContext& context) {
     bitboard captures = moves.mask(capturable);
 
     context.bulk(Piece::KINGS, index, moves, captures);
+
 }
 
 /***********************# Context Bitboards Generation #***********************/
 
-//
-bitboard generation::generate_bitboard_squares_attacked(
-    GenerationContext& context) {
+/*
+ * Sets a bitboard of squares that are attacked by the enemy pieces.
+ */
+void generation::get_bitboard_squares_attacked(
+    GenerationContext& context, bitboard& attacked_squares) {
     auto board = context.board;
 
-    bitboard attacked_squares = 0;
 
     struct {
         bitboard diagonal_sliders;
@@ -465,7 +467,6 @@ bitboard generation::generate_bitboard_squares_attacked(
         attacked_squares |=
             king_moves[std::countr_zero((bitboard_t)board.enemy(Piece::KINGS))];
 
-    return attacked_squares;
 }
 
 void generation::generate_bitboard_pieces_pinned(
