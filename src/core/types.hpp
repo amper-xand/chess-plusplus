@@ -358,6 +358,32 @@ struct Board {
 
         if (this->black != other.black) return false;
 
+        if (this->turn != other.turn) return false;
+
+        if (this->state.fifty_move_rule_counter !=
+            other.state.fifty_move_rule_counter)
+            return false;
+
+        if (this->state.en_passant !=  //
+            other.state.en_passant)
+            return false;
+
+        if (this->state.castling.white_left !=  //
+            other.state.castling.white_left)
+            return false;
+
+        if (this->state.castling.black_left !=  //
+            other.state.castling.black_left)
+            return false;
+
+        if (this->state.castling.white_right !=
+            other.state.castling.white_right)
+            return false;
+
+        if (this->state.castling.black_right !=
+            other.state.castling.black_right)
+            return false;
+
         return true;
     }
 
