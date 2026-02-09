@@ -15,9 +15,11 @@ struct malformed_data : parse_error {
     explicit malformed_data(const std::string& msg) : parse_error(msg) {}
 };
 
-std::tuple<Piece, Color> cto_piece(char c);
-square strto_square(std::string_view str);
+std::tuple<Piece, Color> cto_piece(char c) noexcept(false);
+square strto_square(std::string_view str) noexcept(false);
 
+
+// Represents the fields of the Forsyth–Edwards Notation
 struct FEN {
     std::string placement_data;
     Color active_color;
@@ -28,7 +30,7 @@ struct FEN {
 
     static const FEN parse_string(std::string_view fen) noexcept(false);
 
-    Board get_board();
+    Board get_board() noexcept(false);
 
    protected:
     void parse_field(int index, std::string_view data) noexcept(false);

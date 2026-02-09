@@ -112,6 +112,9 @@ core::square core::notation::FEN::parse_en_passant_target_square(
     return strto_square(str);
 }
 
+// Takes a string formated with Forsyth–Edwards Notation
+// then it parses every field.
+// If the last fields aren't included then it fills them with defaults.
 const core::notation::FEN core::notation::FEN::parse_string(
     std::string_view fen) {
     FEN parsed = {.active_color = Color::WHITE,
@@ -136,6 +139,9 @@ const core::notation::FEN core::notation::FEN::parse_string(
     return parsed;
 }
 
+// Parses the data of a field and parses it base on its position.
+// 
+// Helper function to fill data during parsing.
 void core::notation::FEN::parse_field(int index, std::string_view data) {
     constexpr int PLACEMENT_DATA = 0;
     constexpr int ACTIVE_COLOR = 1;
