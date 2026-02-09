@@ -30,6 +30,7 @@ set(CHESSY_CORE_FILES
     src/core/generation.cpp
     src/core/magic.cpp
     src/core/types.cpp
+    src/core/notation.cpp
 )
 
 # main binary, the engine
