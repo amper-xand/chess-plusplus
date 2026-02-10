@@ -1,7 +1,7 @@
 #include "types.hpp"
 
 #include <stdexcept>
-#include <string_view>
+#include <string>
 
 namespace core::notation {
 
@@ -18,6 +18,10 @@ struct malformed_data : parse_error {
 std::tuple<Piece, Color> cto_piece(char c) noexcept(false);
 square strto_square(std::string_view str) noexcept(false);
 
+char piece_toc(Piece piece, Color color) noexcept(false);
+std::string piece_toname(Piece piece) noexcept(false);
+
+const std::string draw_board_ascii(const Board& board) noexcept(false);
 
 // Represents the fields of the Forsyth–Edwards Notation
 struct FEN {
@@ -30,7 +34,7 @@ struct FEN {
 
     static const FEN parse_string(std::string_view fen) noexcept(false);
 
-    Board get_board() noexcept(false);
+    Board get_board() const noexcept(false);
 
    protected:
     void parse_field(int index, std::string_view data) noexcept(false);

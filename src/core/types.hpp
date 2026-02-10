@@ -2,10 +2,6 @@
 
 #include <stdint.h>
 
-#ifndef CORE_PRIMITIVES_ONLY
-#include <string>
-#endif
-
 namespace core {
 
 typedef uint8_t square_t;

@@ -1,11 +1,13 @@
 #include "notation.hpp"
 
 #include <cctype>
-#include <exception>
 #include <format>
-#include <ranges>
 #include <string>
-#include <string_view>
+
+#include <exception>
+
+#include <functional>
+#include <ranges>
 
 std::tuple<core::Piece, core::Color> core::notation::cto_piece(char c) {
     Color color = !!std::isupper(c);
@@ -54,6 +56,69 @@ core::square core::notation::strto_square(std::string_view str) {
     int file = str[1] - '1';
 
     return square::at(rank, file);
+}
+
+char core::notation::piece_toc(Piece piece, Color color) {
+    // clang-format off
+    switch (piece) {
+        case Piece::PAWNS   : return color ? 'P' : 'p';
+        case Piece::KNIGHTS : return color ? 'N' : 'n';
+        case Piece::BISHOPS : return color ? 'B' : 'b';
+        case Piece::ROOKS   : return color ? 'R' : 'r';
+        case Piece::QUEENS  : return color ? 'Q' : 'q';
+        case Piece::KINGS   : return color ? 'K' : 'k';
+
+        case Piece::NONE: return '-';
+    }
+
+    throw notation::invalid_token(std::format( //
+                "ERROR:: Could not convert core::Piece {} into char", (piece_t) piece));
+    // clang-format on
+}
+
+std::string core::notation::piece_toname(Piece piece) {
+    if (piece == Piece::PAWNS) return "pawn";
+    if (piece == Piece::KNIGHTS) return "knight";
+    if (piece == Piece::BISHOPS) return "bishop";
+    if (piece == Piece::ROOKS) return "rook";
+    if (piece == Piece::QUEENS) return "queen";
+    if (piece == Piece::KINGS) return "king";
+
+    throw notation::invalid_token(std::format(  //
+        "ERROR:: Could not map core::Piece {} into name", (piece_t)piece));
+}
+
+const std::string core::notation::draw_board_ascii(const Board& board) {
+    using namespace std::placeholders;
+
+    std::string str;
+
+    for (int rank : std::views::iota(0, 8) | std::views::reverse) {
+        auto files = std::views::iota(0, 8) | std::views::reverse;
+        auto indices =
+            files | std::views::transform(std::bind(square::at, rank, _1));
+
+        auto pieces = indices | std::views::transform([&](square index) {
+            return board.piece(index);
+        });
+
+        auto colors = indices | std::views::transform([&](square index) {
+            return board.color(index);
+        });
+
+        auto tiles_chars =
+            std::views::zip_transform(notation::piece_toc, pieces, colors);
+
+        for (auto tile : tiles_chars) {
+            str += ' ';
+            str += tile;
+            str += ' ';
+        }
+
+        str += '\n';
+    }
+
+    return str;
 }
 
 core::Color core::notation::FEN::parse_active_color(char c) {
@@ -140,7 +205,7 @@ const core::notation::FEN core::notation::FEN::parse_string(
 }
 
 // Parses the data of a field and parses it base on its position.
-// 
+//
 // Helper function to fill data during parsing.
 void core::notation::FEN::parse_field(int index, std::string_view data) {
     constexpr int PLACEMENT_DATA = 0;
@@ -213,7 +278,7 @@ void core::notation::FEN::parse_field(int index, std::string_view data) {
     }
 }
 
-core::Board core::notation::FEN::get_board() {
+core::Board core::notation::FEN::get_board() const {
     namespace views = std::views;
 
     Board board;
