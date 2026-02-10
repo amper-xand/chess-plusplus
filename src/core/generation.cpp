@@ -481,7 +481,12 @@ void generation::generate_moves_king(GenerationContext& context) {
         board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
     left_blockers &= blockers | context.attacked_squares;
 
-    if (board.get_castling_left() && left_blockers == 0) {
+    bitboard left_rook = board.allied(Piece::ROOKS);
+    left_rook &= bitboard::masks::file(0); 
+    left_rook &=
+        board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+
+    if (board.get_castling_left() && left_blockers == 0 & left_rook != 0) {
         Move& m = context.next();
 
         m.moved = Piece::KINGS;
@@ -497,7 +502,12 @@ void generation::generate_moves_king(GenerationContext& context) {
     right_blockers &=
         board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
 
-    if (board.get_castling_right() && right_blockers == 0) {
+    bitboard right_rook = board.allied(Piece::ROOKS);
+    right_rook &= bitboard::masks::file(7);
+    right_rook &=
+        board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+
+    if (board.get_castling_right() && right_blockers == 0 && right_rook != 0) {
         Move& m = context.next();
 
         m.moved = Piece::KINGS;
