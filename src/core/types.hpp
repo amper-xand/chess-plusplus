@@ -223,9 +223,6 @@ struct Piece : public LiteralWrapper<piece_t> {
     static constexpr piece_t All[]{
         PAWNS, KNIGHTS, BISHOPS, ROOKS, QUEENS, KINGS};
 
-    static Piece from_character_repr(char c);
-    char to_character_repr(Color color);
-
     inline constexpr bool isPawn() const { return value_ == PAWNS; }
     inline constexpr bool isKnight() const { return value_ == KNIGHTS; }
     inline constexpr bool isBishop() const { return value_ == BISHOPS; }
@@ -246,13 +243,10 @@ struct Move {
     Piece promotion = Piece::NONE;
 
     // clang-format off
-
-    //
     bool en_passant : 1 = 0; // set when (enabling ep) or (taking ep)
     bool castle     : 1 = 0; // set when castling
     bool check      : 1 = 0; // set when moving piece causes check
     bool mate       : 1 = 0; // set when check causes mate
-
     // clang-format on
 };
 
@@ -382,10 +376,6 @@ struct Board {
 
         return true;
     }
-
-    static Board parse_fen_repr(std::string fen);
-
-    void print();
 };
 
 #else

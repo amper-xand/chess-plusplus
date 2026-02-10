@@ -14,5 +14,5 @@ int main() {
 
     auto moves = core::generation::generate_moves(board);
 
-    board.print();
+    std::print("{}", core::notation::draw_board_ascii(board));
 }

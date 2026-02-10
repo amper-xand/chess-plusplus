@@ -1,4 +1,5 @@
 #include <core/generation.hpp>
+#include <core/notation.hpp>
 #include <core/types.hpp>
 
 #include <gtest/gtest.h>
@@ -35,23 +36,14 @@ class MoveGenerationTest : public ::testing::TestWithParam<PositionTestCase> {};
 TEST_P(MoveGenerationTest, MatchesExpectedMoveCounts) {
     const auto& test_case = GetParam();
 
-    auto board = Board::parse_fen_repr(test_case.fen);
+    auto board = notation::FEN::parse_string(test_case.fen).get_board();
     auto moves = generation::generate_moves(board);
 
     for (Piece piece : Piece::All) {
         int produced_count = std::ranges::count_if(
             moves, [&](Move move) { return move.moved == piece; });
 
-        std::string piece_name = [&]() {
-            if (piece == Piece::PAWNS) return "pawn";
-            if (piece == Piece::KNIGHTS) return "knight";
-            if (piece == Piece::BISHOPS) return "bishop";
-            if (piece == Piece::ROOKS) return "rook";
-            if (piece == Piece::QUEENS) return "queen";
-            if (piece == Piece::KINGS) return "king";
-
-            return "[[INVALID]]";
-        }();
+        std::string piece_name = notation::piece_toname(piece);
 
         EXPECT_EQ(produced_count, test_case.moves.pieces[piece])
             << std::format("FEN: {}\n", test_case.fen)
@@ -96,13 +88,15 @@ void test_reversible_move_sequence(Board& board, int depth) {
 TEST(FENMoveUnmoveTest, PlaysAndUnplaysWithoutCorruption) {
     std::string fen =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    Board board = Board::parse_fen_repr(fen);
+    Board board = notation::FEN::parse_string(fen).get_board();
 
     EXPECT_NO_FATAL_FAILURE({ test_reversible_move_sequence(board, kDepth); });
 }
 
 void parse_test_cases_from_file(std::string cases_file) {
     toml::parse_result result = toml::parse_file(cases_file);
+
+    std::println("INFO:: Parsing file {}", cases_file);
 
     if (!result) {
         std::println(stderr, "ERROR:: Could not parse file {}, {}", cases_file,
