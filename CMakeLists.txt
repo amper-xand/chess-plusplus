@@ -34,7 +34,7 @@ set(CHESSY_CORE_FILES
 )
 
 # main binary, the engine
-add_executable(cheesy_engine
+add_executable(engine
     src/main.cpp
 
     ${CHESSY_CORE_FILES}
