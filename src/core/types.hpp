@@ -252,43 +252,97 @@ struct Move {
     // clang-format on
 };
 
-/*
- * Represents game state
- * */
-struct Board {
-    // clang-format off
 
+/*
+ * Represents pieces distributions and colors
+ */
+struct Positions {
+
+    // clang-format off
     union  { bitboard colors[2]; 
     struct { bitboard_t black, white; }; };
 
     union  { bitboard pieces[6];
     struct { bitboard_t pawns, knights, bishops, rooks, queens, kings; }; };
 
+    Positions() : colors{bitboard(0)}, pieces{bitboard(0)} {}
+
+    inline bitboard all() const { return white | black; }
+
+    inline Color color(square index) const {
+        return Color::Both[bitboard(white)[index]];
+    }
+
+    inline Piece piece(square index) const {
+        for (auto piece : Piece::All) {
+            if (pieces[piece][index]) return piece;
+        }
+
+        return Piece::NONE;
+    }
+
+    constexpr inline bool operator==(const Positions &other) const {
+        for (auto piece : Piece::All) {
+            if (this->pieces[piece] != other.pieces[piece]) return false;
+        }
+
+        if (this->white != other.white) return false;
+
+        if (this->black != other.black) return false;
+
+        return true;
+    }
+};
+
+
+/*
+ * Represents the state of a game
+ */
+struct State {
     Color turn;
 
-    struct State {
-        struct Castling {
-            bool white_left;
-            bool white_right;
-            bool black_left;
-            bool black_right;
-        };
-
-        State::Castling castling{false, false, false, false};
-        square en_passant = 65;
-        uint8_t fifty_move_rule_counter = 0;
+    // clang-format off
+    struct Castling {
+        bool white_left  : 1;
+        bool white_right : 1;
+        bool black_left  : 1;
+        bool black_right : 1;
     };
-
-    union {
-        State state;
-        struct {
-            State::Castling castling{false, false, false, false};
-            square_t en_passant = 65;
-            uint8_t fifty_move_rule_counter = 0;
-        };
-    };
-
     // clang-format on
+
+    State::Castling castling{false, false, false, false};
+    square en_passant = square::out_of_bounds;
+    uint8_t fifty_move_rule_counter = 0;
+
+    constexpr inline bool operator==(const State &other) const {
+        if (this->turn != other.turn) return false;
+
+        if (this->fifty_move_rule_counter !=
+            other.fifty_move_rule_counter)
+            return false;
+
+        if (this->en_passant !=  //
+            other.en_passant)
+            return false;
+
+        if (this->castling.white_left !=  //
+            other.castling.white_left)
+            return false;
+
+        if (this->castling.black_left !=  //
+            other.castling.black_left)
+            return false;
+
+        if (this->castling.white_right !=
+            other.castling.white_right)
+            return false;
+
+        if (this->castling.black_right !=
+            other.castling.black_right)
+            return false;
+
+        return true;
+    }
 
     inline bool get_castling_left() const {
         return turn ? castling.white_left : castling.black_left;
@@ -306,12 +360,16 @@ struct Board {
         (turn ? castling.white_right : castling.black_right) = value;
     }
 
-    Board() : colors{bitboard(0)}, pieces{bitboard(0)} {}
+};
+
+/*
+ * Represents game state
+ * */
+struct Board : public Positions, public State {
+    Board() : Positions() {}
 
     const State play(const Move move);
     void unplay(const Move move, const State prev);
-
-    inline bitboard all() const { return white | black; }
 
     inline bitboard allies() const { return colors[turn]; }
 
@@ -325,58 +383,8 @@ struct Board {
         return pieces[piece] & colors[!turn];
     }
 
-    inline bool occupied(square index) const {
-        return bitboard(white | black)[index];
-    }
-
-    inline Color color(square index) const {
-        return Color::Both[bitboard(white)[index]];
-    }
-
-    inline Piece piece(square index) const {
-        for (auto piece : Piece::All) {
-            if (pieces[piece][index]) return piece;
-        }
-
-        return Piece::NONE;
-    }
-
     constexpr inline bool operator==(const Board &other) const {
-        for (auto piece : Piece::All) {
-            if (this->pieces[piece] != other.pieces[piece]) return false;
-        }
-
-        if (this->white != other.white) return false;
-
-        if (this->black != other.black) return false;
-
-        if (this->turn != other.turn) return false;
-
-        if (this->state.fifty_move_rule_counter !=
-            other.state.fifty_move_rule_counter)
-            return false;
-
-        if (this->state.en_passant !=  //
-            other.state.en_passant)
-            return false;
-
-        if (this->state.castling.white_left !=  //
-            other.state.castling.white_left)
-            return false;
-
-        if (this->state.castling.black_left !=  //
-            other.state.castling.black_left)
-            return false;
-
-        if (this->state.castling.white_right !=
-            other.state.castling.white_right)
-            return false;
-
-        if (this->state.castling.black_right !=
-            other.state.castling.black_right)
-            return false;
-
-        return true;
+        return Positions::operator==(other) && State::operator==(other);
     }
 };
 

@@ -108,7 +108,7 @@ void generation::generate_moves_pawn(GenerationContext& context) {
     bitboard blockers = board.all();
 
     // set bit for en passant capture
-    capturable |= board.state.en_passant.bb();
+    capturable |= board.en_passant.bb();
 
     // Advance the pawns then remove those who were blocked
     bitboard advances_single = pawns;

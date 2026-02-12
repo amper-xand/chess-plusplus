@@ -12,6 +12,7 @@
 const core::Board::State core::Board::play(const Move move) {
     assert(move.moved.isValid());
 
+    State& state = static_cast<State&>(*this);
     State prev = state;
 
     // move the piece bit to its new position
@@ -34,7 +35,7 @@ const core::Board::State core::Board::play(const Move move) {
     }
 
     // clear the en en passant state
-    state.en_passant = 65;
+    state.en_passant = square::out_of_bounds;
 
     // capture en passant
     if (move.en_passant && !move.target.isNone()) {
@@ -128,8 +129,7 @@ void core::Board::unplay(const Move move, const State prev) {
     assert(move.moved.isValid());
 
     // return the board to its previous state
-    state = prev;
-    turn = !turn;
+    static_cast<State&>(*this) = prev;
 
     // move the piece to its original position
     // if there is a promotion this adds an extra pawn *
