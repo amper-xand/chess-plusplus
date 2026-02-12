@@ -129,6 +129,151 @@ const std::string core::notation::draw_board_ascii(const Board& board) {
     return str;
 }
 
+// Takes a string formated with Forsyth–Edwards Notation
+// then it parses every field.
+// If the last fields aren't included then it fills them with defaults.
+core::Board core::notation::FEN::parse_string(std::string_view fen) {
+    Board parsed;
+
+    parsed.active_color = Color::WHITE;
+    parsed.castling_availability = {true, true, true, true};
+    parsed.en_passant_target_square = square::out_of_bounds;
+    parsed.halfmove_clock = 0;
+    parsed.fullmove_number = 1;
+
+    auto fields = std::views::split(fen, ' ');
+
+    for (auto const [index, field] : std::views::enumerate(fields)) {
+        auto data = std::string_view(field.begin(), field.end());
+
+        try {
+            FEN::parse_fieldstr_into(parsed, index, data);
+        } catch (...) {
+            std::throw_with_nested(notation::parse_error(std::format(  //
+                "ERROR:: Failed to parse core::Board '{}'", fen)));
+        }
+    }
+
+    return parsed;
+}
+
+// Parses the data of a field and parses it base on its position.
+//
+// Helper function to fill data during parsing.
+void core::notation::FEN::parse_fieldstr_into(
+    Board& target, int index, std::string_view data) {
+    constexpr int PLACEMENT_DATA = 0;
+    constexpr int ACTIVE_COLOR = 1;
+    constexpr int CASTLING_AVAILABILITY = 2;
+    constexpr int EN_PASSANT_TARGET_SQUARE = 3;
+    constexpr int HALF_MOVE_CLOCK = 4;
+    constexpr int FULL_MOVE_NUMBER = 5;
+    constexpr int INVALID_FIELD = 6;
+
+    auto parse_or_throw =  //
+        [](auto&& parser, auto&& value, const char* field_name) {
+            try {
+                return parser(value);
+            } catch (...) {
+                std::throw_with_nested(notation::parse_error(std::format(
+                    "ERROR:: Failed parsing {} '{}'", field_name, value)));
+            }
+        };
+
+    if (index == PLACEMENT_DATA) {
+        static_cast<Positions&>(target) = parse_or_throw(  //
+            FEN::parse_placement_data, data, "PLACEMENT_DATA");
+        return;
+    }
+
+    if (index == ACTIVE_COLOR) {
+        target.active_color = parse_or_throw(  //
+            FEN::parse_active_color, data[0], "ACTIVE_COLOR");
+        return;
+    }
+
+    if (index == CASTLING_AVAILABILITY) {
+        target.castling_availability = parse_or_throw(  //
+            FEN::parse_castling_availability, data, "CASTLING_AVAILABILITY");
+        return;
+    }
+
+    if (index == EN_PASSANT_TARGET_SQUARE) {
+        target.en_passant_target_square = parse_or_throw(  //
+            FEN::parse_en_passant_target_square, data,
+            "EN_PASSANT_TARGET_SQUARE");
+        return;
+    }
+
+    if (index == HALF_MOVE_CLOCK) {
+        target.halfmove_clock = parse_or_throw(  //
+            [&](std::string_view data) { return std::stoi((std::string)data); },
+            data, "HALF_MOVE_CLOCK");
+        return;
+    }
+
+    if (index == FULL_MOVE_NUMBER) {
+        target.fullmove_number = parse_or_throw(  //
+            [&](std::string_view data) { return std::stoi((std::string)data); },
+            data, "FULL_MOVE_NUMBER");
+        return;
+    }
+
+    if (index >= INVALID_FIELD) {
+        throw notation::malformed_data(
+            std::format("ERROR:: Unexpected field '{}'", data));
+    }
+}
+
+core::Board::Positions core::notation::FEN::parse_placement_data(
+    std::string_view data) {
+    if (data.find_first_not_of("PNBRQKpnbrqk12345678/") !=
+        std::string_view::npos) {
+        throw notation::invalid_token(std::format(  //
+            "ERROR:: Unexpected token in '{}'"
+            "while parsing core::Board::Postions",
+            data));
+    }
+
+    namespace views = std::views;
+
+    Board::Positions parsed;
+
+    auto ranks = views::split(data, '/');
+
+    if (std::ranges::distance(ranks) != 8) {
+        throw notation::malformed_data(std::format(  //
+            "ERROR:: Expected field of length `8` got "
+            "data='{}' while creating Board",
+            ranks));
+    }
+
+    int rank = 7;
+
+    for (auto data : ranks) {
+        int file = 7;
+
+        for (char d : data) {
+            if (std::isdigit(d)) {
+                file -= d - '0';
+            } else {
+                auto [piece, color] = cto_piece(d);
+
+                square index = square::at(rank, file);
+
+                parsed.pieces[piece] |= index.bb();
+                parsed.colors[color] |= index.bb();
+
+                file--;
+            }
+        }
+
+        rank--;
+    }
+
+    return parsed;
+}
+
 core::Color core::notation::FEN::parse_active_color(char c) {
     if (c == 'w') {
         return Color::WHITE;
@@ -183,153 +328,6 @@ core::square core::notation::FEN::parse_en_passant_target_square(
     }
 
     return strto_square(str);
-}
-
-// Takes a string formated with Forsyth–Edwards Notation
-// then it parses every field.
-// If the last fields aren't included then it fills them with defaults.
-const core::notation::FEN core::notation::FEN::parse_string(
-    std::string_view fen) {
-    FEN parsed = {.active_color = Color::WHITE,
-        .castling_availability = {true, true, true, true},
-        .en_passant_target_square = square::out_of_bounds,
-        .half_move_clock = 0,
-        .full_move_number = 0};
-
-    auto fields = std::views::split(fen, ' ');
-
-    for (auto const [index, field] : std::views::enumerate(fields)) {
-        auto data = std::string_view(field.begin(), field.end());
-
-        try {
-            parsed.parse_field(index, data);
-        } catch (...) {
-            std::throw_with_nested(notation::parse_error(std::format(  //
-                "ERROR:: Failed to parse core::notation::FEN '{}'", fen)));
-        }
-    }
-
-    return parsed;
-}
-
-// Parses the data of a field and parses it base on its position.
-//
-// Helper function to fill data during parsing.
-void core::notation::FEN::parse_field(int index, std::string_view data) {
-    constexpr int PLACEMENT_DATA = 0;
-    constexpr int ACTIVE_COLOR = 1;
-    constexpr int CASTLING_AVAILABILITY = 2;
-    constexpr int EN_PASSANT_TARGET_SQUARE = 3;
-    constexpr int HALF_MOVE_CLOCK = 4;
-    constexpr int FULL_MOVE_NUMBER = 5;
-    constexpr int INVALID_FIELD = 6;
-
-    if (index == PLACEMENT_DATA) {
-        if (data.find_first_not_of("PNBRQKpnbrqk12345678/") !=
-            std::string_view::npos) {
-            throw notation::invalid_token(std::format(  //
-                "ERROR:: Unexpected token in '{}'"
-                "while parsing PLACEMENT_DATA ",
-                data));
-        }
-
-        this->placement_data = std::string(data);
-
-        return;
-    }
-
-    auto parse_or_throw =  //
-        [](auto&& parser, auto&& value, const char* field_name) {
-            try {
-                return parser(value);
-            } catch (...) {
-                std::throw_with_nested(notation::parse_error(std::format(
-                    "ERROR:: Failed parsing {} '{}'", field_name, value)));
-            }
-        };
-
-    if (index == ACTIVE_COLOR) {
-        this->active_color = parse_or_throw(  //
-            FEN::parse_active_color, data[0], "ACTIVE_COLOR");
-        return;
-    }
-
-    if (index == CASTLING_AVAILABILITY) {
-        this->castling_availability = parse_or_throw(  //
-            FEN::parse_castling_availability, data, "CASTLING_AVAILABILITY");
-        return;
-    }
-
-    if (index == EN_PASSANT_TARGET_SQUARE) {
-        this->en_passant_target_square = parse_or_throw(  //
-            FEN::parse_en_passant_target_square, data,
-            "EN_PASSANT_TARGET_SQUARE");
-        return;
-    }
-
-    if (index == HALF_MOVE_CLOCK) {
-        this->half_move_clock = parse_or_throw(  //
-            [&](std::string_view data) { return std::stoi((std::string)data); },
-            data, "HALF_MOVE_CLOCK");
-        return;
-    }
-
-    if (index == FULL_MOVE_NUMBER) {
-        this->half_move_clock = parse_or_throw(  //
-            [&](std::string_view data) { return std::stoi((std::string)data); },
-            data, "FULL_MOVE_NUMBER");
-        return;
-    }
-
-    if (index >= INVALID_FIELD) {
-        throw notation::malformed_data(
-            std::format("ERROR:: Unexpected field '{}'", data));
-    }
-}
-
-core::Board core::notation::FEN::get_board() const {
-    namespace views = std::views;
-
-    Board board;
-
-    auto ranks = views::split(this->placement_data, '/');
-
-    if (std::ranges::distance(ranks) != 8) {
-        throw notation::malformed_data(std::format(  //
-            "ERROR:: Expected field of length `8` got "
-            "data='{}' while creating Board",
-            ranks));
-    }
-
-    int rank = 7;
-
-    for (auto data : ranks) {
-        int file = 7;
-
-        for (char d : data) {
-            if (std::isdigit(d)) {
-                file -= d - '0';
-            } else {
-                auto [piece, color] = cto_piece(d);
-
-                square index = square::at(rank, file);
-
-                board.pieces[piece] |= index.bb();
-                board.colors[color] |= index.bb();
-
-                file--;
-            }
-        }
-
-        rank--;
-    }
-
-    board.active_color = this->active_color;
-    board.castling_availability = this->castling_availability;
-    board.en_passant_target_square = this->en_passant_target_square;
-    board.halfmove_clock = this->half_move_clock;
-
-    return board;
 }
 
 const core::notation::MoveLAN core::notation::MoveLAN::parse_string(

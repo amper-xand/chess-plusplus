@@ -24,35 +24,6 @@ std::string piece_toname(Piece piece) noexcept(false);
 
 const std::string draw_board_ascii(const Board& board) noexcept(false);
 
-// Represents the fields of the Forsyth–Edwards Notation
-struct FEN {
-    std::string placement_data;
-    Color active_color;
-    Board::State::Castling castling_availability;
-    square en_passant_target_square;
-    int half_move_clock;
-    int full_move_number;
-
-    static const FEN parse_string(std::string_view fen) noexcept(false);
-
-    static const FEN from_board(const Board& board);
-
-    std::string to_string();
-
-    Board get_board() const noexcept(false);
-
-   protected:
-    void parse_field(int index, std::string_view data) noexcept(false);
-
-    static Color parse_active_color(char c) noexcept(false);
-
-    static Board::State::Castling parse_castling_availability(  //
-        std::string_view str) noexcept(false);
-
-    static square parse_en_passant_target_square(  //
-        std::string_view str) noexcept(false);
-};
-
 // Represents the fields of a move in Long Algebraic Notation (as in UCI)
 struct MoveLAN {
     square from;
@@ -68,3 +39,23 @@ struct MoveLAN {
 };
 
 }  // namespace core::notation
+
+// Forsyth–Edwards Notation
+namespace core::notation::FEN {
+
+Board parse_string(std::string_view fen) noexcept(false);
+
+void parse_fieldstr_into(
+    Board& target, int index, std::string_view data) noexcept(false);
+
+Board::Positions parse_placement_data(  //
+    std::string_view data) noexcept(false);
+
+Color parse_active_color(char c) noexcept(false);
+
+Board::State::Castling parse_castling_availability(  //
+    std::string_view str) noexcept(false);
+
+square parse_en_passant_target_square(  //
+    std::string_view str) noexcept(false);
+}  // namespace core::notation::FEN

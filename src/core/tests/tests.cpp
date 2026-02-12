@@ -36,7 +36,7 @@ class MoveGenerationTest : public ::testing::TestWithParam<PositionTestCase> {};
 TEST_P(MoveGenerationTest, MatchesExpectedMoveCounts) {
     const auto& test_case = GetParam();
 
-    auto board = notation::FEN::parse_string(test_case.fen).get_board();
+    auto board = notation::FEN::parse_string(test_case.fen);
     auto moves = generation::generate_moves(board);
 
     for (Piece piece : Piece::All) {
@@ -88,7 +88,7 @@ void test_reversible_move_sequence(Board& board, int depth) {
 TEST(FENMoveUnmoveTest, PlaysAndUnplaysWithoutCorruption) {
     std::string fen =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    Board board = notation::FEN::parse_string(fen).get_board();
+    Board board = notation::FEN::parse_string(fen);
 
     EXPECT_NO_FATAL_FAILURE({ test_reversible_move_sequence(board, kDepth); });
 }
