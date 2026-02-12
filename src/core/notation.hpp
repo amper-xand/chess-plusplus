@@ -15,9 +15,10 @@ struct malformed_data : parse_error {
     explicit malformed_data(const std::string& msg) : parse_error(msg) {}
 };
 
-std::tuple<Piece, Color> cto_piece(char c) noexcept(false);
 square strto_square(std::string_view str) noexcept(false);
+std::string square_tostr(square square) noexcept(false);
 
+std::tuple<Piece, Color> cto_piece(char c) noexcept(false);
 char piece_toc(Piece piece, Color color) noexcept(false);
 std::string piece_toname(Piece piece) noexcept(false);
 
@@ -34,6 +35,10 @@ struct FEN {
 
     static const FEN parse_string(std::string_view fen) noexcept(false);
 
+    static const FEN from_board(const Board& board);
+
+    std::string to_string();
+
     Board get_board() const noexcept(false);
 
    protected:
@@ -46,6 +51,20 @@ struct FEN {
 
     static square parse_en_passant_target_square(  //
         std::string_view str) noexcept(false);
+};
+
+// Represents the fields of a move in Long Algebraic Notation (as in UCI)
+struct MoveLAN {
+    square from;
+    square to;
+    Piece promotion;
+
+    static const MoveLAN parse_string(std::string_view lan) noexcept(false);
+    static const MoveLAN from_move(Move move) noexcept(true);
+
+    bool matches_move(Move move) noexcept(true);
+
+    std::string to_string();
 };
 
 }  // namespace core::notation

@@ -2,12 +2,38 @@
 
 #include <cctype>
 #include <format>
-#include <string>
 
 #include <exception>
 
 #include <functional>
 #include <ranges>
+
+core::square core::notation::strto_square(std::string_view str) {
+    if (str.length() != 2) {
+        throw notation::malformed_data(std::format(  //
+            "ERROR:: data='{}' is not of length=2 while parsing core::square",
+            str));
+    }
+
+    if ((std::string("abcdefgh").find(str[0]) == std::string::npos) ||
+        (std::string("12345678").find(str[1]) == std::string::npos)) {
+        throw notation::invalid_token(std::format(  //
+            "ERROR:: Unexpected token in '{}' while parsing core::square",
+            str));
+    }
+
+    int file = 'h' - str[0];
+    int rank = str[1] - '1';
+
+    return square::at(rank, file);
+}
+
+std::string core::notation::square_tostr(square square) {
+    char file = std::string("hgfedcba").at(square.column());
+    char rank = std::string("12345678").at(square.row());
+
+    return (std::string){file, rank};
+}
 
 std::tuple<core::Piece, core::Color> core::notation::cto_piece(char c) {
     Color color = !!std::isupper(c);
@@ -38,26 +64,6 @@ std::tuple<core::Piece, core::Color> core::notation::cto_piece(char c) {
         "ERROR:: Unexpected character {} when parsing core::Piece", c));
 }
 
-core::square core::notation::strto_square(std::string_view str) {
-    if (str.length() != 2) {
-        throw notation::malformed_data(std::format(  //
-            "ERROR:: data='{}' is not of length=2 while parsing core::square",
-            str));
-    }
-
-    if ((std::string("abcdefgh").find(str[0]) == std::string::npos) ||
-        (std::string("12345678").find(str[1]) == std::string::npos)) {
-        throw notation::invalid_token(std::format(  //
-            "ERROR:: Unexpected token in '{}' while parsing core::square",
-            str));
-    }
-
-    int rank = str[0] - 'a';
-    int file = str[1] - '1';
-
-    return square::at(rank, file);
-}
-
 char core::notation::piece_toc(Piece piece, Color color) {
     // clang-format off
     switch (piece) {
@@ -83,6 +89,8 @@ std::string core::notation::piece_toname(Piece piece) {
     if (piece == Piece::ROOKS) return "rook";
     if (piece == Piece::QUEENS) return "queen";
     if (piece == Piece::KINGS) return "king";
+
+    if (piece == Piece::NONE) return "none";
 
     throw notation::invalid_token(std::format(  //
         "ERROR:: Could not map core::Piece {} into name", (piece_t)piece));
@@ -171,7 +179,7 @@ core::Board::State::Castling core::notation::FEN::parse_castling_availability(
 core::square core::notation::FEN::parse_en_passant_target_square(
     std::string_view str) {
     if (str == "-") {
-        return 65;
+        return square::out_of_bounds;
     }
 
     return strto_square(str);
@@ -184,7 +192,7 @@ const core::notation::FEN core::notation::FEN::parse_string(
     std::string_view fen) {
     FEN parsed = {.active_color = Color::WHITE,
         .castling_availability = {true, true, true, true},
-        .en_passant_target_square = 65,
+        .en_passant_target_square = square::out_of_bounds,
         .half_move_clock = 0,
         .full_move_number = 0};
 
@@ -220,7 +228,8 @@ void core::notation::FEN::parse_field(int index, std::string_view data) {
         if (data.find_first_not_of("PNBRQKpnbrqk12345678/") !=
             std::string_view::npos) {
             throw notation::invalid_token(std::format(  //
-                "ERROR:: Unexpected token in '{}' while parsing PLACEMENT_DATA",
+                "ERROR:: Unexpected token in '{}'"
+                "while parsing PLACEMENT_DATA ",
                 data));
         }
 
@@ -321,4 +330,42 @@ core::Board core::notation::FEN::get_board() const {
     board.fifty_move_rule_counter = this->half_move_clock;
 
     return board;
+}
+
+const core::notation::MoveLAN core::notation::MoveLAN::parse_string(
+    std::string_view lan) {
+    MoveLAN parsed{65, 65, Piece::NONE};
+
+    parsed.from = notation::strto_square(lan.substr(0, 2));
+    parsed.to = notation::strto_square(lan.substr(2, 2));
+
+    if (lan.length() == 5) {
+        auto [piece, _] = notation::cto_piece(lan[4]);
+        parsed.promotion = piece;
+    }
+
+    return parsed;
+}
+
+const core::notation::MoveLAN core::notation::MoveLAN::from_move(
+    Move move) noexcept(true) {
+    return MoveLAN{move.from, move.to, move.promotion};
+}
+
+bool core::notation::MoveLAN::matches_move(Move move) noexcept(true) {
+    if (this->from != move.from) return false;
+    if (this->to != move.to) return false;
+    if (this->promotion != move.promotion) return false;
+
+    return true;
+}
+
+std::string core::notation::MoveLAN::to_string() {
+    auto str = square_tostr(this->from) + square_tostr(this->to);
+
+    if (!this->promotion.isNone()) {
+        str += piece_toc(this->promotion, false);
+    }
+
+    return str;
 }

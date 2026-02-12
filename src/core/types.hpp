@@ -56,6 +56,8 @@ struct square : public LiteralWrapper<square_t> {
     static inline constexpr square at(uint8_t row, uint8_t col) {
         return col + 8 * row;
     }
+
+    static constexpr square_t out_of_bounds = 65;
 };
 
 /*
