@@ -252,12 +252,10 @@ struct Move {
     // clang-format on
 };
 
-
 /*
  * Represents pieces distributions and colors
  */
 struct Positions {
-
     // clang-format off
     union  { bitboard colors[2]; 
     struct { bitboard_t black, white; }; };
@@ -299,7 +297,7 @@ struct Positions {
  * Represents the state of a game
  */
 struct State {
-    Color turn;
+    Color active_color;
 
     // clang-format off
     struct Castling {
@@ -310,56 +308,69 @@ struct State {
     };
     // clang-format on
 
-    State::Castling castling{false, false, false, false};
-    square en_passant = square::out_of_bounds;
-    uint8_t fifty_move_rule_counter = 0;
+    State::Castling castling_availability{false, false, false, false};
+
+    // This is a square over which
+    // a pawn has just passed
+    // while moving two squares
+    square en_passant_target_square = square::out_of_bounds;
+
+    // The number of halfmoves since
+    // the last capture or pawn advance,
+    // used for the fifty-move rule
+    uint8_t halfmove_clock = 0;
+
+    // The number of the full moves.
+    // It starts at 1 and is incremented after Black's move.
+    uint16_t fullmove_number = 1;
+
+    inline bool get_castling_left() const {
+        return active_color ? castling_availability.white_left
+                            : castling_availability.black_left;
+    }
+
+    inline bool get_castling_right() const {
+        return active_color ? castling_availability.white_right
+                            : castling_availability.black_right;
+    }
+
+    inline void set_castling_left(bool value) {
+        (active_color ? castling_availability.white_left
+                      : castling_availability.black_left) = value;
+    }
+
+    inline void set_castling_right(bool value) {
+        (active_color ? castling_availability.white_right
+                      : castling_availability.black_right) = value;
+    }
 
     constexpr inline bool operator==(const State &other) const {
-        if (this->turn != other.turn) return false;
+        if (this->active_color != other.active_color) return false;
 
-        if (this->fifty_move_rule_counter !=
-            other.fifty_move_rule_counter)
+        if (this->halfmove_clock != other.halfmove_clock) return false;
+
+        if (this->en_passant_target_square !=  //
+            other.en_passant_target_square)
             return false;
 
-        if (this->en_passant !=  //
-            other.en_passant)
+        if (this->castling_availability.white_left !=  //
+            other.castling_availability.white_left)
             return false;
 
-        if (this->castling.white_left !=  //
-            other.castling.white_left)
+        if (this->castling_availability.black_left !=  //
+            other.castling_availability.black_left)
             return false;
 
-        if (this->castling.black_left !=  //
-            other.castling.black_left)
+        if (this->castling_availability.white_right !=
+            other.castling_availability.white_right)
             return false;
 
-        if (this->castling.white_right !=
-            other.castling.white_right)
-            return false;
-
-        if (this->castling.black_right !=
-            other.castling.black_right)
+        if (this->castling_availability.black_right !=
+            other.castling_availability.black_right)
             return false;
 
         return true;
     }
-
-    inline bool get_castling_left() const {
-        return turn ? castling.white_left : castling.black_left;
-    }
-
-    inline bool get_castling_right() const {
-        return turn ? castling.white_right : castling.black_right;
-    }
-
-    inline void set_castling_left(bool value) {
-        (turn ? castling.white_left : castling.black_left) = value;
-    }
-
-    inline void set_castling_right(bool value) {
-        (turn ? castling.white_right : castling.black_right) = value;
-    }
-
 };
 
 /*
@@ -371,16 +382,16 @@ struct Board : public Positions, public State {
     const State play(const Move move);
     void unplay(const Move move, const State prev);
 
-    inline bitboard allies() const { return colors[turn]; }
+    inline bitboard allies() const { return colors[active_color]; }
 
     inline bitboard allied(Piece piece) const {
-        return pieces[piece] & colors[turn];
+        return pieces[piece] & colors[active_color];
     }
 
-    inline bitboard enemies() const { return colors[!turn]; }
+    inline bitboard enemies() const { return colors[!active_color]; }
 
     inline bitboard enemy(Piece piece) const {
-        return pieces[piece] & colors[!turn];
+        return pieces[piece] & colors[!active_color];
     }
 
     constexpr inline bool operator==(const Board &other) const {

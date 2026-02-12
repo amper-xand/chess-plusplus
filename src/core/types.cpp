@@ -16,37 +16,37 @@ const core::Board::State core::Board::play(const Move move) {
     State prev = state;
 
     // move the piece bit to its new position
-    colors[turn] &= ~move.from.bb();
-    colors[turn] |= move.to.bb();
+    colors[active_color] &= ~move.from.bb();
+    colors[active_color] |= move.to.bb();
     pieces[move.moved] &= ~move.from.bb();
     pieces[move.moved] |= move.to.bb();
 
     // increase counter for 50 move rule
-    ++state.fifty_move_rule_counter;
+    ++state.halfmove_clock;
 
     // reset counter for 50 move rule
     if (!move.target.isNone() || move.moved.isPawn()) {
-        state.fifty_move_rule_counter = 0;
+        state.halfmove_clock = 0;
     }
 
     // remove the bit of the captured piece
     if (!move.target.isNone()) {
-        colors[!turn] &= ~move.to.bb();
+        colors[!active_color] &= ~move.to.bb();
     }
 
     // clear the en en passant state
-    state.en_passant = square::out_of_bounds;
+    state.en_passant_target_square = square::out_of_bounds;
 
     // capture en passant
     if (move.en_passant && !move.target.isNone()) {
-        square capture = turn ? move.to.down() : move.to.up();
+        square capture = active_color ? move.to.down() : move.to.up();
 
-        colors[!turn] &= ~capture.bb();
+        colors[!active_color] &= ~capture.bb();
     }
 
     // set en passant due to double advance
     if (move.en_passant && move.target.isNone()) {
-        state.en_passant = turn ? move.from.up() : move.from.down();
+        state.en_passant_target_square = active_color ? move.from.up() : move.from.down();
     }
 
     // promote pawn, switch bitboard
@@ -62,7 +62,7 @@ const core::Board::State core::Board::play(const Move move) {
 
         // get the bits needed to switch the rook
         rook_movement =
-            turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+            active_color ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
 
         if (move.from > move.to) {
             rook_movement &=
@@ -77,7 +77,7 @@ const core::Board::State core::Board::play(const Move move) {
         }
 
         rooks ^= rook_movement;
-        colors[turn] ^= rook_movement;
+        colors[active_color] ^= rook_movement;
     }
 
     // if the king is moved lose both castling sides
@@ -89,19 +89,19 @@ const core::Board::State core::Board::play(const Move move) {
     // if a rook is moved in a corner,
     // then remove that castling right
     if (move.moved.isRook()) {
-        if (turn.isWhite() && move.from == square::at(0, 0)) {
+        if (active_color.isWhite() && move.from == square::at(0, 0)) {
             set_castling_right(false);
         }
 
-        if (turn.isWhite() && move.from == square::at(0, 7)) {
+        if (active_color.isWhite() && move.from == square::at(0, 7)) {
             set_castling_left(false);
         }
 
-        if (turn.isBlack() && move.from == square::at(7, 0)) {
+        if (active_color.isBlack() && move.from == square::at(7, 0)) {
             set_castling_right(false);
         }
 
-        if (turn.isBlack() && move.from == square::at(7, 7)) {
+        if (active_color.isBlack() && move.from == square::at(7, 7)) {
             set_castling_left(false);
         }
     }
@@ -113,7 +113,7 @@ const core::Board::State core::Board::play(const Move move) {
         bb &= all_pieces;
     }
 
-    turn = !turn;
+    active_color = !active_color;
 
     return prev;
 }
@@ -133,23 +133,23 @@ void core::Board::unplay(const Move move, const State prev) {
 
     // move the piece to its original position
     // if there is a promotion this adds an extra pawn *
-    colors[turn] &= ~move.to.bb();
-    colors[turn] |= move.from.bb();
+    colors[active_color] &= ~move.to.bb();
+    colors[active_color] |= move.from.bb();
     pieces[move.moved] &= ~move.to.bb();
     pieces[move.moved] |= move.from.bb();
 
     // if a piece was captured then add it back
     if (!move.target.isNone() && !move.en_passant) {
         pieces[move.target] |= move.to.bb();
-        colors[!turn] |= move.to.bb();
+        colors[!active_color] |= move.to.bb();
     }
 
     // if a pawn was captured via en passant
     // then put it back
     if (!move.target.isNone() && move.en_passant) {
-        square pawn = turn ? move.to.down() : move.to.up();
+        square pawn = active_color ? move.to.down() : move.to.up();
         pieces[move.target] |= pawn.bb();
-        colors[!turn] |= pawn.bb();
+        colors[!active_color] |= pawn.bb();
     }
 
     // if there was a promotion
@@ -164,7 +164,7 @@ void core::Board::unplay(const Move move, const State prev) {
         bitboard rook_movement;
 
         rook_movement =
-            turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+            active_color ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
 
         if (move.from > move.to) {
             rook_movement &=
@@ -175,6 +175,6 @@ void core::Board::unplay(const Move move, const State prev) {
         }
 
         rooks ^= rook_movement;
-        colors[turn] ^= rook_movement;
+        colors[active_color] ^= rook_movement;
     }
 }

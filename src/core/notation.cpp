@@ -324,10 +324,10 @@ core::Board core::notation::FEN::get_board() const {
         rank--;
     }
 
-    board.turn = this->active_color;
-    board.castling = this->castling_availability;
-    board.en_passant = this->en_passant_target_square;
-    board.fifty_move_rule_counter = this->half_move_clock;
+    board.active_color = this->active_color;
+    board.castling_availability = this->castling_availability;
+    board.en_passant_target_square = this->en_passant_target_square;
+    board.halfmove_clock = this->half_move_clock;
 
     return board;
 }

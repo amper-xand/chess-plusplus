@@ -108,26 +108,27 @@ void generation::generate_moves_pawn(GenerationContext& context) {
     bitboard blockers = board.all();
 
     // set bit for en passant capture
-    capturable |= board.en_passant.bb();
+    capturable |= board.en_passant_target_square.bb();
 
     // Advance the pawns then remove those who were blocked
     bitboard advances_single = pawns;
-    advances_single = advances_single.forward(board.turn, 8);
+    advances_single = advances_single.forward(board.active_color, 8);
     advances_single = advances_single.exclude(blockers);
 
-    bitboard pawns_can_advance_again = board.turn.isWhite()
+    bitboard pawns_can_advance_again = board.active_color.isWhite()
         ? bitboard::masks::rank(2)
         : bitboard::masks::rank(5);
 
     // Advance the pawns that were not blocked
     bitboard advances_double = advances_single.mask(pawns_can_advance_again);
-    advances_double = advances_double.forward(board.turn, 8);
+    advances_double = advances_double.forward(board.active_color, 8);
     advances_double = advances_double.exclude(blockers);
 
     // Advance the pawns to a capture position
 
     // Add pinned pawns that can capture
-    bitboard king_front = board.allied(Piece::KINGS).forward(board.turn, 8);
+    bitboard king_front =
+        board.allied(Piece::KINGS).forward(board.active_color, 8);
 
     square iking = std::countr_zero((bitboard_t)board.allied(Piece::KINGS));
 
@@ -141,7 +142,7 @@ void generation::generate_moves_pawn(GenerationContext& context) {
 
     bitboard capture_direction = board.allied(Piece::KINGS) - 1;
 
-    if (board.turn.isWhite()) capture_direction = ~capture_direction;
+    if (board.active_color.isWhite()) capture_direction = ~capture_direction;
 
     side_left &= capture_direction;
     side_right &= capture_direction;
@@ -157,8 +158,8 @@ void generation::generate_moves_pawn(GenerationContext& context) {
     captures_right = captures_right.exclude(bitboard::masks::file(0));
 
     // Move pawns to capture
-    captures_left = captures_left.forward(board.turn, 8) << 1;
-    captures_right = captures_right.forward(board.turn, 8) >> 1;
+    captures_left = captures_left.forward(board.active_color, 8) << 1;
+    captures_right = captures_right.forward(board.active_color, 8) >> 1;
 
     // keep the pawns that are over an enemy piece
     captures_left = captures_left.mask(capturable);
@@ -175,7 +176,7 @@ void generation::generate_moves_pawn(GenerationContext& context) {
         Move& m = context.next();
 
         m.moved = Piece::PAWNS;
-        m.from = board.turn.isWhite() ? index.down() : index.up();
+        m.from = board.active_color.isWhite() ? index.down() : index.up();
         m.to = index;
     }
 
@@ -185,7 +186,7 @@ void generation::generate_moves_pawn(GenerationContext& context) {
         Move& m = context.next();
 
         m.moved = Piece::PAWNS;
-        m.from = board.turn.isWhite() ? index.down(2) : index.up(2);
+        m.from = board.active_color.isWhite() ? index.down(2) : index.up(2);
         m.to = index;
 
         m.en_passant = true;
@@ -197,11 +198,12 @@ void generation::generate_moves_pawn(GenerationContext& context) {
         Move& m = context.next();
 
         m.moved = Piece::PAWNS;
-        m.from = (board.turn.isWhite() ? index.down() : index.up()).right();
+        m.from =
+            (board.active_color.isWhite() ? index.down() : index.up()).right();
         m.to = index;
         m.target = board.piece(m.to);
 
-        if (index == board.en_passant) {
+        if (index == board.en_passant_target_square) {
             m.en_passant = true;
             m.target = Piece::PAWNS;
         }
@@ -213,11 +215,12 @@ void generation::generate_moves_pawn(GenerationContext& context) {
         Move& m = context.next();
 
         m.moved = Piece::PAWNS;
-        m.from = (board.turn.isWhite() ? index.down() : index.up()).left();
+        m.from =
+            (board.active_color.isWhite() ? index.down() : index.up()).left();
         m.to = index;
         m.target = board.piece(m.to);
 
-        if (index == board.en_passant) {
+        if (index == board.en_passant_target_square) {
             m.en_passant = true;
             m.target = Piece::PAWNS;
         }
@@ -477,14 +480,14 @@ void generation::generate_moves_king(GenerationContext& context) {
 
     bitboard left_blockers;
     left_blockers = bitboard::masks::file(1) | bitboard::masks::file(2);
-    left_blockers &=
-        board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+    left_blockers &= board.active_color ? bitboard::masks::rank(0)
+                                        : bitboard::masks::rank(7);
     left_blockers &= blockers | context.attacked_squares;
 
     bitboard left_rook = board.allied(Piece::ROOKS);
-    left_rook &= bitboard::masks::file(0); 
-    left_rook &=
-        board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+    left_rook &= bitboard::masks::file(0);
+    left_rook &= board.active_color ? bitboard::masks::rank(0)
+                                    : bitboard::masks::rank(7);
 
     if (board.get_castling_left() && left_blockers == 0 & left_rook != 0) {
         Move& m = context.next();
@@ -499,13 +502,13 @@ void generation::generate_moves_king(GenerationContext& context) {
     bitboard right_blockers;
     right_blockers = bitboard::masks::file(6) | bitboard::masks::file(5) |
         bitboard::masks::file(4);
-    right_blockers &=
-        board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+    right_blockers &= board.active_color ? bitboard::masks::rank(0)
+                                         : bitboard::masks::rank(7);
 
     bitboard right_rook = board.allied(Piece::ROOKS);
     right_rook &= bitboard::masks::file(7);
-    right_rook &=
-        board.turn ? bitboard::masks::rank(0) : bitboard::masks::rank(7);
+    right_rook &= board.active_color ? bitboard::masks::rank(0)
+                                     : bitboard::masks::rank(7);
 
     if (board.get_castling_right() && right_blockers == 0 && right_rook != 0) {
         Move& m = context.next();
@@ -568,12 +571,18 @@ void generation::get_bitboard_squares_attacked(
     bitboard pawns = board.enemy(Piece::PAWNS);
 
     // left pawn attacks
-    attacked_squares |=
-        pawns.exclude(bitboard::masks::file(7)).forward(!board.turn, 8) << 1;
+    attacked_squares |=  //
+        pawns
+            .exclude(bitboard::masks::file(7))  //
+            .forward(!board.active_color, 8)    //
+        << 1;
 
     // right pawn attacks
-    attacked_squares |=
-        pawns.exclude(bitboard::masks::file(0)).forward(!board.turn, 8) >> 1;
+    attacked_squares |=  //
+        pawns
+            .exclude(bitboard::masks::file(0))  //
+            .forward(!board.active_color, 8)    //
+        >> 1;
 
     if (board.enemy(Piece::KINGS) != 0)
         attacked_squares |=
@@ -721,9 +730,9 @@ bool generation::get_bitboard_check_blocks(
     checking_piece.straight = board.enemies().mask(board.rooks | board.queens);
 
     check_pattern.pawn =
-        king.exclude(bitboard::masks::file(0)).forward(board.turn, 7);
+        king.exclude(bitboard::masks::file(0)).forward(board.active_color, 7);
     check_pattern.pawn |=
-        king.exclude(bitboard::masks::file(7)).forward(board.turn, 9);
+        king.exclude(bitboard::masks::file(7)).forward(board.active_color, 9);
 
     checking_piece.pawn = board.enemy(Piece::PAWNS).mask(check_pattern.pawn);
 
